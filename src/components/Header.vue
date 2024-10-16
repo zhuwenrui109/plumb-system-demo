@@ -1,0 +1,99 @@
+<!-- 头部 -->
+<script setup>
+import { onMounted, onUnmounted, ref } from "vue";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const date = ref("");
+const time = ref("");
+let timer = null;
+
+onMounted(() => {
+	timeInit();
+	timer = setInterval(timeInit, 1000);
+});
+
+function timeInit() {
+	if (route.name == 'login') {
+		return;
+	}
+	const tm = new Date();
+	const y = tm.getFullYear();
+	const m = (tm.getMonth() + 1).toString().padStart(2, "0");
+	const d = tm.getDate().toString().padStart(2, "0");
+	const hours = tm.getHours().toString().padStart(2, "0");
+	const minutes = tm.getMinutes().toString().padStart(2, "0");
+	const secound = tm.getSeconds().toString().padStart(2, "0");
+	date.value = `${y}年${m}月${d}日`;
+	time.value = `${hours}:${minutes}:${secound}`;
+}
+
+onUnmounted(() => {
+	clearInterval(timer);
+})
+</script>
+
+<template>
+	<div class="wrap">
+		<div class="time" v-if="route.name != 'login'">{{ date }} {{ time }}</div>
+		<img
+			src="../assets/images/header-bg.png"
+			alt=""
+			class="header-bg"
+		/>
+		<div class="line"></div>
+		<div class="line right"></div>
+	</div>
+</template>
+
+<style scoped>
+.wrap {
+	position: relative;
+	width: 100%;
+	z-index: 15;
+}
+
+.wrap .header-bg {
+	display: block;
+	width: 100%;
+}
+
+.wrap .time {
+	position: absolute;
+	top: 50%;
+	left: 40px;
+	transform: translateY(-50%);
+	font-size: 16px;
+	line-height: 1;
+	color: #fff;
+	font-weight: lighter;
+}
+
+.wrap .line {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	transform: translateY(-50%);
+	width: 644px;
+	height: 2px;
+	background: linear-gradient(to right, transparent 80%, rgba(255, 255, 255, .6) 90%);
+}
+
+.wrap .line::after {
+	position: absolute;
+	content: "";
+	top: 50%;
+	right: 0;
+	transform: translate(50%, -50%);
+	width: 6px;
+	height: 6px;
+	background: #fff;
+	border-radius: 50%;
+}
+
+.wrap .line.right {
+	left: auto;
+	right: 0;
+	transform: rotate(180deg);
+}
+</style>
