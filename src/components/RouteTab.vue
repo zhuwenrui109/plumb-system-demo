@@ -1,7 +1,36 @@
 <script setup>
-import { useRouter } from "vue-router";
+import { computed, reactive } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
+const route = useRoute();
+
+const tabList = reactive([
+	{
+		name: "实时监测",
+		routerName: "home"
+	},
+	{
+		name: "历史报警",
+		routerName: "alarm"
+	},
+	{
+		name: "历史故障",
+		routerName: "home"
+	},
+	{
+		name: "系统管理",
+		routerName: "setting"
+	},
+	{
+		name: "设备管理",
+		routerName: "manage"
+	}
+]);
+
+const currentRouter = computed(() => {
+	return router.currentRoute.value.fullPath;
+});
 </script>
 
 <template>
@@ -9,14 +38,14 @@ const router = useRouter();
 	<div class="tab-wrap">
 		<div class="tab-content">
 			<div
-				class="tab-item active"
-				@click="router.push('test')"
+				class="tab-item"
+				:class="{ active: currentRouter.includes(item.routerName) }"
+				v-for="(item, index) in tabList"
+				:key="index"
+				@click="router.push({ name: item.routerName })"
 			>
-				实时监测
+				{{ item.name }}
 			</div>
-			<div class="tab-item">历史报警</div>
-			<div class="tab-item">历史故障</div>
-			<div class="tab-item">系统管理</div>
 		</div>
 		<img
 			src="../assets/images/tab-bg.png"

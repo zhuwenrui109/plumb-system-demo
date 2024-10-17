@@ -1,5 +1,5 @@
 <script setup>
-import GlobalContent from "@/components/HomeGlobalContent.vue";
+import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
@@ -29,7 +29,7 @@ function toggleAutoLogin() {
 			<div class="time english">2014-10-13 13:00:00</div>
 			<div class="line chance"></div>
 		</div>
-		<global-content>
+		<home-global-content class="content">
 			<div class="form">
 				<input type="text" placeholder="请输入账号" v-model="username" />
 				<input type="password" placeholder="请输入密码" v-model="password" @keyup.enter="login" />
@@ -45,7 +45,7 @@ function toggleAutoLogin() {
           <span>自动登录</span>
         </div>
 			</div>
-		</global-content>
+		</home-global-content>
 		<div class="tips">©2024 大连向量集传感技术有限公司 All Right Reserved</div>
 	</div>
 </template>

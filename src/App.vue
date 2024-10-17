@@ -6,11 +6,14 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 
-const isLoginRouter = computed(() => route.name == 'login');
+const isLoginRouter = computed(() => route.name == "login");
 </script>
 
 <template>
-	<div class="app-wrap" :class="{ chance: !isLoginRouter }">
+	<div
+		class="app-wrap"
+		:class="{ chance: !isLoginRouter }"
+	>
 		<!-- 头部 -->
 		<Header></Header>
 
@@ -18,7 +21,11 @@ const isLoginRouter = computed(() => route.name == 'login');
 		<div class="app-main">
 			<route-tab v-if="!isLoginRouter"></route-tab>
 
-			<RouterView />
+			<router-view v-slot="{ Component }">
+				<transition name="fade">
+					<component :is="Component" />
+				</transition>
+			</router-view>
 		</div>
 	</div>
 </template>
@@ -50,5 +57,15 @@ const isLoginRouter = computed(() => route.name == 'login');
 .app-wrap .app-main {
 	width: 100%;
 	flex: 1;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity .2s ease-in;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
 }
 </style>

@@ -469,8 +469,6 @@ const areaList = reactive([
 
 .top-wrap .home-item.chance {
 	width: 1148px;
-	background: url("../assets/images/home-videos-bg.png") no-repeat;
-	background-size: cover;
 }
 
 .top-wrap .home-item .control-tips {
