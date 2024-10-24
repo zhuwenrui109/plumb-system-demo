@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 
 const { WebVideoCtrl } = window;
 const config = {
@@ -9,18 +9,29 @@ const config = {
 	szUsername: "admin", // 用户名称
 	szPassword: "abcd1234" // 用户密码
 };
+const szDeviceIdentify = config.szIP + "_" + config.szPort;
+let iDevicePort = null;
+let iRtspPort = null;
 const g_iWndIndex = ref(0);
+let iChannelID = null;
 
 onMounted(() => {
 	initPlugin();
 });
 
+onUnmounted(() => {
+	WebVideoCtrl.I_DestroyPlugin();
+});
+
 async function initPlugin() {
 	await nextTick();
 	WebVideoCtrl.I_InitPlugin({
-		bWndFull: true, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
-		iWndowType: 1,
+		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
+		iWndowType: 4,
 		bDebugMode: true,
+		cbDoubleClickWnd(iWndIndex, bFullScreen) {
+			console.log("当前放大的窗口编号：" + iWndIndex);
+		},
 		cbInitPluginComplete: function () {
 			WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(
 				() => {
@@ -52,7 +63,16 @@ function loginPlugin() {
 				getDevicePort();
 			}, 10);
 		},
-		error() {
+		error(oError) {
+			if (oError.errorCode == 2001) {
+				setTimeout(function () {
+					setTimeout(function () {
+						getChannelInfo();
+					}, 1000);
+					getDevicePort();
+				}, 10);
+			}
+			console.log("err :>> ", oError.errorCode);
 			console.error("登录失败");
 		}
 	});
@@ -60,140 +80,101 @@ function loginPlugin() {
 
 // 获取端口
 function getDevicePort() {
-	var szDeviceIdentify = $("#ip").val();
-
 	if (null == szDeviceIdentify) {
 		return;
 	}
 
 	var oPort = WebVideoCtrl.I_GetDevicePort(szDeviceIdentify).then(
 		oPort => {
-			$("#deviceport").val(oPort.iDevicePort);
-			$("#rtspport").val(oPort.iRtspPort);
-      console.log('szDeviceIdentify + " 获取端口成功！" :>> ', szDeviceIdentify + " 获取端口成功！");
+			iDevicePort = oPort.iDevicePort;
+			iRtspPort = oPort.iRtspPort;
+			console.log('szDeviceIdentify + " 获取端口成功！" :>> ', szDeviceIdentify + " 获取端口成功！");
 		},
 		oError => {
 			var szInfo = "获取端口失败！";
-      console.log('szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg :>> ', szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
+			console.log("szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg :>> ", szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
 		}
 	);
 }
 
 // 获取通道
 function getChannelInfo() {
-    var szDeviceIdentify = $("#ip").val(),
-        oSel = $("#channels").empty();
+	if (null == szDeviceIdentify) {
+		return;
+	}
 
-    if (null == szDeviceIdentify) {
-        return;
-    }
+	// 模拟通道
+	WebVideoCtrl.I_GetAnalogChannelInfo(szDeviceIdentify, {
+		success: function (xmlDoc) {
+			console.log("xmlDoc :>> ", xmlDoc);
+			var oChannels = $(xmlDoc).find("VideoInputChannel");
 
-    // 模拟通道
-    WebVideoCtrl.I_GetAnalogChannelInfo(szDeviceIdentify, {
-        success: function (xmlDoc) {
-            var oChannels = $(xmlDoc).find("VideoInputChannel");
-
-            $.each(oChannels, function (i) {
-                var id = $(this).find("id").eq(0).text(),
-                    name = $(this).find("name").eq(0).text();
-                if ("" == name) {
-                    name = "Camera " + (i < 9 ? "0" + (i + 1) : (i + 1));
-                }
-                oSel.append("<option value='" + id + "' bZero='false'>" + name + "</option>");
-            });
-            clickStartRealPlay();
-        },
-        error: function (oError) {
-          console.log('szDeviceIdentify + " 获取模拟通道失败！", oError.errorCode, oError.errorMsg :>> ', szDeviceIdentify + " 获取模拟通道失败！", oError.errorCode, oError.errorMsg);
-        }
-    });
-    // 数字通道
-    WebVideoCtrl.I_GetDigitalChannelInfo(szDeviceIdentify, {
-        success: function (xmlDoc) {
-            var oChannels = $(xmlDoc).find("InputProxyChannelStatus");
-
-            $.each(oChannels, function (i) {
-                var id = $(this).find("id").eq(0).text(),
-                    name = $(this).find("name").eq(0).text(),
-                    online = $(this).find("online").eq(0).text();
-                if ("false" == online) {// 过滤禁用的数字通道
-                    return true;
-                }
-                if ("" == name) {
-                    name = "IPCamera " + (i < 9 ? "0" + (i + 1) : (i + 1));
-                }
-                oSel.append("<option value='" + id + "' bZero='false'>" + name + "</option>");
-            });
-            console.log('szDeviceIdentify + " 获取数字通道成功！" :>> ', szDeviceIdentify + " 获取数字通道成功！");
-        },
-        error: function (oError) {
-          console.log('szDeviceIdentify + " 获取数字通道失败！", oError.errorCode, oError.errorMsg :>> ', szDeviceIdentify + " 获取数字通道失败！", oError.errorCode, oError.errorMsg);
-        }
-    });
-    // 零通道
-    WebVideoCtrl.I_GetZeroChannelInfo(szDeviceIdentify, {
-        success: function (xmlDoc) {
-            var oChannels = $(xmlDoc).find("ZeroVideoChannel");
-            
-            $.each(oChannels, function (i) {
-                var id = $(this).find("id").eq(0).text(),
-                    name = $(this).find("name").eq(0).text();
-                if ("" == name) {
-                    name = "Zero Channel " + (i < 9 ? "0" + (i + 1) : (i + 1));
-                }
-                if ("true" == $(this).find("enabled").eq(0).text()) {// 过滤禁用的零通道
-                    oSel.append("<option value='" + id + "' bZero='true'>" + name + "</option>");
-                }
-            });
-            console.log('szDeviceIdentify + " 获取零通道成功！" :>> ', szDeviceIdentify + " 获取零通道成功！");
-        },
-        error: function (oError) {
-          console.log('szDeviceIdentify + " 获取零通道失败！", oError.errorCode, oError.errorMsg :>> ', szDeviceIdentify + " 获取零通道失败！", oError.errorCode, oError.errorMsg);
-        }
-    });
+			$.each(oChannels, function (i) {
+				var id = $(this).find("id").eq(0).text(),
+					name = $(this).find("name").eq(0).text();
+				iChannelID = id;
+				if ("" == name) {
+					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
+				}
+				// oSel.append("<option value='" + id + "' bZero='false'>" + name + "</option>");
+			});
+			clickStartRealPlay(1);
+		},
+		error: function (oError) {
+			console.log(
+				'szDeviceIdentify + " 获取模拟通道失败！", oError.errorCode, oError.errorMsg :>> ',
+				szDeviceIdentify + " 获取模拟通道失败！",
+				oError.errorCode,
+				oError.errorMsg
+			);
+		}
+	});
 }
 
 // 开始预览
 function clickStartRealPlay(iStreamType) {
-    var oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value),
-        szDeviceIdentify = $("#ip").val(),
-        iRtspPort = parseInt($("#rtspport").val(), 10),
-        iChannelID = parseInt($("#channels").val(), 10),
-        bZeroChannel = $("#channels option").eq($("#channels").get(0).selectedIndex).attr("bZero") == "true" ? true : false,
-        szInfo = "";
+	var oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value),
+		// bZeroChannel = $("#channels option").eq($("#channels").get(0).selectedIndex).attr("bZero") == "true" ? true : false,
+		szInfo = "";
 
-    if ("undefined" === typeof iStreamType) {
-        iStreamType = parseInt($("#streamtype").val(), 10);
-    }
+	if ("undefined" === typeof iStreamType) {
+		iStreamType = parseInt(1, 10);
+	}
 
-    if (null == szDeviceIdentify) {
-        return;
-    }
-    var startRealPlay = function () {
-        WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
-            iStreamType: iStreamType,
-            iChannelID: iChannelID,
-            bZeroChannel: bZeroChannel,
-            iPort: iRtspPort,
-            success: function () {
-                szInfo = "开始预览成功！";
-                console.log('szDeviceIdentify + " " + szInfo :>> ', szDeviceIdentify + " " + szInfo);
-            },
-            error: function (oError) {
-              console.log('szDeviceIdentify + " 开始预览失败！", oError.errorCode, oError.errorMsg :>> ', szDeviceIdentify + " 开始预览失败！", oError.errorCode, oError.errorMsg);
-            }
-        });
-    };
-   
-    if (oWndInfo != null) {// 已经在播放了，先停止
-        WebVideoCtrl.I_Stop({
-            success: function () {
-                startRealPlay();
-            }
-        });
-    } else {
-        startRealPlay();
-    }
+	if (null == szDeviceIdentify) {
+		return;
+	}
+	var startRealPlay = function () {
+		WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
+			iStreamType: iStreamType,
+			iChannelID: iChannelID,
+			bZeroChannel: false,
+			iPort: iRtspPort,
+			success: function () {
+				szInfo = "开始预览成功！";
+				console.log('szDeviceIdentify + " " + szInfo :>> ', szDeviceIdentify + " " + szInfo);
+			},
+			error: function (oError) {
+				console.log(
+					'szDeviceIdentify + " 开始预览失败！", oError.errorCode, oError.errorMsg :>> ',
+					szDeviceIdentify + " 开始预览失败！",
+					oError.errorCode,
+					oError.errorMsg
+				);
+			}
+		});
+	};
+
+	if (oWndInfo != null) {
+		// 已经在播放了，先停止
+		WebVideoCtrl.I_Stop({
+			success: function () {
+				startRealPlay();
+			}
+		});
+	} else {
+		startRealPlay();
+	}
 }
 </script>
 
@@ -218,10 +199,9 @@ function clickStartRealPlay(iStreamType) {
 				class="arr right"
 			/>
 		</div>
-		<div
-			class="plugin-content"
-			id="divPlugin"
-		></div>
+		<div class="plugin-content">
+			<div id="divPlugin"></div>
+		</div>
 		<img
 			src="../assets/images/plugin-bg.png"
 			alt=""
@@ -291,7 +271,14 @@ function clickStartRealPlay(iStreamType) {
 	transform: translate(-50%, -50%);
 	width: 904px;
 	height: 542px;
+	box-sizing: border-box;
+	padding: 6px 16px;
 	background: rgba(225, 133, 43, 0.18);
 	border: 1px solid #c16205;
+}
+
+.plugin-wrap .plugin-content div {
+	width: 100%;
+	height: 100%;
 }
 </style>
