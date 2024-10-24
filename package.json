@@ -14,6 +14,8 @@
     "@better-scroll/observe-dom": "^2.5.1",
     "@better-scroll/scroll-bar": "^2.5.1",
     "amfe-flexible": "^2.2.1",
+    "ant-design-vue": "^4.2.5",
+    "echarts": "^5.5.1",
     "vue": "^3.4.29",
     "vue-router": "^4.4.5",
     "vuex": "^4.1.0"

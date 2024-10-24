@@ -1,10 +1,6 @@
 <script setup>
-// import GlobalTable from '@/components/GlobalTable.vue';
 import GlobalPagination from "@/components/GlobalPagination.vue";
-import GlobalSwitch from "@/components/GlobalSwitch.vue";
-import { ref } from "vue";
 
-const state = ref(0);
 </script>
 
 <template>
@@ -16,11 +12,8 @@ const state = ref(0);
 				<div class="td">视频设备地址</div>
 				<div class="td">所属场站</div>
 				<div class="td">所属工艺区</div>
-				<div class="td">一级报警值</div>
-				<div class="td">二级报警值</div>
-				<div class="td">连接</div>
-				<div class="td">状态</div>
-				<div class="td handle">操作</div>
+				<div class="td connect">连接</div>
+				<div class="td date">时间</div>
 			</div>
 			<div class="tr">
 				<div class="td id">
@@ -35,8 +28,6 @@ const state = ref(0);
 				<div class="td english">192.168.10.100 : 8090</div>
 				<div class="td">沈阳分输站</div>
 				<div class="td">过滤区</div>
-				<div class="td english alarm">5000</div>
-				<div class="td english alarm">25000</div>
 				<div class="td connect success">
 					<span class="dir"></span>
 					<img
@@ -46,20 +37,8 @@ const state = ref(0);
 					/>
 					<span>已连接</span>
 				</div>
-				<div class="td state">
-					<GlobalSwitch v-model="state"></GlobalSwitch>
-				</div>
-				<div class="td handle">
-					<img
-						src="../assets/images/icon-edit.png"
-						alt=""
-						class="handle-icon"
-					/>
-					<img
-						src="../assets/images/icon-delete.png"
-						alt=""
-						class="handle-icon"
-					/>
+				<div class="td date english">
+					2024/09/25 10:00:15
 				</div>
 			</div>
 		</div>
@@ -96,7 +75,7 @@ const state = ref(0);
 }
 
 .global-table-wrap .table .tr .td {
-	width: calc((100% - 257px - 257px) / 8);
+	width: 148px;
 	box-sizing: border-box;
 	font-size: 15px;
 	line-height: 1;
@@ -132,6 +111,8 @@ const state = ref(0);
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
+	width: 250px;
+	padding-left: 100px;
 	column-gap: 10px;
 }
 
@@ -159,6 +140,7 @@ const state = ref(0);
 	width: 14px;
 }
 
+.global-table-wrap .table .tr .th.handle,
 .global-table-wrap .table .tr .td.handle {
 	display: flex;
 	align-items: center;
@@ -179,5 +161,9 @@ const state = ref(0);
 
 .global-table-wrap .table .tr .td.alarm {
 	color: #ecc69d;
+}
+
+.global-table-wrap .table .tr .td.date {
+	padding-left: 85px;
 }
 </style>

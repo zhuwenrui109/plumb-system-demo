@@ -35,6 +35,13 @@ let timer = null;
 onMounted(() => {
 	// 初始化滚动
 	initScroll();
+	if (props.isAutoScroll) {
+		autoScroll();
+		scroll.on("scrollStart", () => {
+			clearInterval(timer);
+			timer = null;
+		});
+	}
 });
 
 onUnmounted(() => {
@@ -64,13 +71,6 @@ function initScroll() {
 		disableMouse: true,
 		disableTouch: true
 	});
-	if (props.isAutoScroll) {
-		autoScroll();
-		scroll.on("scrollStart", () => {
-			clearInterval(timer);
-			timer = null;
-		});
-	}
 }
 
 /**
@@ -80,9 +80,10 @@ function autoScroll() {
 	timer = setInterval(() => {
 		if (scroll.y <= scroll.maxScrollY) {
 			scroll.scrollTo(0, 0);
+			return;
 		}
-    scroll.scrollBy(0, -1);
-	}, 100);
+		scroll.scrollBy(0, -1);
+	}, 16);
 }
 
 /**

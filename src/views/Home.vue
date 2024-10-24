@@ -255,7 +255,6 @@ const areaList = reactive([
 					class="density-wrap"
 					:isNeedScroll="true"
 					:isAutoScroll="true"
-					:isNeedScrollBar="true"
 				>
 					<div class="density-list">
 						<div class="density-item">

@@ -1,3 +1,6 @@
+<script setup>
+
+</script>
 <!-- 黄色内发光框子 -->
 <template>
 	<div class="global-content-wrap">

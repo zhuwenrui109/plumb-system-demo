@@ -2,7 +2,7 @@
 <script setup>
 const props = defineProps({
 	isSelect: Boolean,
-	num: String | Number,
+	num: [String, Number],
 	title: String,
 	date: String
 });

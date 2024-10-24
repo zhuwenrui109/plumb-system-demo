@@ -1,10 +1,6 @@
 <script setup>
-// import GlobalTable from '@/components/GlobalTable.vue';
-import GlobalPagination from "@/components/GlobalPagination.vue";
-import GlobalSwitch from "@/components/GlobalSwitch.vue";
-import { ref } from "vue";
+import GlobalSwitch from './GlobalSwitch.vue';
 
-const state = ref(0);
 </script>
 
 <template>
@@ -39,31 +35,18 @@ const state = ref(0);
 				<div class="td english alarm">25000</div>
 				<div class="td connect success">
 					<span class="dir"></span>
-					<img
-						src="../assets/images/icon-unconnect.png"
-						alt=""
-						style="display: none"
-					/>
+					<img src="../assets/images/icon-unconnect.png" alt="" style="display: none;">
 					<span>已连接</span>
 				</div>
 				<div class="td state">
 					<GlobalSwitch v-model="state"></GlobalSwitch>
 				</div>
 				<div class="td handle">
-					<img
-						src="../assets/images/icon-edit.png"
-						alt=""
-						class="handle-icon"
-					/>
-					<img
-						src="../assets/images/icon-delete.png"
-						alt=""
-						class="handle-icon"
-					/>
+					<img src="../assets/images/icon-edit.png" alt="" class="handle-icon">
+					<img src="../assets/images/icon-delete.png" alt="" class="handle-icon">
 				</div>
 			</div>
 		</div>
-		<GlobalPagination></GlobalPagination>
 	</div>
 </template>
 
@@ -74,8 +57,6 @@ const state = ref(0);
 
 .global-table-wrap .table {
 	width: 100%;
-	height: 665px;
-	margin-bottom: 10px;
 }
 
 .global-table-wrap .table .tr {
@@ -96,16 +77,12 @@ const state = ref(0);
 }
 
 .global-table-wrap .table .tr .td {
-	width: calc((100% - 257px - 257px) / 8);
+	width: 148px;
 	box-sizing: border-box;
-	font-size: 15px;
+	font-size: 16px;
 	line-height: 1;
 	padding-left: 40px;
 	text-wrap: nowrap;
-}
-
-.global-table-wrap .table .tr .td.english {
-	font-size: 16px;
 }
 
 .global-table-wrap .table .tr .td:nth-child(2) {
@@ -136,11 +113,11 @@ const state = ref(0);
 }
 
 .global-table-wrap .table .tr .td.connect.success {
-	color: #15c675;
+	color: #15C675;
 }
 
 .global-table-wrap .table .tr .td.connect.fail {
-	color: #f85827;
+	color: #F85827;
 }
 
 .global-table-wrap .table .tr .td.connect span {
@@ -159,6 +136,7 @@ const state = ref(0);
 	width: 14px;
 }
 
+.global-table-wrap .table .tr .th.handle,
 .global-table-wrap .table .tr .td.handle {
 	display: flex;
 	align-items: center;
@@ -178,6 +156,6 @@ const state = ref(0);
 }
 
 .global-table-wrap .table .tr .td.alarm {
-	color: #ecc69d;
+	color: #ECC69D;
 }
 </style>

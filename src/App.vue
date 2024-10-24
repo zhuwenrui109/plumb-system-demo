@@ -21,11 +21,7 @@ const isLoginRouter = computed(() => route.name == "login");
 		<div class="app-main">
 			<route-tab v-if="!isLoginRouter"></route-tab>
 
-			<router-view v-slot="{ Component }">
-				<transition name="fade">
-					<component :is="Component" />
-				</transition>
-			</router-view>
+			<router-view></router-view>
 		</div>
 	</div>
 </template>

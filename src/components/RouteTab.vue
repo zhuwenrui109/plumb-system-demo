@@ -16,15 +16,11 @@ const tabList = reactive([
 	},
 	{
 		name: "历史故障",
-		routerName: "home"
+		routerName: "fault"
 	},
 	{
 		name: "系统管理",
 		routerName: "setting"
-	},
-	{
-		name: "设备管理",
-		routerName: "manage"
 	}
 ]);
 
