@@ -198,7 +198,7 @@ const areaList = reactive([
 				<home-global-content>
 					<div class="control-direction">
 						<control></control>
-						<div class="start-control">开始控制</div>
+						<div class="start-control disabled">开始控制</div>
 						<GlobalBlackContent>
 							<div class="control-item">
 								<span class="name">视频放大/缩小</span>
@@ -504,6 +504,16 @@ const areaList = reactive([
 	border-radius: 2px;
 	cursor: pointer;
 	margin-bottom: 12px;
+}
+
+.top-wrap .home-item .control-direction .start-control.disabled {
+	opacity: .6;
+}
+
+.top-wrap .home-item .control-direction .start-control.check {
+	border: 1px solid #aeadad;
+	background: linear-gradient(to top, rgba(166, 166, 166, .3), rgba(86, 86, 86, .3));
+	box-shadow: inset 0 0 9px 3px rgba(255, 255, 255, .19);
 }
 
 .top-wrap .home-item .control-direction .control-item {
