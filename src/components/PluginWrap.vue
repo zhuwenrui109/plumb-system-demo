@@ -14,6 +14,7 @@ let iDevicePort = null;
 let iRtspPort = null;
 const g_iWndIndex = ref(0);
 let iChannelID = null;
+let iWndowType = 4; // 分割数量
 
 onMounted(() => {
 	initPlugin();
@@ -23,14 +24,25 @@ onUnmounted(() => {
 	WebVideoCtrl.I_DestroyPlugin();
 });
 
+/**
+ * 监控控件初始化
+ */
 async function initPlugin() {
 	await nextTick();
 	WebVideoCtrl.I_InitPlugin({
 		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
-		iWndowType: 4,
+		iWndowType: iWndowType,
 		bDebugMode: true,
-		cbDoubleClickWnd(iWndIndex, bFullScreen) {
-			console.log("当前放大的窗口编号：" + iWndIndex);
+		cbDoubleClickWnd(iWndIndex) {
+			if (iWndowType != 1) {
+				console.log("当前放大的窗口编号：" + iWndIndex);
+				iWndowType = 1;
+				changeWndNum(iWndowType);
+			} else {
+				console.log('"当前还原的窗口编号：" + iWndIndex :>> ', "当前还原的窗口编号：" + iWndIndex);
+				iWndowType = 4;
+				changeWndNum(iWndowType);
+			}
 		},
 		cbInitPluginComplete: function () {
 			WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(
@@ -51,6 +63,9 @@ async function initPlugin() {
 	});
 }
 
+/**
+ * 登录
+ */
 function loginPlugin() {
 	WebVideoCtrl.I_Login(config.szIP, config.iPrototocol, config.szPort, config.szUsername, config.szPassword, {
 		timeout: 3000,
@@ -116,7 +131,6 @@ function getChannelInfo() {
 				if ("" == name) {
 					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
 				}
-				// oSel.append("<option value='" + id + "' bZero='false'>" + name + "</option>");
 			});
 			clickStartRealPlay(1);
 		},
@@ -131,12 +145,41 @@ function getChannelInfo() {
 	});
 }
 
+/**
+ * 切换分割数
+ * @param iType 分割数量
+ */
+function changeWndNum(iType) {
+	if ("1*2" === iType || "2*1" === iType) {
+		WebVideoCtrl.I_ArrangeWindow(iType).then(
+			() => {
+				showOPInfo("窗口分割成功！");
+			},
+			oError => {
+				var szInfo = "窗口分割失败！";
+				showOPInfo(szInfo, oError.errorCode, oError.errorMsg);
+			}
+		);
+	} else {
+		console.log("iType :>> ", iType);
+		iType = parseInt(iType, 10);
+		WebVideoCtrl.I_ChangeWndNum(iType).then(
+			() => {
+				console.log('"窗口分割成功！" :>> ', "窗口分割成功！");
+			},
+			oError => {
+				const szInfo = "窗口分割失败！";
+				console.log("szInfo, oError.errorCode, oError.errorMsg :>> ", szInfo, oError.errorCode, oError.errorMsg);
+			}
+		);
+	}
+}
+
 // 开始预览
 function clickStartRealPlay(iStreamType) {
 	var oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value),
-		// bZeroChannel = $("#channels option").eq($("#channels").get(0).selectedIndex).attr("bZero") == "true" ? true : false,
 		szInfo = "";
-
+	console.log("oWndInfo :>> ", oWndInfo);
 	if ("undefined" === typeof iStreamType) {
 		iStreamType = parseInt(1, 10);
 	}
