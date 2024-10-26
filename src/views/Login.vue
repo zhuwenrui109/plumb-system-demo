@@ -10,11 +10,11 @@ const password = ref("");
 const router = useRouter();
 
 function login(e) {
-  alogin({
-    account: username.value,
-    password: username.value
-  })
-  return;
+  // alogin({
+  //   account: username.value,
+  //   password: username.value
+  // })
+  // return;
   localStorage.setItem("token", JSON.stringify({
     username: username.value,
     password: password.value
