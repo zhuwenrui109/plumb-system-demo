@@ -26,9 +26,9 @@ onUnmounted(() => {
 });
 
 watch(g_iWndowType, newVal => {
-	console.log('newVal :>> ', newVal);
+	console.log("newVal :>> ", newVal);
 	changeWndNum(newVal);
-})
+});
 
 /**
  * 监控控件初始化
@@ -47,7 +47,9 @@ async function initPlugin() {
 				g_iWndowType.value = 1;
 				console.log("g_iWndowType.value :>> ", g_iWndowType.value);
 				changeWndNum(1);
+				enableDraw();
 			} else {
+				delAllSnapPolygon();
 				g_iWndowType.value = 4;
 				changeWndNum(4);
 			}
@@ -140,7 +142,7 @@ function getChannelInfo() {
 					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
 				}
 			});
-			clickStartRealPlay(1);
+			clickStartRealPlay(0);
 		},
 		error: function (oError) {
 			console.log(
@@ -173,21 +175,22 @@ async function changeWndNum(iType) {
 
 /**
  * 开始预览
- * @param iStreamType 分割数量
+ * @param iWndIndex 在哪一个窗口预览
  */
-function clickStartRealPlay(iStreamType) {
+function clickStartRealPlay(iWndIndex) {
 	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
 
 	if (null == szDeviceIdentify) {
 		return;
 	}
 	const startRealPlay = function () {
-		console.log('szDeviceIdentify :>> ', szDeviceIdentify);
+		console.log("szDeviceIdentify :>> ", szDeviceIdentify);
 		WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
-			iStreamType: iStreamType,
+			iStreamType: 1,
 			iChannelID: iChannelID,
 			bZeroChannel: false,
 			iPort: iRtspPort,
+			iWndIndex,
 			success: function () {
 				console.log("开始预览成功！ :>> ", szDeviceIdentify);
 			},
@@ -210,16 +213,92 @@ function clickStartRealPlay(iStreamType) {
 }
 
 /**
+ * 启用多边形绘制
+ */
+function enableDraw() {
+	WebVideoCtrl.I_SetPlayModeType(6).then(
+		() => {
+			// g_bEnableDraw = true;
+			console.log("启用绘制成功！");
+			setSnapPolygon();
+		},
+		oError => {
+			console.log("启用绘制失败！ :>> ", oError.errorCode, oError.errorMsg);
+		}
+	);
+}
+
+/**
+ * 清空图形
+ */
+function delAllSnapPolygon() {
+	// if (!g_bEnableDraw) {
+	// 	return;
+	// }
+
+	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex).then(
+		() => {
+			console.log("清空图形成功！");
+		},
+		oError => {
+			console.log('清空图形失败！ :>> ', oError.errorCode, oError.errorMsg);
+		}
+	);
+}
+
+/**
+ * 设置图形，页面打开时可以设置以前设置过的图形
+ */
+function setSnapPolygon() {
+	// if (!g_bEnableDraw) {
+	// 	return;
+	// }
+
+	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex.value);
+
+	var szInfo = "<?xml version='1.0' encoding='utf-8'?>";
+	szInfo += "<SnapPolygonList>";
+	szInfo += "<SnapPolygon>";
+	szInfo += "<id>1</id>";
+	szInfo += "<polygonType>0</polygonType>";
+	szInfo += "<tips>沈阳分输站-过滤区      </tips>";
+	szInfo += "<tips>浓度:1000ppm.m      </tips>";
+	szInfo += "<tips>光强:8      </tips>";
+	szInfo += "<tips>2014-10-13 13:00:00</tips>";
+	szInfo += "<isClosed>true</isClosed>";
+	szInfo += "<color><r>236</r><g>198</g><b>157</b></color>";
+	szInfo += "<pointList>";
+	szInfo += "<point><x>0</x><y>0.9</y></point>";
+	szInfo += "<point><x>1</x><y>0.9</y></point>";
+	szInfo += "<point><x>1</x><y>1</y></point>";
+	szInfo += "<point><x>0</x><y>1</y></point>";
+	szInfo += "</pointList>";
+	szInfo += "</SnapPolygon>";
+	szInfo += "</SnapPolygonList>";
+
+	WebVideoCtrl.I_SetSnapPolygonInfo(g_iWndIndex.value, szInfo).then(
+		() => {
+			console.log("设置图形成功！");
+		},
+		oError => {
+			console.log("设置图形失败！ :>> ", oError.errorCode, oError.errorMsg);
+		}
+	);
+}
+/**
  * 刷新
  */
 function refresh() {
-	clickStartRealPlay(1);
+	clickStartRealPlay(0);
 }
 </script>
 
 <template>
 	<div class="plugin-wrap">
-		<div class="plugin-refresh" @click="refresh">
+		<div
+			class="plugin-refresh"
+			@click="refresh"
+		>
 			<img
 				src="../assets/images/icon-refresh.png"
 				alt=""
