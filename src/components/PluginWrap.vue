@@ -1,6 +1,8 @@
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref } from "vue";
+import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
+const g_iWndIndex = defineModel("iWndIndex");
+const g_iWndowType = defineModel("iWndowType"); // 分割数量
 const { WebVideoCtrl } = window;
 const config = {
 	szIP: "192.168.1.64", // IP地址
@@ -12,10 +14,10 @@ const config = {
 const szDeviceIdentify = config.szIP + "_" + config.szPort;
 let iDevicePort = null;
 let iRtspPort = null;
-const g_iWndIndex = ref(0);
 let iChannelID = null;
 
 onMounted(() => {
+	console.log("g_iWndowType.value :>> ", g_iWndowType.value);
 	initPlugin();
 });
 
@@ -23,16 +25,34 @@ onUnmounted(() => {
 	WebVideoCtrl.I_DestroyPlugin();
 });
 
+watch(g_iWndowType, newVal => {
+	console.log('newVal :>> ', newVal);
+	changeWndNum(newVal);
+})
+
+/**
+ * 监控控件初始化
+ */
 async function initPlugin() {
-	await nextTick();
 	WebVideoCtrl.I_InitPlugin({
 		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
-		iWndowType: 4,
-		bDebugMode: true,
-		cbDoubleClickWnd(iWndIndex, bFullScreen) {
-			console.log("当前放大的窗口编号：" + iWndIndex);
+		iWndowType: g_iWndowType.value,
+		cbSelWnd: function (xmlDoc) {
+			g_iWndIndex.value = parseInt($(xmlDoc).find("SelectWnd").eq(0).text(), 10);
+			console.log("g_iWndIndex.value :>> ", g_iWndIndex.value);
 		},
-		cbInitPluginComplete: function () {
+		cbDoubleClickWnd(iWndIndex) {
+			g_iWndIndex.value = iWndIndex;
+			if (g_iWndowType.value > 1) {
+				g_iWndowType.value = 1;
+				console.log("g_iWndowType.value :>> ", g_iWndowType.value);
+				changeWndNum(1);
+			} else {
+				g_iWndowType.value = 4;
+				changeWndNum(4);
+			}
+		},
+		cbInitPluginComplete() {
 			WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(
 				() => {
 					// 检查插件是否最新
@@ -51,6 +71,9 @@ async function initPlugin() {
 	});
 }
 
+/**
+ * 登录
+ */
 function loginPlugin() {
 	WebVideoCtrl.I_Login(config.szIP, config.iPrototocol, config.szPort, config.szUsername, config.szPassword, {
 		timeout: 3000,
@@ -84,14 +107,14 @@ function getDevicePort() {
 		return;
 	}
 
-	var oPort = WebVideoCtrl.I_GetDevicePort(szDeviceIdentify).then(
+	const oPort = WebVideoCtrl.I_GetDevicePort(szDeviceIdentify).then(
 		oPort => {
 			iDevicePort = oPort.iDevicePort;
 			iRtspPort = oPort.iRtspPort;
-			console.log('szDeviceIdentify + " 获取端口成功！" :>> ', szDeviceIdentify + " 获取端口成功！");
+			console.log("获取端口成功! :>> ", szDeviceIdentify);
 		},
 		oError => {
-			var szInfo = "获取端口失败！";
+			const szInfo = "获取端口失败！";
 			console.log("szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg :>> ", szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
 		}
 	);
@@ -116,7 +139,6 @@ function getChannelInfo() {
 				if ("" == name) {
 					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
 				}
-				// oSel.append("<option value='" + id + "' bZero='false'>" + name + "</option>");
 			});
 			clickStartRealPlay(1);
 		},
@@ -131,36 +153,45 @@ function getChannelInfo() {
 	});
 }
 
-// 开始预览
-function clickStartRealPlay(iStreamType) {
-	var oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value),
-		// bZeroChannel = $("#channels option").eq($("#channels").get(0).selectedIndex).attr("bZero") == "true" ? true : false,
-		szInfo = "";
+/**
+ * 切换分割数
+ * @param iType 分割数量
+ */
+async function changeWndNum(iType) {
+	await nextTick();
+	console.log("iType :>> ", iType);
+	WebVideoCtrl.I_ChangeWndNum(iType).then(
+		() => {
+			console.log('"窗口分割成功！" :>> ', "窗口分割成功！");
+		},
+		oError => {
+			const szInfo = "窗口分割失败！";
+			console.log("szInfo, oError.errorCode, oError.errorMsg :>> ", szInfo, oError.errorCode, oError.errorMsg);
+		}
+	);
+}
 
-	if ("undefined" === typeof iStreamType) {
-		iStreamType = parseInt(1, 10);
-	}
+/**
+ * 开始预览
+ * @param iStreamType 分割数量
+ */
+function clickStartRealPlay(iStreamType) {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
 
 	if (null == szDeviceIdentify) {
 		return;
 	}
-	var startRealPlay = function () {
+	const startRealPlay = function () {
 		WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
 			iStreamType: iStreamType,
 			iChannelID: iChannelID,
 			bZeroChannel: false,
 			iPort: iRtspPort,
 			success: function () {
-				szInfo = "开始预览成功！";
-				console.log('szDeviceIdentify + " " + szInfo :>> ', szDeviceIdentify + " " + szInfo);
+				console.log("开始预览成功！ :>> ", szDeviceIdentify + " " + szInfo);
 			},
 			error: function (oError) {
-				console.log(
-					'szDeviceIdentify + " 开始预览失败！", oError.errorCode, oError.errorMsg :>> ',
-					szDeviceIdentify + " 开始预览失败！",
-					oError.errorCode,
-					oError.errorMsg
-				);
+				console.log("开始预览失败！ :>> ", szDeviceIdentify, oError.errorCode, oError.errorMsg);
 			}
 		});
 	};

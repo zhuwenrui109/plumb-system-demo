@@ -14,7 +14,6 @@ function login(e) {
   //   account: username.value,
   //   password: username.value
   // })
-  // return;
   localStorage.setItem("token", JSON.stringify({
     username: username.value,
     password: password.value
