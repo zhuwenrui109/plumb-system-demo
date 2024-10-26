@@ -731,7 +731,7 @@ function handleStopPluginZoom(type) {
 	background: repeating-linear-gradient(116deg, transparent, transparent 10px, rgba(0, 0, 0, 0.2) 15px, rgba(0, 0, 0, 0.2) 26px);
 	background-size: 100% 60px;
 	background-color: #631d13;
-	/* animation: ani2 0.7s infinite alternate linear, ani 0.7s infinite both linear; */
+	animation: ani2 0.2s infinite alternate ease-in-out, ani 0.7s infinite both linear;
 	box-shadow: inset 0 0 12px 5px #a11e1d;
 	border-radius: 3px;
 }
@@ -818,10 +818,10 @@ function handleStopPluginZoom(type) {
 
 @keyframes ani2 {
 	0% {
-		box-shadow: inset 0 0 12px 5px #a11e1d;
+		opacity: .3;
 	}
 	100% {
-		box-shadow: inset 0 0 12px 7px #a11e1d;
+		opacity: 1;
 	}
 }
 </style>
