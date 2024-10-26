@@ -1,4 +1,5 @@
 <script setup>
+import { alogin } from "@/api";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -9,6 +10,11 @@ const password = ref("");
 const router = useRouter();
 
 function login(e) {
+  alogin({
+    account: username.value,
+    password: username.value
+  })
+  return;
   localStorage.setItem("token", JSON.stringify({
     username: username.value,
     password: password.value
