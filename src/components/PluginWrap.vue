@@ -182,13 +182,14 @@ function clickStartRealPlay(iStreamType) {
 		return;
 	}
 	const startRealPlay = function () {
+		console.log('szDeviceIdentify :>> ', szDeviceIdentify);
 		WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
 			iStreamType: iStreamType,
 			iChannelID: iChannelID,
 			bZeroChannel: false,
 			iPort: iRtspPort,
 			success: function () {
-				console.log("开始预览成功！ :>> ", szDeviceIdentify + " " + szInfo);
+				console.log("开始预览成功！ :>> ", szDeviceIdentify);
 			},
 			error: function (oError) {
 				console.log("开始预览失败！ :>> ", szDeviceIdentify, oError.errorCode, oError.errorMsg);

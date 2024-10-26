@@ -6,6 +6,7 @@ const props = defineProps({
 	title: String,
 	date: String
 });
+const emit = defineEmits(["goDetail"]);
 </script>
 
 <template>
@@ -28,6 +29,7 @@ const props = defineProps({
 				alt=""
 				class="icon"
 				v-if="isSelect"
+				@click="emit('goDetail')"
 			/>
 		</div>
 		<slot></slot>
@@ -105,5 +107,6 @@ const props = defineProps({
 .tips-wrap .top-wrap .icon {
 	display: block;
 	width: 24px;
+	cursor: pointer;
 }
 </style>

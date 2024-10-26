@@ -3,7 +3,7 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
@@ -170,12 +170,47 @@ const areaList = reactive([
 		]
 	}
 ]);
+const alarmList = ref([]);
+
+onMounted(() => {
+	setTimeout(testPluginError, 1000 * 10);
+});
 
 /**
  * 测试浓度超标警报录制视频
  */
 function testPluginError() {
 	console.log("测试浓度超标警报录制视频");
+	const test = {
+		id: 0,
+		title: "2级别",
+		value: "1000ppm.m",
+		ip: "192.168.1.64"
+	};
+	capturePicData();
+	alarmList.value.push(test);
+}
+
+function goPlugin() {
+	console.log("gogogogo");
+	g_iWndowType.value = 1;
+}
+
+/**
+ * 抓图并上传
+ */
+function capturePicData() {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	if (oWndInfo != null) {
+		WebVideoCtrl.I_CapturePicData().then(
+			function (data) {
+				console.log('抓图成功并上传:>> ', data);
+			},
+			function () {
+				console.log('抓图失败！ :>> ', oWndInfo.szDeviceIdentify);
+			}
+		);
+	}
 }
 
 /**
@@ -256,11 +291,19 @@ function handleStopPluginZoom(type) {
 					name="云台控制"
 					english="PTZ control"
 				>
-					<div class="control-tips" v-show="g_iWndowType > 1">云台不可控</div>
+					<div
+						class="control-tips"
+						v-show="g_iWndowType > 1"
+					>
+						云台不可控
+					</div>
 				</global-title>
 				<!-- 设备列表内容 -->
 				<home-global-content>
-					<div class="control-direction" :class="{ active: g_iWndowType == 1 }">
+					<div
+						class="control-direction"
+						:class="{ active: g_iWndowType == 1 }"
+					>
 						<control :class="{ 'control-wrap-active': g_iWndowType == 1 }"></control>
 						<div
 							class="start-control"
@@ -313,7 +356,10 @@ function handleStopPluginZoom(type) {
 						<GlobalBlackContent>
 							<div class="control-speed-item">
 								<div class="name">速度调整</div>
-								<SpeedController v-model:speed="pluginSpeed" :disabled="g_iWndowType > 1"></SpeedController>
+								<SpeedController
+									v-model:speed="pluginSpeed"
+									:disabled="g_iWndowType > 1"
+								></SpeedController>
 							</div>
 						</GlobalBlackContent>
 					</div>
@@ -418,6 +464,9 @@ function handleStopPluginZoom(type) {
 						<global-tips-item
 							:isSelect="true"
 							class="alarm-item"
+							v-for="(item, index) in alarmList"
+							:key="index"
+							@go-detail="goPlugin"
 						>
 							<div class="alarm">
 								<img
@@ -425,50 +474,12 @@ function handleStopPluginZoom(type) {
 									alt=""
 									class="icon"
 								/>
-								<div class="level">2级别</div>
-								<div class="english">1000ppm.m</div>
-							</div>
-						</global-tips-item>
-						<global-tips-item
-							:isSelect="true"
-							class="alarm-item"
-						>
-							<div class="alarm">
-								<img
-									src="../assets/images/icon-warning.png"
-									alt=""
-									class="icon"
-								/>
-								<div class="level">2级别</div>
-								<div class="english">1000ppm.m</div>
-							</div>
-						</global-tips-item>
-						<global-tips-item
-							:isSelect="true"
-							class="alarm-item"
-						>
-							<div class="alarm">
-								<img
-									src="../assets/images/icon-warning.png"
-									alt=""
-									class="icon"
-								/>
-								<div class="level">2级别</div>
-								<div class="english">1000ppm.m</div>
-							</div>
-						</global-tips-item>
-						<global-tips-item
-							:isSelect="true"
-							class="alarm-item"
-						>
-							<div class="alarm">
-								<img
-									src="../assets/images/icon-warning.png"
-									alt=""
-									class="icon"
-								/>
-								<div class="level">2级别</div>
-								<div class="english">1000ppm.m</div>
+								<div class="level">
+									{{ item.title }}
+								</div>
+								<div class="english">
+									{{ item.value }}
+								</div>
 							</div>
 						</global-tips-item>
 					</div>
@@ -829,7 +840,7 @@ function handleStopPluginZoom(type) {
 
 @keyframes ani2 {
 	0% {
-		opacity: .3;
+		opacity: 0.3;
 	}
 	100% {
 		opacity: 1;
