@@ -1,164 +1,192 @@
 <!-- 云台上下左右控制 -->
 <script setup>
-
 function handleControl(key) {
-  console.log('key :>> ', key);
+	console.log("key :>> ", key);
 }
 </script>
 
 <template>
 	<div class="control-wrap">
-		<div
-			class="triangle top"
-			@click="handleControl('top')"
-		>
+		<div class="control-content">
+			<div
+				class="triangle top"
+				@click="handleControl('top')"
+			>
+				<img
+					src="../assets/images/icon-arr-right.png"
+					alt=""
+					class="arr"
+				/>
+			</div>
+			<div
+				class="triangle left"
+				@click="handleControl('left')"
+			>
+				<img
+					src="../assets/images/icon-arr-right.png"
+					alt=""
+					class="arr"
+				/>
+			</div>
+			<div
+				class="triangle right"
+				@click="handleControl('right')"
+			>
+				<img
+					src="../assets/images/icon-arr-right.png"
+					alt=""
+					class="arr"
+				/>
+			</div>
+			<div
+				class="triangle bottom"
+				@click="handleControl('bottom')"
+			>
+				<img
+					src="../assets/images/icon-arr-right.png"
+					alt=""
+					class="arr"
+				/>
+			</div>
 			<img
-				src="../assets/images/icon-arr-right.png"
+				src="../assets/images/control-border.png"
 				alt=""
-				class="arr"
+				class="border"
+			/>
+			<img
+				src="../assets/images/control-auto.png"
+				alt=""
+				class="auto-btn"
+			/>
+			<img
+				src="../assets/images/control-auto-active.png"
+				alt=""
+				class="auto-btn active"
 			/>
 		</div>
-		<div
-			class="triangle left"
-			@click="handleControl('left')"
-		>
-			<img
-				src="../assets/images/icon-arr-right.png"
-				alt=""
-				class="arr"
-			/>
-		</div>
-		<div
-			class="triangle right"
-			@click="handleControl('right')"
-		>
-			<img
-				src="../assets/images/icon-arr-right.png"
-				alt=""
-				class="arr"
-			/>
-		</div>
-		<div
-			class="triangle bottom"
-			@click="handleControl('bottom')"
-		>
-			<img
-				src="../assets/images/icon-arr-right.png"
-				alt=""
-				class="arr"
-			/>
-		</div>
-		<img
-			src="../assets/images/control-border.png"
-			alt=""
-			class="border"
-		/>
-		<img
-			src="../assets/images/control-auto.png"
-			alt=""
-			class="auto-btn"
-		/>
 	</div>
 </template>
 
 <style scoped>
 .control-wrap {
+	width: 218px;
+	height: 218px;
+	box-sizing: border-box;
+	padding: 8px;
+	margin: 0 auto;
+	background: #000;
+	border-radius: 50%;
+	border: 1px solid transparent;
+}
+
+.control-wrap.control-wrap-active {
+	border-color: #ffe3c6;
+	/* transition: .2s all ease-in; */
+}
+
+.control-wrap .control-content {
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
-	width: 217px;
-	height: 217px;
-	margin: 0 auto;
+	width: 100%;
+	height: 100%;
 	box-sizing: border-box;
-	border: 8px solid #000;
 	border-radius: 50%;
 	overflow: hidden;
 }
 
-.control-wrap .triangle.left {
+.control-wrap .control-content .triangle.left {
 	position: relative;
 	width: 50%;
 	height: 100%;
-	background: linear-gradient(to bottom, #1C1918, #28201C, #4D4C4B 70%) no-repeat;
+	background: linear-gradient(to bottom, #1c1918, #28201c, #4d4c4b 70%) no-repeat;
 	cursor: pointer;
 }
 
-.control-wrap .triangle.left .arr {
+.control-wrap .control-content .triangle.left .arr {
 	position: absolute;
 	top: 50%;
 	right: 60px;
 	transform: translateY(-50%) rotate(180deg);
 	display: block;
 	width: 8px;
-	opacity: .4;
+	opacity: 0.4;
 }
 
-.control-wrap .triangle.right {
+.control-wrap .control-content .triangle.right {
 	position: relative;
 	width: 50%;
 	height: 100%;
-	background: linear-gradient(to bottom, #1C1918, #28201C, #4D4C4B 70%) no-repeat;
+	background: linear-gradient(to bottom, #1c1918, #28201c, #4d4c4b 70%) no-repeat;
 	cursor: pointer;
 }
 
-.control-wrap .triangle.right .arr {
+.control-wrap .control-content .triangle.right .arr {
 	position: absolute;
 	top: 50%;
 	left: 60px;
 	transform: translateY(-50%);
 	display: block;
 	width: 8px;
-	opacity: .4;
+	opacity: 0.4;
 }
 
-.control-wrap .triangle.top {
+.control-wrap .control-content .triangle.top {
 	position: absolute;
 	top: 0;
 	left: 50%;
 	transform: translateX(-50%);
 	width: 100%;
 	height: 50%;
-	background: linear-gradient(to bottom, #58524F 60%, #322923) no-repeat;
+	background: linear-gradient(to bottom, #58524f 60%, #322923) no-repeat;
 	clip-path: polygon(100% 0, 0 0, 50% 100%);
 	cursor: pointer;
 	z-index: 10;
 }
 
-.control-wrap .triangle.top .arr {
+.control-wrap .control-content .triangle.top .arr {
 	position: absolute;
 	left: 50%;
 	bottom: 60px;
 	transform: translateX(-50%) rotate(-90deg);
 	display: block;
 	width: 8px;
-	opacity: .4;
+	opacity: 0.4;
 }
 
-.control-wrap .triangle.bottom {
+.control-wrap .control-content .triangle.bottom {
 	position: absolute;
 	left: 50%;
 	bottom: 0;
 	transform: translateX(-50%);
 	width: 100%;
 	height: 50%;
-	background: linear-gradient(to bottom, #1b1918 10%, #28201C 30%, #4d4c4c) no-repeat;
-	clip-path: polygon(50% 0, 0 100%, 100% 100%);;
+	background: linear-gradient(to bottom, #1b1918 10%, #28201c 30%, #4d4c4c) no-repeat;
+	clip-path: polygon(50% 0, 0 100%, 100% 100%);
 	cursor: pointer;
 	z-index: 10;
 }
 
-.control-wrap .triangle.bottom .arr {
+.control-wrap .control-content .triangle.bottom .arr {
 	position: absolute;
 	left: 50%;
 	top: 60px;
 	transform: translateX(-50%) rotate(90deg);
 	display: block;
 	width: 8px;
-	opacity: .4;
+	opacity: 0.4;
 }
 
-.control-wrap .border {
+.control-wrap.control-wrap-active .control-content .triangle.top .arr,
+.control-wrap.control-wrap-active .control-content .triangle.right .arr,
+.control-wrap.control-wrap-active .control-content .triangle.bottom .arr,
+.control-wrap.control-wrap-active .control-content .triangle.left .arr {
+	opacity: 1;
+	/* transition: .2s all ease-in; */
+}
+
+.control-wrap .control-content .border {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -169,7 +197,7 @@ function handleControl(key) {
 	z-index: 15;
 }
 
-.control-wrap .auto-btn {
+.control-wrap .control-content .auto-btn {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -178,5 +206,17 @@ function handleControl(key) {
 	width: 58px;
 	cursor: pointer;
 	z-index: 15;
+}
+
+.control-wrap .control-content .auto-btn.active {
+	display: none;
+}
+
+.control-wrap.control-wrap-active .control-content .auto-btn {
+	display: none;
+}
+
+.control-wrap.control-wrap-active .control-content .auto-btn.active {
+	display: block;
 }
 </style>

@@ -1,6 +1,12 @@
 <script setup>
 import { computed, onMounted, ref } from "vue";
 
+const props = defineProps({
+	disabled: {
+		type: Boolean,
+		default: true
+	}
+})
 const speed = defineModel("speed");
 
 const wrap = ref(null);
@@ -13,6 +19,10 @@ onMounted(() => {
 })
 
 function handleSpeed(key) {
+	console.log('props.disabled :>> ', props.disabled);
+	if (props.disabled) {
+		return
+	}
 	switch (key) {
 		case 0:
       if (speed.value <= 1) return;

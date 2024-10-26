@@ -250,7 +250,7 @@ function handleStopPluginZoom(type) {
 				<!-- 设备列表内容 -->
 				<home-global-content>
 					<div class="control-direction" :class="{ active: g_iWndowType == 1 }">
-						<control></control>
+						<control :class="{ 'control-wrap-active': g_iWndowType == 1 }"></control>
 						<div
 							class="start-control"
 							@click="handlePlugin"
@@ -302,7 +302,7 @@ function handleStopPluginZoom(type) {
 						<GlobalBlackContent>
 							<div class="control-speed-item">
 								<div class="name">速度调整</div>
-								<SpeedController v-model:speed="pluginSpeed"></SpeedController>
+								<SpeedController v-model:speed="pluginSpeed" :disabled="g_iWndowType > 1"></SpeedController>
 							</div>
 						</GlobalBlackContent>
 					</div>
@@ -572,7 +572,7 @@ function handleStopPluginZoom(type) {
 	margin-bottom: 12px;
 }
 
-.top-wrap .home-item .control-direction .start-control.active {
+.top-wrap .home-item .control-direction.active .start-control {
 	border: 1px solid #aeadad;
 	background: linear-gradient(to top, rgba(166, 166, 166, 0.3), rgba(86, 86, 86, 0.3));
 	box-shadow: inset 0 0 9px 3px rgba(255, 255, 255, 0.19);
