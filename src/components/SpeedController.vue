@@ -1,9 +1,16 @@
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
-const speed = ref(4);
+const speed = defineModel("speed");
 
-const lineWidth = computed(() => (Math.round(230 / 7) * speed.value) + "px");
+const wrap = ref(null);
+const wrapWidth = ref(0);
+
+const lineWidth = computed(() => (Math.round(wrapWidth.value / 7) * speed.value) + "px");
+
+onMounted(() => {
+	wrapWidth.value = wrap.value.clientWidth;
+})
 
 function handleSpeed(key) {
 	switch (key) {
@@ -42,7 +49,7 @@ function handleSpeed(key) {
 			/>
 			<!-- 速度条 -->
 			<div class="line-wrap">
-				<div class="line">
+				<div class="line" ref="wrap">
 					<div :style="{ width: lineWidth }"></div>
 				</div>
 			</div>

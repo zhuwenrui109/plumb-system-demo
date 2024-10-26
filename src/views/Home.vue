@@ -10,6 +10,10 @@ import SpeedController from "@/components/SpeedController.vue";
 import GlobalButton from "@/components/GlobalButton.vue";
 import PluginWrap from "@/components/PluginWrap.vue";
 
+const { WebVideoCtrl } = window;
+const pluginSpeed = ref(1);
+const g_iWndIndex = ref(0);
+const g_iWndowType = ref(4);
 const isSelect = ref(false);
 const areaList = reactive([
 	{
@@ -166,6 +170,52 @@ const areaList = reactive([
 		]
 	}
 ]);
+
+function handlePlugin() {
+	g_iWndowType.value = g_iWndowType.value > 1 ? 1 : 4;
+}
+
+/**
+ * 变倍（放大缩小）
+ * @param type 放大/缩小
+ */
+function handlePluginZoom(type) {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	if (g_iWndowType.value == 1 && oWndInfo) {
+		WebVideoCtrl.I_PTZControl(type, false, {
+			iWndIndex: g_iWndIndex.value,
+			iPTZSpeed: pluginSpeed.value,
+			success: function (xmlDoc) {
+				console.log("xmlDoc :>> ", xmlDoc);
+				console.log("调焦成功 :>> ", oWndInfo.szDeviceIdentify);
+			},
+			error: function (oError) {
+				console.log("调焦失败！ :>> ", oWndInfo.szDeviceIdentify);
+			}
+		});
+	}
+}
+
+/**
+ * 停止变倍（放大缩小）
+ * @param type 10:放大; 11:缩小
+ */
+function handleStopPluginZoom(type) {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	if (g_iWndowType.value == 1 && oWndInfo) {
+		WebVideoCtrl.I_PTZControl(type, true, {
+			iWndIndex: g_iWndIndex.value,
+			iPTZSpeed: pluginSpeed.value,
+			success: function (xmlDoc) {
+				console.log("xmlDoc :>> ", xmlDoc);
+				console.log("停止调焦成功！ :>> ", oWndInfo.szDeviceIdentify);
+			},
+			error: function (oError) {
+				console.log("停止调焦失败！ :>> ", oWndInfo.szDeviceIdentify);
+			}
+		});
+	}
+}
 </script>
 
 <template>
@@ -184,7 +234,10 @@ const areaList = reactive([
 			</div>
 			<!-- 监控视频 -->
 			<div class="home-item chance">
-				<PluginWrap></PluginWrap>
+				<PluginWrap
+					v-model:iWndIndex="g_iWndIndex"
+					v-model:iWndowType="g_iWndowType"
+				></PluginWrap>
 			</div>
 			<!-- 云台控制 -->
 			<div class="home-item control-item">
@@ -192,23 +245,36 @@ const areaList = reactive([
 					name="云台控制"
 					english="PTZ control"
 				>
-					<div class="control-tips">云台不可控</div>
+					<div class="control-tips" v-show="g_iWndowType > 1">云台不可控</div>
 				</global-title>
 				<!-- 设备列表内容 -->
 				<home-global-content>
-					<div class="control-direction">
+					<div class="control-direction" :class="{ active: g_iWndowType == 1 }">
 						<control></control>
-						<div class="start-control disabled">开始控制</div>
+						<div
+							class="start-control"
+							@click="handlePlugin"
+						>
+							{{ g_iWndowType > 1 ? "开始控制" : "云台控制中" }}
+						</div>
 						<GlobalBlackContent>
 							<div class="control-item">
 								<span class="name">视频放大/缩小</span>
-								<span class="icon">
+								<span
+									class="icon"
+									@mousedown="handlePluginZoom(10)"
+									@mouseup="handleStopPluginZoom(10)"
+								>
 									<img
 										src="../assets/images/icon-bigger.png"
 										alt=""
 									/>
 								</span>
-								<span class="icon">
+								<span
+									class="icon"
+									@mousedown="handlePluginZoom(11)"
+									@mouseup="handleStopPluginZoom(11)"
+								>
 									<img
 										src="../assets/images/icon-smaller.png"
 										alt=""
@@ -236,7 +302,7 @@ const areaList = reactive([
 						<GlobalBlackContent>
 							<div class="control-speed-item">
 								<div class="name">速度调整</div>
-								<SpeedController></SpeedController>
+								<SpeedController v-model:speed="pluginSpeed"></SpeedController>
 							</div>
 						</GlobalBlackContent>
 					</div>
@@ -506,14 +572,10 @@ const areaList = reactive([
 	margin-bottom: 12px;
 }
 
-.top-wrap .home-item .control-direction .start-control.disabled {
-	opacity: .6;
-}
-
-.top-wrap .home-item .control-direction .start-control.check {
+.top-wrap .home-item .control-direction .start-control.active {
 	border: 1px solid #aeadad;
-	background: linear-gradient(to top, rgba(166, 166, 166, .3), rgba(86, 86, 86, .3));
-	box-shadow: inset 0 0 9px 3px rgba(255, 255, 255, .19);
+	background: linear-gradient(to top, rgba(166, 166, 166, 0.3), rgba(86, 86, 86, 0.3));
+	box-shadow: inset 0 0 9px 3px rgba(255, 255, 255, 0.19);
 }
 
 .top-wrap .home-item .control-direction .control-item {
@@ -536,7 +598,6 @@ const areaList = reactive([
 	display: block;
 	width: 58px;
 	box-sizing: border-box;
-	/* , linear-gradient(to top, #505050, #aeadad) */
 	border: solid 1px transparent;
 	background-origin: border-box;
 	background-clip: content-box, border-box;
