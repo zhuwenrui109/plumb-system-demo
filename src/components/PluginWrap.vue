@@ -207,11 +207,18 @@ function clickStartRealPlay(iStreamType) {
 		startRealPlay();
 	}
 }
+
+/**
+ * 刷新
+ */
+function refresh() {
+	clickStartRealPlay(1);
+}
 </script>
 
 <template>
 	<div class="plugin-wrap">
-		<div class="plugin-refresh">
+		<div class="plugin-refresh" @click="refresh">
 			<img
 				src="../assets/images/icon-refresh.png"
 				alt=""
@@ -259,6 +266,7 @@ function clickStartRealPlay(iStreamType) {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
+	cursor: pointer;
 }
 
 .plugin-wrap .plugin-refresh img {

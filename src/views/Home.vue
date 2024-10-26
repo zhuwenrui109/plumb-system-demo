@@ -171,6 +171,17 @@ const areaList = reactive([
 	}
 ]);
 
+/**
+ * 测试浓度超标警报录制视频
+ */
+function testPluginError() {
+	console.log("测试浓度超标警报录制视频");
+}
+
+/**
+ * 开始控制
+ * 把监控全屏
+ */
 function handlePlugin() {
 	g_iWndowType.value = g_iWndowType.value > 1 ? 1 : 4;
 }
