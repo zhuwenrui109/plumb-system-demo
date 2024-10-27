@@ -114,7 +114,14 @@ const router = createRouter({
 // })
 
 router.beforeEach((to, from, next) => {
-  if ((localStorage.getItem('token') && !tokenExpressInTime()) || to.path === '/login') {
+  // if ((localStorage.getItem('token') && !tokenExpressInTime()) || to.path === '/login') {
+  //   next();
+  // } else {
+  //   localStorage.setItem("preRoute", to.fullPath);
+  //   clearToken();
+  //   next('/login');
+  // }
+  if (true) {
     next();
   } else {
     localStorage.setItem("preRoute", to.fullPath);

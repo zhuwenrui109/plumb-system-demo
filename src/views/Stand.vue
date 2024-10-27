@@ -148,7 +148,7 @@ const state = ref("0");
 
 .stand-wrap .table {
 	width: 100%;
-	height: 665px;
+	height: 650px;
 	margin-bottom: 10px;
 }
 

@@ -300,7 +300,7 @@ function echartsInit() {
 <style scoped>
 .fault-wrap {
 	width: 9.84375rem;
-	height: 4.28646rem;
+	height: 100%;
 	margin: 0 auto;
 	padding: 0.0625rem 0;
 }
@@ -435,9 +435,9 @@ input[type="number"] {
 
 .fault-wrap .fault-content .table-list {
 	width: 1828px;
-	height: 276px;
+	height: 260px;
 	margin: 0 auto;
-	padding: 10px 56px 22px;
+	padding: 10px 56px 10px;
 	margin-bottom: 12px;
 }
 

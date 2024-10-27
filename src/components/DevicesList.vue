@@ -149,7 +149,7 @@ function toggleSite(index) {
 <style scoped>
 .area-nav {
 	position: relative;
-	height: 498px;
+	height: 470px;
 	box-sizing: border-box;
 	overflow: hidden;
 }

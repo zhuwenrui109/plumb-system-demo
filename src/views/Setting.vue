@@ -192,10 +192,10 @@ function getImgUrl(title) {
 	</div>
 </template>
 
-<style>
+<style scoped>
 .setting-wrap {
 	width: 1890px;
-	height: 823px;
+	height: 100%;
 	margin: 0 auto;
 	box-sizing: border-box;
 }
@@ -211,7 +211,7 @@ function getImgUrl(title) {
 
 .setting-wrap .setting-content .setting-border {
 	width: 1862px;
-	height: 792px;
+	height: 100%;
 }
 
 .setting-wrap .setting-content .setting-border .setting-right {
@@ -251,7 +251,7 @@ function getImgUrl(title) {
 	align-items: center;
 	justify-content: center;
 	width: 124px;
-	height: 715px;
+	height: 690px;
 	box-sizing: border-box;
 	background: rgba(39, 39, 38, 0.26);
 	border: 2px solid rgba(221, 221, 221, 0.17);
@@ -262,7 +262,7 @@ function getImgUrl(title) {
 
 .setting-wrap .setting-main .left-nav-list .left-nav-item {
 	cursor: pointer;
-	margin-bottom: 52px;
+	margin-bottom: 45px;
 }
 
 .setting-wrap .setting-main .left-nav-list .left-nav-item:last-child {

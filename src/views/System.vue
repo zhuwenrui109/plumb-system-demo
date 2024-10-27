@@ -158,7 +158,7 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 	align-items: center;
 	justify-content: flex-start;
 	column-gap: 20px;
-	margin-bottom: 396px;
+	margin-bottom: 380px;
 }
 
 .system-wrap .system-list .system-item {

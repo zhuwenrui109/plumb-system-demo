@@ -55,7 +55,7 @@ function handleSpeed(key) {
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn"
-				@mousedown="handleSpeed(0)"
+				@click="handleSpeed(0)"
 			/>
 			<!-- 速度条 -->
 			<div class="line-wrap">
@@ -67,7 +67,7 @@ function handleSpeed(key) {
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn right"
-				@mousedown="handleSpeed(1)"
+				@click="handleSpeed(1)"
 			/>
 		</div>
 	</div>

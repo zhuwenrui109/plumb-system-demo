@@ -2,9 +2,21 @@
 // import GlobalTable from '@/components/GlobalTable.vue';
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
+import dialogPlguin from "@/utils/dialog";
 import { ref } from "vue";
 
 const state = ref(0);
+
+function handleEdit() {
+	dialogPlguin().then(
+		() => {
+			console.log("确认");
+		},
+		str => {
+			console.log("取消");
+		}
+	);
+}
 </script>
 
 <template>
@@ -54,6 +66,7 @@ const state = ref(0);
 						src="../assets/images/icon-edit.png"
 						alt=""
 						class="handle-icon"
+						@click="handleEdit"
 					/>
 					<img
 						src="../assets/images/icon-delete.png"
@@ -74,7 +87,7 @@ const state = ref(0);
 
 .global-table-wrap .table {
 	width: 100%;
-	height: 665px;
+	height: 650px;
 	margin-bottom: 10px;
 }
 
