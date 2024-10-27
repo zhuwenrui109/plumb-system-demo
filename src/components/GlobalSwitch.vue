@@ -7,7 +7,7 @@ function handleClick() {
 </script>
 
 <template>
-	<div class="switch-wrap" :class="{ active: state == 1 }" @click="handleClick">
+	<div class="switch-wrap" :class="{ active: state == 1 }" @mousedown="handleClick">
 		<div class="switch"></div>
 	</div>
 </template>

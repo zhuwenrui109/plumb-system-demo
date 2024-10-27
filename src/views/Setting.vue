@@ -165,7 +165,7 @@ function getImgUrl(title) {
 							class="left-nav-item"
 							v-for="(item, index) in navList"
 							:key="index"
-							@click="router.push({ name: item.name })"
+							@mousedown="router.push({ name: item.name })"
 						>
 							<div
 								class="left-nav"

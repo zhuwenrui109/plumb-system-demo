@@ -1,7 +1,8 @@
 <script setup>
 import { API_HOME } from "@/api";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
-import { ref } from "vue";
+import { tokenExpressInTime } from "@/utils/tool";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 const isAutoLogin = ref(false);
@@ -9,21 +10,56 @@ const username = ref("18804030703");
 const password = ref("123456");
 const router = useRouter();
 
-function login(e) {
-  API_HOME.login({
-    account: username.value,
-    password: username.value
-  })
-  localStorage.setItem("token", JSON.stringify({
-    username: username.value,
-    password: password.value
-  }))
-  let prev = localStorage.getItem("preRoute");
-  router.push(prev);
+onMounted(() => {
+	checkLoginStatus();
+  
+})
+
+function checkLoginStatus() {
+	// 如果已经登录并且token没过期直接回到上一个页面
+	if (localStorage.getItem("token") || !tokenExpressInTime()) {
+		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
+		router.push(prev);
+		return;
+  }
+	// 没有登录，自动登录
+  const autoToken = JSON.parse(localStorage.getItem("autoToken"));
+  if (autoToken) {
+    username.value = autoToken.username;
+    password.value = autoToken.password;
+    setTimeout(handleLogin, 1000);
+  }
+}
+
+/**
+ * 登录
+ * @param {Event} e Event
+ */
+async function handleLogin(e) {
+	try {
+		const { token_type, access_token, expires_in } = await API_HOME.login({
+			account: username.value,
+			password: username.value
+		});
+    // 如果需要自动登录保存账号密码到缓存
+    if (isAutoLogin.value) {
+      localStorage.setItem("autoToken", JSON.stringify({
+        username: username.value,
+        password: password.value
+      }))
+    }
+		const token = token_type + " " + access_token;
+		localStorage.setItem("token", token);
+		localStorage.setItem("tokenTime", 9999999999999999);
+		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
+		router.push(prev);
+	} catch (err) {
+		console.log("err :>> ", err);
+	}
 }
 
 function toggleAutoLogin() {
-  isAutoLogin.value = !isAutoLogin.value;
+	isAutoLogin.value = !isAutoLogin.value;
 }
 </script>
 
@@ -36,19 +72,35 @@ function toggleAutoLogin() {
 		</div>
 		<home-global-content class="content">
 			<div class="form">
-				<input type="text" placeholder="请输入账号" v-model="username" />
-				<input type="password" placeholder="请输入密码" v-model="password" @keyup.enter="login" />
-				<div class="btn" @click="login">
+				<input
+					type="text"
+					placeholder="请输入账号"
+					v-model="username"
+				/>
+				<input
+					type="password"
+					placeholder="请输入密码"
+					v-model="password"
+					@keyup.enter="handleLogin"
+				/>
+				<div
+					class="btn"
+					@mousedown="handleLogin"
+				>
 					<span>登录</span>
 					<img
 						src="../assets/images/icon-login-arr.png"
 						alt=""
 					/>
 				</div>
-				<div class="autoLogin-btn" :class="{ check: isAutoLogin }" @click="toggleAutoLogin">
-          <span class="box"></span>
-          <span>自动登录</span>
-        </div>
+				<div
+					class="autoLogin-btn"
+					:class="{ check: isAutoLogin }"
+					@mousedown="toggleAutoLogin"
+				>
+					<span class="box"></span>
+					<span>自动登录</span>
+				</div>
 			</div>
 		</home-global-content>
 		<div class="tips">©2024 大连向量集传感技术有限公司 All Right Reserved</div>
@@ -105,108 +157,108 @@ function toggleAutoLogin() {
 
 .login .content {
 	width: 342px;
-  box-sizing: border-box;
-  padding: 35px 40px;
-  text-align: right;
-  background: rgba(0, 0, 0, .4);
-  margin-bottom: 276px;
+	box-sizing: border-box;
+	padding: 35px 40px;
+	text-align: right;
+	background: rgba(0, 0, 0, 0.4);
+	margin-bottom: 276px;
 }
 
 .login .content input {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 16px;
-  line-height: 1;
-  color: #fff;
-  padding: 15px 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  border-bottom: 1px solid rgba(151, 151, 151, .3);
-  transition: .3s all ease-in;
-  margin-bottom: 18px;
+	display: block;
+	width: 100%;
+	box-sizing: border-box;
+	font-size: 16px;
+	line-height: 1;
+	color: #fff;
+	padding: 15px 0;
+	border: none;
+	outline: none;
+	background: transparent;
+	border-bottom: 1px solid rgba(151, 151, 151, 0.3);
+	transition: 0.3s all ease-in;
+	margin-bottom: 18px;
 }
 
 .login .content input:last-of-type {
-  margin-bottom: 20px;
+	margin-bottom: 20px;
 }
 
 .login .content input:focus {
-  border-bottom-color: #fff;
+	border-bottom-color: #fff;
 }
 
 .login .content input::placeholder {
-  color: #949494;
+	color: #949494;
 }
 
 .login .content .btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  box-sizing: border-box;
-  background: rgba(188, 181, 133, 0.68);
-  padding-left: 28px;
-  padding-right: 20px;
-  margin-bottom: 14px;
-  cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	box-sizing: border-box;
+	background: rgba(188, 181, 133, 0.68);
+	padding-left: 28px;
+	padding-right: 20px;
+	margin-bottom: 14px;
+	cursor: pointer;
 }
 
 .login .content .btn span {
-  display: block;
-  font-size: 16px;
-  line-height: 44px;
+	display: block;
+	font-size: 16px;
+	line-height: 44px;
 }
 
 .login .content .btn img {
-  display: block;
-  width: 20px;
+	display: block;
+	width: 20px;
 }
 
 .login .content .autoLogin-btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-size: 14px;
-  line-height: 1;
-  color: #949494;
-  cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	font-size: 14px;
+	line-height: 1;
+	color: #949494;
+	cursor: pointer;
 }
 
 .login .content .autoLogin-btn span {
-  display: block;
+	display: block;
 }
 
 .login .content .autoLogin-btn .box {
-  position: relative;
-  width: 12px;
-  height: 12px;
-  box-sizing: border-box;
-  border: 1px solid #979797;
-  margin-right: 4px;
+	position: relative;
+	width: 12px;
+	height: 12px;
+	box-sizing: border-box;
+	border: 1px solid #979797;
+	margin-right: 4px;
 }
 
 .login .content .autoLogin-btn .box::after {
-  position: absolute;
-  content: "";
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 6px;
-  height: 6px;
-  background: #fff;
-  opacity: 0;
-  transition: .1s all ease-in;
+	position: absolute;
+	content: "";
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 6px;
+	height: 6px;
+	background: #fff;
+	opacity: 0;
+	transition: 0.1s all ease-in;
 }
 
 .login .content .autoLogin-btn.check .box::after {
-  opacity: 1;
+	opacity: 1;
 }
 
 .login .tips {
-  font-size: 14px;
-  line-height: 1;
-  color: #949494;
+	font-size: 14px;
+	line-height: 1;
+	color: #949494;
 }
 </style>

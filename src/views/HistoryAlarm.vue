@@ -28,7 +28,7 @@ function toggleTools() {
 					<div
 						class="history-handle"
 						:class="{ active: isToolsShow }"
-						@click="toggleTools"
+						@mousedown="toggleTools"
 					>
 						<div class="btn">
 							<span>批量操作</span>
@@ -177,7 +177,7 @@ function toggleTools() {
 <style scoped>
 .history-wrap {
 	width: 9.84375rem;
-	height: 4.28646rem;
+	height: 100%;
 	margin: 0 auto;
 	padding: 0.0625rem 0;
 }
@@ -269,7 +269,7 @@ function toggleTools() {
 
 .global-table-wrap .table {
 	width: 100%;
-	height: 665px;
+	height: 640px;
 	margin-bottom: 10px;
 }
 

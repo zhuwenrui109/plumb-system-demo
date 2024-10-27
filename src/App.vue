@@ -12,14 +12,15 @@ const isLoginRouter = computed(() => route.name == "login");
 <template>
 	<div
 		class="app-wrap"
-		:class="{ chance: !isLoginRouter }"
 	>
 		<!-- 头部 -->
 		<Header></Header>
 
+		<!-- 导航 -->
+		<route-tab v-if="!isLoginRouter"></route-tab>
+
 		<!-- 内容区域 -->
 		<div class="app-main">
-			<route-tab v-if="!isLoginRouter"></route-tab>
 
 			<router-view></router-view>
 		</div>
@@ -41,10 +42,6 @@ const isLoginRouter = computed(() => route.name == "login");
 	background-size: cover;
 }
 
-.app-wrap.chance {
-	row-gap: 16px;
-}
-
 .app-wrap .app-bg {
 	display: block;
 	width: 100%;
@@ -52,6 +49,7 @@ const isLoginRouter = computed(() => route.name == "login");
 
 .app-wrap .app-main {
 	width: 100%;
+	padding-bottom: 12px;
 	flex: 1;
 }
 

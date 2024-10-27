@@ -9,172 +9,29 @@ import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
 import GlobalButton from "@/components/GlobalButton.vue";
 import PluginWrap from "@/components/PluginWrap.vue";
+import { API_HOME } from "@/api";
 
 const { WebVideoCtrl } = window;
 const pluginSpeed = ref(1);
 const g_iWndIndex = ref(0);
 const g_iWndowType = ref(4);
 const isSelect = ref(false);
-const areaList = reactive([
-	{
-		id: 0,
-		name: "营口分输站",
-		count: "20",
-		child: [
-			{
-				id: "0",
-				name: "过滤区",
-				count: "20"
-			},
-			{
-				id: "1",
-				name: "清管区",
-				count: "20"
-			},
-			{
-				id: "2",
-				name: "空冷区",
-				count: "20"
-			},
-			{
-				id: "3",
-				name: "调压撬区",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			}
-		]
-	},
-	{
-		id: 1,
-		name: "大连分输站",
-		count: "20",
-		child: [
-			{
-				id: "0",
-				name: "过滤区",
-				count: "20"
-			},
-			{
-				id: "1",
-				name: "清管区",
-				count: "20"
-			},
-			{
-				id: "2",
-				name: "空冷区",
-				count: "20"
-			},
-			{
-				id: "3",
-				name: "调压撬区",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			}
-		]
-	},
-	{
-		id: 2,
-		name: "沈阳分输站",
-		count: "20",
-		child: [
-			{
-				id: "0",
-				name: "过滤区",
-				count: "20"
-			},
-			{
-				id: "1",
-				name: "清管区",
-				count: "20"
-			},
-			{
-				id: "2",
-				name: "空冷区",
-				count: "20"
-			},
-			{
-				id: "3",
-				name: "调压撬区",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			}
-		]
-	},
-	{
-		id: 3,
-		name: "葫芦岛分输站",
-		count: "20",
-		child: [
-			{
-				id: "0",
-				name: "过滤区",
-				count: "20"
-			},
-			{
-				id: "1",
-				name: "清管区",
-				count: "20"
-			},
-			{
-				id: "2",
-				name: "空冷区",
-				count: "20"
-			},
-			{
-				id: "3",
-				name: "调压撬区",
-				count: "20"
-			},
-			{
-				id: "4",
-				name: "压缩机组",
-				count: "20"
-			}
-		]
-	}
-]);
+const standList = reactive([]);
 const alarmList = ref([]);
 
 onMounted(() => {
 	setTimeout(testPluginError, 1000 * 10);
+	loadStandList();
 });
+
+/**
+ * 获取场站列表
+ */
+async function loadStandList() {
+	const res = await API_HOME.getStandList();
+	console.log('res :>> ', res);
+	standList.push(...res.data);
+}
 
 /**
  * 测试浓度超标警报录制视频
@@ -275,7 +132,7 @@ function handleStopPluginZoom(type) {
 				></global-title>
 				<!-- 设备列表内容 -->
 				<home-global-content class="devices-content">
-					<devices-list :list="areaList"></devices-list>
+					<devices-list :list="standList"></devices-list>
 				</home-global-content>
 			</div>
 			<!-- 监控视频 -->
@@ -307,7 +164,7 @@ function handleStopPluginZoom(type) {
 						<control :class="{ 'control-wrap-active': g_iWndowType == 1 }"></control>
 						<div
 							class="start-control"
-							@click="handlePlugin"
+							@mousedown="handlePlugin"
 						>
 							{{ g_iWndowType > 1 ? "开始控制" : "云台控制中" }}
 						</div>

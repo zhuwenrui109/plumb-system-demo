@@ -29,7 +29,7 @@ const emit = defineEmits(["goDetail"]);
 				alt=""
 				class="icon"
 				v-if="isSelect"
-				@click="emit('goDetail')"
+				@mousedown="emit('goDetail')"
 			/>
 		</div>
 		<slot></slot>

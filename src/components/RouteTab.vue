@@ -38,7 +38,7 @@ const currentRouter = computed(() => {
 				:class="{ active: currentRouter.includes(item.routerName) }"
 				v-for="(item, index) in tabList"
 				:key="index"
-				@click="router.push({ name: item.routerName })"
+				@mousedown="router.push({ name: item.routerName })"
 			>
 				{{ item.name }}
 			</div>
@@ -54,7 +54,8 @@ const currentRouter = computed(() => {
 .tab-wrap {
 	position: relative;
 	width: 712px;
-	margin: 0 auto;
+	height: 40px;
+	margin: 0.08333rem auto 0;
 }
 
 .tab-wrap .tab-content {

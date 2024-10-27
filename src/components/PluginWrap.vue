@@ -297,7 +297,7 @@ function refresh() {
 	<div class="plugin-wrap">
 		<div
 			class="plugin-refresh"
-			@click="refresh"
+			@mousedown="refresh"
 		>
 			<img
 				src="../assets/images/icon-refresh.png"

@@ -1,7 +1,19 @@
-<!-- 云台上下左右控制 -->
 <script setup>
-function handleControl(key) {
+import { API_HOME } from '@/api';
+
+
+
+/**
+ * 控制云台方向
+ * @param {String} type 0：停止，1：上，2：下,3:左，4：右，5：左上，6：右上，7：左下，8：右下，
+ */
+async function handleControl(key) {
 	console.log("key :>> ", key);
+	const res = await API_HOME.handleDirection({
+		device_id: "0",
+		value: key
+	})
+	console.log('res :>> ', res);
 }
 </script>
 
@@ -10,7 +22,8 @@ function handleControl(key) {
 		<div class="control-content">
 			<div
 				class="triangle top"
-				@click="handleControl('top')"
+				@mousedown="handleControl('1')"
+				@mouseup="handleControl('0')"
 			>
 				<img
 					src="../assets/images/icon-arr-right.png"
@@ -20,7 +33,8 @@ function handleControl(key) {
 			</div>
 			<div
 				class="triangle left"
-				@click="handleControl('left')"
+				@mousedown="handleControl('3')"
+				@mouseup="handleControl('0')"
 			>
 				<img
 					src="../assets/images/icon-arr-right.png"
@@ -30,7 +44,8 @@ function handleControl(key) {
 			</div>
 			<div
 				class="triangle right"
-				@click="handleControl('right')"
+				@mousedown="handleControl('4')"
+				@mouseup="handleControl('0')"
 			>
 				<img
 					src="../assets/images/icon-arr-right.png"
@@ -40,7 +55,8 @@ function handleControl(key) {
 			</div>
 			<div
 				class="triangle bottom"
-				@click="handleControl('bottom')"
+				@mousedown="handleControl('2')"
+				@mouseup="handleControl('0')"
 			>
 				<img
 					src="../assets/images/icon-arr-right.png"

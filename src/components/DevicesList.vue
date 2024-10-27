@@ -78,6 +78,9 @@ function destroyScroll() {
 }
 
 function toggleSite(index) {
+	if (!props.list.length) {
+		return;
+	}
 	currentNavIndex.value = currentNavIndex.value == index ? -1 : index;
 	refreshScroll();
 }
@@ -94,8 +97,8 @@ function toggleSite(index) {
 					class="area-nav-first"
 					:class="{ active: currentNavIndex >= 0 && currentNavIndex == siteIndex }"
 					v-for="(site, siteIndex) in list"
-					:key="site.id"
-					@click="toggleSite(siteIndex)"
+					:key="site.station_id"
+					@mousedown="toggleSite(siteIndex)"
 				>
 					<div class="area-nav-first-top">
 						<img
@@ -109,7 +112,7 @@ function toggleSite(index) {
 							class="icon"
 						/>
 						<div class="name">{{ site.name }}</div>
-						<div class="count english">{{ site.count }}</div>
+						<div class="count english">{{ site.regions_count }}</div>
 						<img
 							src="../assets/images/icon-arr-right.png"
 							alt=""
@@ -118,19 +121,16 @@ function toggleSite(index) {
 					</div>
 					<div
 						class="area-nav-secound"
-						v-show="currentNavIndex >= 0 && currentNavIndex == siteIndex"
+						v-show="currentNavIndex >= 0 && currentNavIndex == siteIndex && site.regions.length"
 					>
 						<div
 							class="area-nav-secound-item"
-							v-for="(area, areaIndex) in site.child"
-							:key="area.id"
-							@click.stop
+							v-for="(area, areaIndex) in site.regions"
+							:key="area.station_id"
+							@mousedown.stop
 						>
 							<div class="area-name">
 								{{ area.name }}
-							</div>
-							<div class="area-count english">
-								{{ area.count }}
 							</div>
 						</div>
 					</div>

@@ -9,6 +9,7 @@ import Stand from '@/views/Stand.vue';
 import User from '@/views/User.vue';
 import System from '@/views/System.vue';
 import HistoryFault from '@/views/HistoryFault.vue';
+import { clearToken, tokenExpressInTime } from '@/utils/tool';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -113,12 +114,11 @@ const router = createRouter({
 // })
 
 router.beforeEach((to, from, next) => {
-  let token = localStorage.getItem('token');
-  if (token || to.path === '/login') {
+  if ((localStorage.getItem('token') && !tokenExpressInTime()) || to.path === '/login') {
     next();
   } else {
-    console.log('router.currentRoute.value.fullPath :>> ', router.currentRoute.value.fullPath);
-    localStorage.setItem("preRoute", router.currentRoute.value.fullPath);
+    localStorage.setItem("preRoute", to.fullPath);
+    clearToken();
     next('/login');
   }
 })
