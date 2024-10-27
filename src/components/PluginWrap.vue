@@ -319,6 +319,12 @@ function refresh() {
 		</div>
 		<div class="plugin-content">
 			<div id="divPlugin"></div>
+			<div class="info">
+				<div class="title">沈阳分输站-过滤区</div>
+				<div class="test">浓度: <span class="english">1000ppm.m </span></div>
+				<div class="test">光强: <span class="english">8</span></div>
+				<div class="date english">2014-10-13 13:00:00</div>
+			</div>
 		</div>
 		<img
 			src="../assets/images/plugin-bg.png"
@@ -396,7 +402,46 @@ function refresh() {
 	border: 1px solid #c16205;
 }
 
-.plugin-wrap .plugin-content div {
+.plugin-wrap .plugin-content .info {
+	position: absolute;
+	left: 50%;
+	bottom: 6px;
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	width: calc(100% - 16px * 2);
+	height: 45px;
+	padding-left: 26px;
+	padding-right: 50px;
+	background: rgba(0, 0, 0, .7);
+}
+
+.plugin-wrap .plugin-content .info .title {
+	font-size: 15px;
+	margin-right: 20px;
+}
+
+.plugin-wrap .plugin-content .info .test {
+	font-size: 15px;
+	margin-right: 28px;
+}
+
+.plugin-wrap .plugin-content .info .test:last-of-type {
+	margin-right: 0;
+}
+
+.plugin-wrap .plugin-content .info .test .english {
+	font-size: 16px;
+	color: #ECC69D;
+}
+
+.plugin-wrap .plugin-content .info .date {
+	font-size: 16px;
+	margin-left: auto;
+}
+
+.plugin-wrap .plugin-content > div {
 	width: 100%;
 	height: 100%;
 }
