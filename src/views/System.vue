@@ -1,12 +1,42 @@
 <script setup>
+import { API_HOME } from "@/api";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
+import { onMounted, ref, watch } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
+
+const current = ref("1");
+
+onMounted(() => {});
+
+watch(
+	() => store.state.windowCount,
+	newVal => {
+		current.value = newVal;
+	}
+);
+
+async function submitSetting() {
+	const res = await API_HOME.saveSetting({
+		key: "windows_number",
+		value: current.value
+	});
+	console.log("res :>> ", res);
+	if (res == 200) {
+	}
+}
 </script>
 
 <template>
 	<div class="system-wrap">
 		<div class="title">实时监测窗口数量</div>
 		<div class="system-list">
-			<div class="system-item">
+			<div
+				class="system-item"
+				:class="{ active: current == '1' }"
+				@click="current = '1'"
+			>
 				<div class="bg">
 					<div class="pic">
 						<img
@@ -17,7 +47,11 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 				</div>
 				<div class="txt">1个窗口</div>
 			</div>
-			<div class="system-item chance2 active">
+			<div
+				class="system-item chance2"
+				:class="{ active: current == '2' }"
+				@click="current = '2'"
+			>
 				<div class="bg">
 					<div class="pic">
 						<img
@@ -34,7 +68,11 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 				</div>
 				<div class="txt">2个窗口</div>
 			</div>
-			<div class="system-item chance4">
+			<div
+				class="system-item chance4"
+				:class="{ active: current == '4' }"
+				@click="current = '4'"
+			>
 				<div class="bg">
 					<div class="pic">
 						<img
@@ -63,7 +101,11 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 				</div>
 				<div class="txt">4个窗口</div>
 			</div>
-			<div class="system-item chance9">
+			<div
+				class="system-item chance9"
+				:class="{ active: current == '9' }"
+				@click="current = '9'"
+			>
 				<div class="bg">
 					<div class="pic">
 						<img
@@ -122,7 +164,11 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 				</div>
 				<div class="txt">9个窗口</div>
 			</div>
-			<div class="system-item chance16">
+			<div
+				class="system-item chance16"
+				:class="{ active: current == '16' }"
+				@click="current = '16'"
+			>
 				<div class="bg">
 					<div
 						class="pic"
@@ -137,7 +183,10 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 				<div class="txt">16个窗口</div>
 			</div>
 		</div>
-		<SettingButtonBorder class="check-btn">
+		<SettingButtonBorder
+			class="check-btn"
+			@click="submitSetting"
+		>
 			<div class="btn">确认选择</div>
 		</SettingButtonBorder>
 	</div>
@@ -158,13 +207,13 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 	align-items: center;
 	justify-content: flex-start;
 	column-gap: 20px;
-	margin-bottom: 396px;
+	margin-bottom: 380px;
 }
 
 .system-wrap .system-list .system-item {
 	width: 324px;
 	box-sizing: border-box;
-  cursor: pointer;
+	cursor: pointer;
 }
 
 .system-wrap .system-list .system-item .bg {
@@ -174,12 +223,12 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 	height: 200px;
 	background: rgba(39, 39, 39, 0.26);
 	border: 2px solid rgba(221, 221, 221, 0.17);
-  border-radius: 2px;
+	border-radius: 2px;
 	margin-bottom: 16px;
 }
 
 .system-wrap .system-list .system-item.active .bg {
-  border-color: #B88D3C;
+	border-color: #b88d3c;
 }
 
 .system-wrap .system-list .system-item .bg .pic {

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, reactive, ref } from "vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
@@ -8,12 +8,122 @@ import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalDatePicker from "@/components/GlobalDatePicker.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
+import { API_ALARM } from "@/api";
+import dayjs from "dayjs";
 
 const currentStandArea = ref(0);
+const standId = ref("");
+const areaId = ref("");
 const startDate = ref("");
 const endDate = ref("");
 const isToolsShow = ref(false);
 const checkList = ref([]);
+const dataList = reactive([]);
+const page = ref(1);
+const pageConfig = ref({
+	total: 1,
+	pageSize: 10
+});
+const keyword = ref("");
+const currentRemarkId = ref("");
+
+onMounted(() => {
+	loadData();
+});
+
+async function loadData() {
+	let start_date = "";
+	let end_date = "";
+	if (startDate.value) {
+		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
+	}
+	if (startDate.value) {
+		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
+	}
+	const res = await API_ALARM.getList({
+		page: page.value,
+		station_id: standId.value,
+		region_id: areaId.value,
+		keyword: keyword.value,
+		start_date,
+		end_date
+	});
+	dataList.splice(0, dataList.length);
+	dataList.push(...res.data.data);
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
+}
+
+/**
+ * 搜索
+ */
+function search() {
+	page.value = 1;
+	loadData();
+}
+
+/**
+ * 清空
+ */
+async function clearForm() {
+	standId.value = "";
+	areaId.value = "";
+	keyword.value = "";
+	startDate.value = "";
+	endDate.value = "";
+	await nextTick();
+	search();
+}
+
+/**
+ * 导出
+ */
+function exportData() {
+	if (checkList.value.length == 0) {
+		return;
+	}
+	API_ALARM.exprotData(checkList.value.join(","));
+}
+
+/**
+ * 批量删除
+ */
+async function batchDelete() {
+	if (checkList.value.length == 0) {
+		return;
+	}
+	const res = await API_ALARM.batchDelData({
+		alarm_id: checkList.value
+	});
+	console.log('res :>> ', res);
+	if (res.code == 200) {
+		checkList.value = [];
+		loadData();
+	}
+}
+
+/**
+ * 多选
+ * @param id 设备ID
+ */
+function handleSelect(id) {
+	if (checkList.value.includes(id)) {
+		checkList.value.splice(checkList.value.indexOf(id), 1);
+		return;
+	}
+	checkList.value.push(id);
+}
+
+/**
+ * 全选
+ */
+function handleSelectAll() {
+	if (checkList.value.length > 0) {
+		checkList.value.splice(0, checkList.value.length);
+		return;
+	}
+	checkList.value = dataList.map(item => item.alarm_id);
+}
 
 function toggleTools() {
 	isToolsShow.value = !isToolsShow.value;
@@ -28,7 +138,7 @@ function toggleTools() {
 					<div
 						class="history-handle"
 						:class="{ active: isToolsShow }"
-						@mousedown="toggleTools"
+						@click="toggleTools"
 					>
 						<div class="btn">
 							<span>批量操作</span>
@@ -41,14 +151,20 @@ function toggleTools() {
 							class="handle-list"
 							v-show="isToolsShow"
 						>
-							<div class="handle-item">
+							<div
+								class="handle-item"
+								@click="batchDelete"
+							>
 								<img
 									src="../assets/images/icon-delete.png"
 									alt=""
 								/>
 								<span>删除</span>
 							</div>
-							<div class="handle-item">
+							<div
+								class="handle-item"
+								@click="exportData"
+							>
 								<img
 									src="../assets/images/icon-export.png"
 									alt=""
@@ -60,29 +176,45 @@ function toggleTools() {
 				</template>
 				<template #right>
 					<div class="history-right">
-						<GlobalLinkageSelect v-model="currentStandArea"></GlobalLinkageSelect>
-						<GlobalInput placeholder="确认人员姓名"></GlobalInput>
+						<GlobalLinkageSelect
+							v-model:standId="standId"
+							v-model:areaId="areaId"
+						></GlobalLinkageSelect>
+						<GlobalInput
+							placeholder="确认人员姓名"
+							v-model="keyword"
+						></GlobalInput>
 						<GlobalDatePicker
 							v-model="startDate"
 							:name="'选择开始日期'"
 						></GlobalDatePicker>
 						<GlobalDatePicker
 							v-model="endDate"
+							:start-date="startDate"
 							:name="'选择结束日期'"
 						></GlobalDatePicker>
-						<SettingButtonBorder> 搜索 </SettingButtonBorder>
-						<SettingButtonBorder type="clear"> 清空 </SettingButtonBorder>
+						<SettingButtonBorder @click="search"> 搜索 </SettingButtonBorder>
+						<SettingButtonBorder
+							type="clear"
+							@click="clearForm"
+						>
+							清空
+						</SettingButtonBorder>
 					</div>
 				</template>
 			</SettingTopHandller>
 			<div class="main">
 				<div class="global-table-wrap">
 					<div class="table">
-						<div class="tr" id="hhh">
-							<div class="td checkbox">
+						<div class="tr">
+							<div
+								class="td checkbox"
+								@click="handleSelectAll"
+							>
 								<img
 									src="../assets/images/icon-hook.png"
 									alt=""
+									v-show="checkList.length > 0"
 								/>
 							</div>
 							<div class="td id">设备ID</div>
@@ -96,11 +228,19 @@ function toggleTools() {
 							<div class="td tips">备注</div>
 							<div class="td video">报警视频</div>
 						</div>
-						<div class="tr">
-							<div class="td checkbox">
+						<div
+							class="tr"
+							v-for="(item, index) in dataList"
+							:key="item.alarm_id"
+						>
+							<div
+								class="td checkbox"
+								@click="handleSelect(item.alarm_id)"
+							>
 								<img
 									src="../assets/images/icon-hook.png"
 									alt=""
+									v-show="checkList.includes(item.alarm_id)"
 								/>
 							</div>
 							<div class="td id">
@@ -109,54 +249,31 @@ function toggleTools() {
 									alt=""
 									class="camera"
 								/>
-								<span class="english">1001</span>
+								<span class="english">{{ item.device_id }}</span>
 							</div>
-							<div class="td english">沈阳分输站</div>
-							<div class="td english">过滤区</div>
-							<div class="td english color">1000ppm.m</div>
-							<div class="td color"><span class="english">1</span>级</div>
-							<div class="td english date">2014-10-13 13:00:00</div>
-							<div class="td">荣阿花</div>
-							<div class="td english date">2014-10-13 13:00:00</div>
-							<div class="td tips">
-								<span>无</span>
+							<div class="td">{{ item.station.name }}</div>
+							<div class="td">{{ item.region.name }}</div>
+							<div class="td english color">{{ item.density + "pmm.m" }}</div>
+							<div class="td color">
+								<span class="english">{{ item.level }}</span
+								>级
+							</div>
+							<div class="td english date">{{ item.created_at }}</div>
+							<div class="td">{{ item.confirm_user }}</div>
+							<div class="td english date">{{ item.confirmed_at }}</div>
+							<div
+								class="td tips"
+								@mouseenter="currentRemarkId = item.alarm_id"
+								@mouseleave="currentRemarkId = ''"
+							>
+								<span>{{ item.remark }}</span>
 								<Transition>
-									<div class="tips-more" v-show="false">管道泄漏导致报警浓度达到极限值，已及时采取维修， 目前已恢复。</div>
-								</Transition>
-							</div>
-							<div class="td video">
-								<img
-									src="../assets/images/icon-video.png"
-									alt=""
-								/>
-							</div>
-						</div>
-						<div class="tr">
-							<div class="td checkbox">
-								<img
-									src="../assets/images/icon-hook.png"
-									alt=""
-								/>
-							</div>
-							<div class="td id">
-								<img
-									src="../assets/images/icon-camera.png"
-									alt=""
-									class="camera"
-								/>
-								<span class="english">1001</span>
-							</div>
-							<div class="td english">沈阳分输站</div>
-							<div class="td english">过滤区</div>
-							<div class="td english color">1000ppm.m</div>
-							<div class="td color"><span class="english">1</span>级</div>
-							<div class="td english date">2014-10-13 13:00:00</div>
-							<div class="td">荣阿花</div>
-							<div class="td english date">2014-10-13 13:00:00</div>
-							<div class="td tips">
-								<span>管道泄漏导致报警浓度达到极限值，已及时采取维修，目前已恢复。</span>
-								<Transition>
-									<div class="tips-more" v-show="false">管道泄漏导致报警浓度达到极限值，已及时采取维修， 目前已恢复。</div>
+									<div
+										class="tips-more"
+										v-show="item.remark.length > 16 && currentRemarkId == item.alarm_id"
+									>
+										{{ item.remark }}
+									</div>
 								</Transition>
 							</div>
 							<div class="td video">
@@ -167,7 +284,12 @@ function toggleTools() {
 							</div>
 						</div>
 					</div>
-					<GlobalPagination></GlobalPagination>
+					<GlobalPagination
+						v-model="page"
+						:total="pageConfig.total"
+						:page-size="pageConfig.pageSize"
+						@change-page="loadData"
+					></GlobalPagination>
 				</div>
 			</div>
 		</GlobalContent>
@@ -234,6 +356,7 @@ function toggleTools() {
 	padding: 15px 0;
 	padding-left: 14px;
 	border-bottom: 1px solid rgba(108, 108, 108, 0.8);
+	cursor: pointer;
 }
 
 .history-wrap .history-content .history-handle .handle-list .handle-item:last-child {
@@ -292,7 +415,7 @@ function toggleTools() {
 }
 
 .global-table-wrap .table .tr .td {
-	width: calc((100% - 230px - 230px - 330px) / 8);
+	width: calc((100% - 230px - 230px - 330px - 16px) / 7);
 	box-sizing: border-box;
 	font-size: 15px;
 	line-height: 1;
@@ -304,12 +427,21 @@ function toggleTools() {
 }
 
 .global-table-wrap .table .tr .td.checkbox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 16px;
 	height: 16px;
 	box-sizing: border-box;
 	background: rgba(255, 255, 255, 0.17);
 	border: 1px solid #6c6c6c;
 	padding: 0;
+	cursor: pointer;
+}
+
+.global-table-wrap .table .tr .td.checkbox img {
+	display: block;
+	width: 11px;
 }
 
 .global-table-wrap .table .tr .td .camera {

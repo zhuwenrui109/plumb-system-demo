@@ -413,6 +413,10 @@ function handleStopPluginZoom(type) {
 
 .top-wrap .home-item.chance {
 	width: 1148px;
+	height: 550px;
+	background: url("../assets/images/plugin-bg.png") no-repeat;
+	background-size: 100% 100%;
+	/* background-position: center center; */
 }
 
 .top-wrap .home-item .control-tips {
@@ -426,7 +430,7 @@ function handleStopPluginZoom(type) {
 }
 
 .top-wrap .home-item .control-direction {
-	height: 526px;
+	height: 496px;
 	box-sizing: border-box;
 	padding: 8px 16px 22px 10px;
 }
@@ -462,7 +466,6 @@ function handleStopPluginZoom(type) {
 	align-items: center;
 	justify-content: space-between;
 	column-gap: 10px;
-	height: 54px;
 	box-sizing: border-box;
 	padding: 0 12px;
 }
@@ -490,7 +493,7 @@ function handleStopPluginZoom(type) {
 
 .top-wrap .home-item .control-direction .control-item .icon img {
 	display: block;
-	width: 20px;
+	width: 18px;
 	margin: 9px auto 10px;
 }
 
@@ -523,7 +526,7 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item .density-wrap {
-	height: 200px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 0 20px 0 15px;
 }
@@ -576,7 +579,7 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap {
-	height: 202px;
+	height: 180px;
 	padding-right: 15px;
 	padding-left: 8px;
 }
@@ -635,7 +638,7 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap {
-	height: 202px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 8px 15px 30px;
 }

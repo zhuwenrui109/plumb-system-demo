@@ -30,8 +30,8 @@ const txt = defineModel();
 .global-input-wrap input {
 	display: block;
 	width: 100%;
+	height: 100%;
 	font-size: 15px;
-	line-height: 30px;
 	background: none;
 	border: none;
 	outline: none;

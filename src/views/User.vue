@@ -1,9 +1,33 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import GlobalSwitch from '@/components/GlobalSwitch.vue';
 import GlobalPagination from '@/components/GlobalPagination.vue';
+import { API_USER } from "@/api";
+
+const props = defineProps({
+	username: String
+})
 
 const state = ref(0);
+const page = ref(1);
+const dataList = ref([]);
+
+onMounted(() => {
+	loadData();
+})
+
+defineExpose({
+	loadData
+})
+
+async function loadData() {
+	const res = await API_USER.getList({
+		page: page.value,
+		keyword: props.username
+	});
+	console.log('res :>> ', res);
+	dataList.value = res.data.data;
+}
 </script>
 
 <template>
@@ -18,21 +42,21 @@ const state = ref(0);
 				<div class="td">状态</div>
 				<div class="td handle">操作</div>
 			</div>
-			<div class="tr">
+			<div class="tr" v-for="item in dataList">
 				<div class="td id">
 					<img
 						src="../assets/images/icon-user.png"
 						alt=""
 						class="user"
 					/>
-					<span class="english">1</span>
+					<span class="english">{{ item.id }}</span>
 				</div>
-				<div class="td english">wangzhang</div>
-				<div class="td">赵老哥</div>
-				<div class="td">普通账号</div>
-				<div class="td english date">2024/09/25 10:00:15</div>
+				<div class="td english">{{ item.account }}</div>
+				<div class="td">{{ item.name }}</div>
+				<div class="td">{{ item.role == 1 ? "管理员账号" : "普通账号" }}</div>
+				<div class="td english date">{{ item.created_at }}</div>
 				<div class="td state">
-					<GlobalSwitch v-model="state"></GlobalSwitch>
+					<GlobalSwitch v-model="item.status"></GlobalSwitch>
 				</div>
 				<div class="td handle">
 					<img
@@ -59,7 +83,7 @@ const state = ref(0);
 
 .user-wrap .table {
 	width: 100%;
-	height: 665px;
+	height: 650px;
 	margin-bottom: 10px;
 }
 

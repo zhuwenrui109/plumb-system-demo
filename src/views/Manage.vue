@@ -1,10 +1,135 @@
 <script setup>
-// import GlobalTable from '@/components/GlobalTable.vue';
+import { API_MANAGE } from "@/api";
+import FormPop from "@/components/FormPop.vue";
+import GlobalInput from "@/components/GlobalInput.vue";
+import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
-import { ref } from "vue";
+import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
+import dialogPlguin from "@/utils/dialog";
+import { onMounted, reactive, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 
-const state = ref(0);
+const route = useRoute();
+const props = defineProps({
+	standId: {
+		type: [String, Number],
+		default: ""
+	},
+	areaId: {
+		type: [String, Number],
+		default: ""
+	}
+});
+
+const isPopShow = ref(false);
+const page = ref(1);
+const dataList = ref([]);
+const pageConfig = ref({
+	total: 1,
+	pageSize: 10
+});
+const form = ref({
+	device_id: "",
+	sensor_ip: "",
+	sensor_port: "",
+	monitor_ip: "",
+	monitor_port: "",
+	region_id: "",
+	station_id: "",
+	threshold_first: "",
+	threshold_second: "",
+	status: "0"
+});
+
+onMounted(() => {
+	loadData();
+});
+
+watch(
+	() => props.standId,
+	() => {
+		page.value = 1;
+	}
+);
+
+watch(isPopShow, newVal => {
+	if (!newVal) {
+		form.value = {
+			device_id: "",
+			sensor_ip: "",
+			sensor_port: "",
+			monitor_ip: "",
+			monitor_port: "",
+			region_id: "",
+			station_id: "",
+			threshold_first: "",
+			threshold_second: "",
+			status: "0"
+		};
+	}
+});
+
+defineExpose({
+	page,
+	isPopShow,
+	loadData
+});
+
+async function loadData() {
+	const res = await API_MANAGE.getList({
+		page: page.value,
+		station_id: props.standId,
+		region_id: props.areaId
+	});
+	dataList.value = res.data.data;
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
+}
+
+async function toggleStatus(index) {
+	const item = dataList.value[index];
+	dataList.value[index].status = item.status == 1 ? 0 : 1;
+	const res = await API_MANAGE.editManage({
+		device_id: item.device_id,
+		status: dataList.value[index].status
+	});
+	if (res.code != 200) {
+		dataList.value[index].status = item.status == 1 ? 0 : 1;
+	}
+}
+
+async function handleSubmit() {
+	const res = await API_MANAGE.editManage(form.value);
+	if (res.code == 200) {
+		loadData();
+		isPopShow.value = false;
+	}
+}
+
+async function handleEdit(id) {
+	const res = await API_MANAGE.getDetail(id);
+	console.log("res :>> ", res);
+	if (res.code == 200) {
+		form.value = {
+			...res.data
+		};
+		isPopShow.value = true;
+	}
+}
+
+function handleDelete(id) {
+	dialogPlguin().then(
+		async () => {
+			console.log("确认");
+			await API_MANAGE.deleteManage(id);
+			loadData();
+		},
+		() => {
+			console.log("取消");
+		}
+	);
+}
 </script>
 
 <template>
@@ -22,48 +147,136 @@ const state = ref(0);
 				<div class="td">状态</div>
 				<div class="td handle">操作</div>
 			</div>
-			<div class="tr">
+			<div
+				class="tr"
+				v-for="(item, index) in dataList"
+				:key="item.device_id"
+			>
 				<div class="td id">
 					<img
 						src="../assets/images/icon-camera.png"
 						alt=""
 						class="user"
 					/>
-					<span class="english">1001</span>
+					<span class="english">{{ item.device_id }}</span>
 				</div>
-				<div class="td english">192.168.10.100 : 8090</div>
-				<div class="td english">192.168.10.100 : 8090</div>
-				<div class="td">沈阳分输站</div>
-				<div class="td">过滤区</div>
-				<div class="td english alarm">5000</div>
-				<div class="td english alarm">25000</div>
-				<div class="td connect success">
+				<div class="td english">{{ `${item.sensor_ip}:${item.sensor_port}` }}</div>
+				<div class="td english">{{ `${item.monitor_ip || "XXX"}:${item.monitor_port || "XXX"}` }}</div>
+				<div class="td">{{ item.station && item.station.name }}</div>
+				<div class="td">{{ item.station && item.region.name }}</div>
+				<div class="td english alarm">{{ item.threshold_first }}</div>
+				<div class="td english alarm">{{ item.threshold_second }}</div>
+				<div
+					class="td connect success"
+					:class="{ success: item.connection_status == 1 }"
+				>
 					<span class="dir"></span>
 					<img
 						src="../assets/images/icon-unconnect.png"
 						alt=""
-						style="display: none"
 					/>
 					<span>已连接</span>
 				</div>
 				<div class="td state">
-					<GlobalSwitch v-model="state"></GlobalSwitch>
+					<GlobalSwitch
+						v-model="item.status"
+						@click="toggleStatus(index)"
+					></GlobalSwitch>
 				</div>
 				<div class="td handle">
 					<img
 						src="../assets/images/icon-edit.png"
 						alt=""
 						class="handle-icon"
+						@click="handleEdit(item.device_id)"
 					/>
 					<img
 						src="../assets/images/icon-delete.png"
 						alt=""
 						class="handle-icon"
+						@click="handleDelete(item.device_id)"
 					/>
 				</div>
 			</div>
 		</div>
-		<GlobalPagination></GlobalPagination>
+		<GlobalPagination
+			v-model="page"
+			:total="pageConfig.total"
+			:page-size="pageConfig.pageSize"
+			@change-page="loadData"
+		></GlobalPagination>
+		<FormPop
+			name="新增设备"
+			v-model="isPopShow"
+		>
+			<div class="form-wrap">
+				<div class="form-item">
+					<div class="name">传感器设备IP</div>
+					<GlobalInput
+						placeholder="请输入"
+						v-model="form.sensor_ip"
+					></GlobalInput>
+				</div>
+				<div class="form-item">
+					<div class="name">设备端口</div>
+					<GlobalInput
+						placeholder="请输入"
+						v-model="form.sensor_port"
+					></GlobalInput>
+				</div>
+				<div class="form-item">
+					<div class="name">视频设备IP</div>
+					<GlobalInput
+						placeholder="请输入"
+						v-model="form.monitor_ip"
+					></GlobalInput>
+				</div>
+				<div class="form-item">
+					<div class="name">设备端口</div>
+					<GlobalInput
+						placeholder="请输入"
+						v-model="form.monitor_port"
+					></GlobalInput>
+				</div>
+				<GlobalLinkageSelect
+					class="select-wrap"
+					v-model:standId="form.station_id"
+					v-model:areaId="form.region_id"
+					:need-name="true"
+				></GlobalLinkageSelect>
+				<div class="form-item chance">
+					<div class="name">一级报警阀值</div>
+					<GlobalInput
+						class="input-chance"
+						placeholder="输入阀值"
+						v-model="form.threshold_first"
+					></GlobalInput>
+				</div>
+				<div class="form-item chance">
+					<div class="name">二级报警值</div>
+					<GlobalInput
+						class="input-chance"
+						placeholder="输入阀值"
+						v-model="form.threshold_second"
+					></GlobalInput>
+				</div>
+				<div class="form-item chance switch">
+					<div class="name">是否启用该设备:</div>
+					<GlobalSwitch
+						v-model="form.status"
+						@click="form.status = form.status == '1' ? '0' : '1'"
+					></GlobalSwitch>
+				</div>
+				<div class="form-item chance">
+					<SettingButtonBorder
+						class="btn"
+						@click="handleSubmit"
+					>
+						确认提交
+					</SettingButtonBorder>
+				</div>
+			</div>
+		</FormPop>
 	</div>
 </template>
 
@@ -74,7 +287,7 @@ const state = ref(0);
 
 .global-table-wrap .table {
 	width: 100%;
-	height: 665px;
+	height: 650px;
 	margin-bottom: 10px;
 }
 
@@ -133,14 +346,11 @@ const state = ref(0);
 	align-items: center;
 	justify-content: flex-start;
 	column-gap: 10px;
+	color: #f85827;
 }
 
 .global-table-wrap .table .tr .td.connect.success {
 	color: #15c675;
-}
-
-.global-table-wrap .table .tr .td.connect.fail {
-	color: #f85827;
 }
 
 .global-table-wrap .table .tr .td.connect span {
@@ -148,15 +358,24 @@ const state = ref(0);
 }
 
 .global-table-wrap .table .tr .td.connect .dir {
+	display: none;
 	width: 8px;
 	height: 8px;
 	background: #15c675;
 	border-radius: 50%;
 }
 
+.global-table-wrap .table .tr .td.connect.success .dir {
+	display: block;
+}
+
 .global-table-wrap .table .tr .td.connect img {
 	display: block;
 	width: 14px;
+}
+
+.global-table-wrap .table .tr .td.connect.success img {
+	display: none;
 }
 
 .global-table-wrap .table .tr .td.handle {
@@ -179,5 +398,51 @@ const state = ref(0);
 
 .global-table-wrap .table .tr .td.alarm {
 	color: #ecc69d;
+}
+
+.form-wrap {
+	display: flex;
+	align-items: center;
+	align-content: flex-start;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	row-gap: 24px;
+	padding: 23px 38px 44px;
+}
+
+.form-wrap .form-item.chance {
+	width: 100%;
+}
+
+.form-wrap .form-item.switch {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+
+.form-wrap .form-item.switch .name {
+	margin-bottom: 0;
+	margin-right: 14px;
+}
+
+.form-wrap .form-item .name {
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+
+.form-wrap .form-item .input-chance {
+	width: 100%;
+}
+
+.form-wrap .select-wrap {
+	width: 100%;
+	justify-content: space-between;
+	gap: 0;
+}
+
+.form-wrap .btn {
+	width: 208px;
+	margin: 0 auto;
+	text-align: center;
 }
 </style>

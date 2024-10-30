@@ -1,7 +1,15 @@
 <script setup>
 
 const props = defineProps({
-  list: Array
+  list: Array,
+	id: {
+		type: String,
+		default: "value"
+	},
+	name: {
+		type: String,
+		default: "value"
+	}
 });
 const current = defineModel();
 </script>
@@ -10,15 +18,15 @@ const current = defineModel();
 	<div class="global-select-wrap">
 		<select
 			class="global-select"
-			:class="{ disabled: list[current][disabled] && list[current].disabled }"
+			:class="{ disabled: current == '' }"
 			v-model="current"
 		>
 			<option
 				v-for="(item, index) in list"
 				:key="index"
-				:value="item.value"
+				:value="item[id]"
 			>
-				{{ item.title }}
+				{{ item[name] }}
 			</option>
 		</select>
 	</div>
