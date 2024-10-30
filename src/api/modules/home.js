@@ -16,8 +16,14 @@ export const login = data => {
 export const getStandList = () => request.post("api/index");
 
 /**
- * 操作云台上下左右
+ * 保存设置
  * @param {Object} data 
  * @returns 
  */
-export const handleDirection = (data) => request.post("api/direction", data);
+export const saveSetting = (data) => request.post("api/configStore", data);
+
+/**
+ * 获取窗口数量
+ * @returns 
+ */
+export const getWindowCount = () => request.get("api/config/windows_number");

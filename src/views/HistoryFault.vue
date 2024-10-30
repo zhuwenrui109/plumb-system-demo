@@ -10,15 +10,19 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import "ant-design-vue/dist/reset.css";
 import "dayjs/locale/zh-cn";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import GlobalSelect from "@/components/GlobalSelect.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
+import { API_FAULT } from "@/api";
 
 dayjs.locale("zh-cn");
 
-const currentStandArea = ref();
-const date = ref();
-const time = ref();
+const timeScope = ref(0);
+const timeGap = ref(0);
+const standId = ref("");
+const areaId = ref("");
+const date = ref("");
+const time = ref(dayjs("00:00:00", "HH:mm:ss"));
 const gap = ref();
 const locale = ref(zhCN);
 const chart = ref(null);
@@ -138,8 +142,28 @@ const timeUnit = ref([
 ]);
 
 onMounted(() => {
+	initDefaultDate();
 	echartsInit();
+	loadData();
 });
+
+async function loadData() {
+	const res = await API_FAULT.getCharts({
+		region_id: "",
+		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
+		range: "",
+		step: ""
+	});
+	console.log("res :>> ", res);
+}
+
+function initDefaultDate() {
+	let d = new Date();
+	let year = d.getFullYear().toString();
+	let month = d.getMonth() + 1 < 10 ? "0" + (d.getMonth() + 1).toString() : (d.getMonth() + 1).toString();
+	let day = d.getDate() < 10 ? "0" + d.getDate().toString() : d.getDate().toString();
+	date.value = dayjs(year + "-" + month + "-" + day);
+}
 
 function echartsInit() {
 	const myChart = echarts.init(chart.value);
@@ -158,7 +182,8 @@ function echartsInit() {
 					<div class="fault-left">
 						<GlobalLinkageSelect
 							:width="128"
-							v-model="currentStandArea"
+							v-model:standId="standId"
+							v-model:areaId="areaId"
 							class="select"
 						></GlobalLinkageSelect>
 						<div class="date-list">
@@ -167,7 +192,6 @@ function echartsInit() {
 								<config-provider :locale="locale">
 									<DatePicker
 										v-model:value="date"
-										placeholder="起始时间"
 										class="global-date"
 										:inputReadOnly="true"
 									>
@@ -175,9 +199,9 @@ function echartsInit() {
 									</DatePicker>
 									<DatePicker
 										v-model:value="time"
-										placeholder="起始时间"
 										picker="time"
 										class="global-date"
+										:inputReadOnly="true"
 									>
 										<template #suffixIcon></template>
 									</DatePicker>
@@ -190,6 +214,7 @@ function echartsInit() {
 										<input
 											type="number"
 											maxlength="2"
+											v-model="timeScope"
 										/>
 										<div class="arr-list">
 											<img
@@ -217,6 +242,7 @@ function echartsInit() {
 										<input
 											type="number"
 											maxlength="2"
+											v-model="timeGap"
 										/>
 										<div class="arr-list">
 											<img

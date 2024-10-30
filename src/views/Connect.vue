@@ -1,5 +1,20 @@
 <script setup>
 import GlobalPagination from "@/components/GlobalPagination.vue";
+import { Dayjs } from "dayjs";
+
+const props = defineProps({
+	standId: [String, Number],
+	areaId: [String, Number],
+	currentState: [String, Number],
+	startDate: {
+		type: Dayjs,
+		default: ""
+	},
+	endDate: {
+		type: Dayjs,
+		default: ""
+	}
+})
 
 </script>
 

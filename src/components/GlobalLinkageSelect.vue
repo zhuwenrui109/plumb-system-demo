@@ -1,129 +1,101 @@
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { useStore } from "vuex";
 
-const standList = ref([
-	{
-		id: 0,
-		value: "选择站点",
-		disabled: true,
-		child: [
-			{
-				id: 0,
-				value: "选择工艺区",
-				disabled: true
-			}
-		]
-	},
-	{
-		id: 1,
-		value: "沈阳分输站",
-		child: [
-			{
-				id: 0,
-				value: "过滤区"
-			},
-			{
-				id: 1,
-				value: "清管区"
-			},
-			{
-				id: 2,
-				value: "空冷区"
-			},
-			{
-				id: 3,
-				value: "调压撬区"
-			},
-			{
-				id: 4,
-				value: "压缩机组"
-			}
-		]
-	},
-	{
-		id: 2,
-		value: "大连分输站",
-		child: [
-			{
-				id: 0,
-				value: "过滤区"
-			},
-			{
-				id: 1,
-				value: "清管区"
-			},
-			{
-				id: 2,
-				value: "空冷区"
-			},
-			{
-				id: 3,
-				value: "调压撬区"
-			},
-			{
-				id: 4,
-				value: "压缩机组"
-			}
-		]
-	}
-]);
-
+const store = useStore();
 const props = defineProps({
 	width: {
 		type: Number,
 		default: 204
+	},
+	needName: {
+		type: Boolean,
+		default: false
 	}
-})
-const current = defineModel();
-const currentStandIndex = ref(0);
-const currentAreaIndex = ref(0);
+});
+const currentStandId = defineModel("standId");
+const currentAreaId = defineModel("areaId");
+
+const standList = computed(() => {
+	const arr = [
+		{
+			name: "选择站点",
+			station_id: "",
+			regions: [
+				{
+					name: "选择工艺区",
+					region_id: ""
+				}
+			]
+		}
+	];
+
+	return [...arr, ...store.state.standList];
+});
+
+const areaList = computed(() => standList.value.find(item => item.station_id == currentStandId.value));
 
 function handleSelectStand() {
-	currentAreaIndex.value = 0;
-	current.value = {
-		stand: standList.value[currentStandIndex.value].value,
-		area: standList.value[currentStandIndex.value].child[currentAreaIndex.value].value
-	};
-}
-
-function handleSelectArea() {
-	current.value.area = standList.value[currentStandIndex.value].child[currentAreaIndex.value].value;
+	if (!areaList.value.regions[0]) {
+		areaList.value.regions.push({
+			name: "暂无工艺区",
+			region_id: ""
+		});
+	}
+	currentAreaId.value = areaList.value.regions[0].region_id;
 }
 </script>
 
 <template>
 	<div class="global-select-wrap">
-		<div class="global-select-item" :style="{ width: width / 192 + 'rem' }">
-			<select
-				class="global-select"
-				:class="{ disabled: standList[currentStandIndex].disabled }"
-				v-model="currentStandIndex"
-				@change="handleSelectStand"
+		<div class="global-select-content">
+			<div class="name" v-if="needName">
+				所属场站
+			</div>
+			<div
+				class="global-select-item"
+				:style="{ width: width / 192 + 'rem' }"
 			>
-				<option
-					v-for="item in standList"
-					:key="item.id"
-					:value="item.id"
+				<select
+					class="global-select"
+					:class="{ disabled: currentStandId == '' }"
+					v-model="currentStandId"
+					@change="handleSelectStand"
 				>
-					{{ item.value }}
-				</option>
-			</select>
+					<option
+						v-for="item in standList"
+						:key="item.station_id"
+						:value="item.station_id"
+						v-show="item.regions"
+					>
+						{{ item.name }}
+					</option>
+				</select>
+			</div>
 		</div>
-		<div class="global-select-item" :style="{ width: width / 192 + 'rem' }">
-			<select
-				class="global-select"
-				:class="{ disabled: standList[currentStandIndex].child[currentAreaIndex].disabled }"
-				v-model="currentAreaIndex"
-				@change="handleSelectArea"
+		<div class="global-select-content">
+			<div class="name" v-if="needName">
+				所属工艺区
+			</div>
+			<div
+				class="global-select-item"
+				:style="{ width: width / 192 + 'rem' }"
 			>
-				<option
-					v-for="item in standList[currentStandIndex].child"
-					:key="item.id"
-					:value="item.id"
+				<select
+					class="global-select"
+					:class="{ disabled: currentAreaId == '' }"
+					v-model="currentAreaId"
+					@change="handleSelectArea"
 				>
-					{{ item.value }}
-				</option>
-			</select>
+					<option
+						v-for="item in areaList.regions"
+						:key="item.region_id"
+						:value="item.region_id"
+					>
+						{{ item.name }}
+					</option>
+				</select>
+			</div>
 		</div>
 	</div>
 </template>
@@ -134,6 +106,11 @@ function handleSelectArea() {
 	align-items: center;
 	justify-content: flex-end;
 	column-gap: 8px;
+}
+
+.global-select-wrap .global-select-content .name {
+	font-size: 14px;
+	margin-bottom: 8px;
 }
 
 .global-select-wrap .global-select-item {

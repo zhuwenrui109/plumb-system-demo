@@ -4,15 +4,23 @@ import { DatePicker, ConfigProvider } from "ant-design-vue";
 import "ant-design-vue/dist/reset.css";
 import "dayjs/locale/zh-cn";
 import zhCN from "ant-design-vue/es/locale/zh_CN";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 dayjs.locale("zh-cn");
 
 const props = defineProps({
-	name: String
+	name: String,
+	startDate: {
+		type: Dayjs,
+		default: ""
+	}
 });
 
 const date = defineModel();
 const locale = ref(zhCN);
+
+function disabledDate(current) {
+	return props.startDate && dayjs(props.startDate, 'YYYY-MM-DD') > current;
+}
 </script>
 
 <template>
@@ -20,9 +28,10 @@ const locale = ref(zhCN);
 		<config-provider :locale="locale">
 			<DatePicker
 				v-model:value="date"
-				format="YYYY.MM.DD"
 				:placeholder="name"
+				:disabled-date="disabledDate"
 				class="global-date"
+				inputReadOnly
 			>
 				<template #suffixIcon>
 					<img
@@ -59,8 +68,8 @@ const locale = ref(zhCN);
 .ant-picker .ant-picker-input > input {
 	font-size: 15px;
 	color: #fff;
-  border: 0;
-  border-radius: 0;
+	border: 0;
+	border-radius: 0;
 }
 
 .ant-picker .ant-picker-input > input::placeholder {

@@ -1,17 +1,15 @@
 <script setup>
 const state = defineModel();
-
-function handleClick() {
-  state.value = state.value == 0 ? 1 : 0;
-}
 </script>
 
 <template>
-	<div class="switch-wrap" :class="{ active: state == 1 }" @mousedown="handleClick">
+	<div
+		class="switch-wrap"
+		:class="{ active: state == '1' }"
+	>
 		<div class="switch"></div>
 	</div>
 </template>
-
 
 <style scoped>
 .switch-wrap {
@@ -32,7 +30,7 @@ function handleClick() {
 	height: 12px;
 	background: #fff;
 	border-radius: 2px;
-	transition: .2s all ease-in;
+	transition: 0.2s all ease-in;
 }
 
 .switch-wrap.active {

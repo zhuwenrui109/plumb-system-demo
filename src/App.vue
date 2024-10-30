@@ -3,16 +3,30 @@ import Header from "@/components/Header.vue";
 import RouteTab from "@/components/RouteTab.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { API_HOME } from "./api";
+import { useStore } from "vuex";
 
 const route = useRoute();
+const store = useStore();
 
 const isLoginRouter = computed(() => route.name == "login");
+
+loadStandList();
+loadWindowCount();
+
+async function loadStandList() {
+	const res = await API_HOME.getStandList();
+	store.dispatch("handleStandList", res.data);
+}
+
+async function loadWindowCount() {
+	const res = await API_HOME.getWindowCount();
+	store.dispatch("handleWindowCount", res.data.value);
+}
 </script>
 
 <template>
-	<div
-		class="app-wrap"
-	>
+	<div class="app-wrap">
 		<!-- 头部 -->
 		<Header></Header>
 
@@ -21,7 +35,6 @@ const isLoginRouter = computed(() => route.name == "login");
 
 		<!-- 内容区域 -->
 		<div class="app-main">
-
 			<router-view></router-view>
 		</div>
 	</div>
@@ -55,7 +68,7 @@ const isLoginRouter = computed(() => route.name == "login");
 
 .fade-enter-active,
 .fade-leave-active {
-	transition: opacity .2s ease-in;
+	transition: opacity 0.2s ease-in;
 }
 
 .fade-enter-from,

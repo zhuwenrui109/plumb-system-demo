@@ -244,7 +244,7 @@ function toggleSite(index) {
 	box-sizing: border-box;
 	padding-top: 2px;
 	padding-bottom: 30px;
-	margin-bottom: 30px;
+	margin-bottom: 14px;
 }
 
 .area-nav .area-nav-first .area-nav-secound::before {
@@ -267,6 +267,10 @@ function toggleSite(index) {
 	padding-left: 64px;
 	padding-right: 40px;
 	cursor: pointer;
+}
+
+.area-nav .area-nav-first .area-nav-secound .area-nav-secound-item:last-child {
+	padding-bottom: 0;
 }
 
 .area-nav .area-nav-first .area-nav-secound .area-nav-secound-item .area-name {

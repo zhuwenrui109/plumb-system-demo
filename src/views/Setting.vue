@@ -3,45 +3,38 @@ import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref } from "vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import { useRoute, useRouter } from "vue-router";
 import GlobalSelect from "@/components/GlobalSelect.vue";
 import GlobalDatePicker from "@/components/GlobalDatePicker.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
+import { useStore } from "vuex";
 
 const route = useRoute();
 const router = useRouter();
+const store = useStore();
 
+const routerViewRef = ref(null);
 const username = ref("");
 const startDate = ref("");
 const endDate = ref("");
-const currentState = ref(0);
-const currentStand = ref(0);
-const currentStandArea = ref({});
+const currentState = ref("");
+const standKeyword = ref("");
+const standId = ref("");
+const areaId = ref("");
 const stateList = ref([
 	{
-		title: "选择状态",
-		disabled: true,
-		value: 0
+		name: "选择状态",
+		value: ""
 	},
 	{
-		title: "已连接",
-		value: 1
+		name: "已连接",
+		value: "1"
 	},
 	{
-		title: "已断开",
-		value: 2
-	}
-]);
-const standList = ref([
-	{
-		value: 0,
-		title: "沈阳分输站"
-	},
-	{
-		value: 1,
-		title: "大连分输站"
+		name: "已断开",
+		value: "0"
 	}
 ]);
 const navList = ref([
@@ -72,7 +65,47 @@ const navList = ref([
 	}
 ]);
 
-const currentPath = computed(() => route.path.slice(route.path.lastIndexOf("/")));
+const standList = computed(() => {
+	const arr = [
+		{
+			name: "选择站点",
+			station_id: ""
+		}
+	];
+
+	return [...arr, ...store.state.standList];
+});
+const currentPath = computed(() => {
+	username.value = "";
+	startDate.value = "";
+	endDate.value = "";
+	currentState.value = "";
+	standKeyword.value = "";
+	standId.value = "";
+	areaId.value = "";
+	return route.path.slice(route.path.lastIndexOf("/"));
+});
+
+function search() {
+	routerViewRef.value.page = 1;
+	routerViewRef.value.loadData();
+}
+
+async function clearForm() {
+	username.value = "";
+	startDate.value = "";
+	endDate.value = "";
+	currentState.value = "";
+	standKeyword.value = "";
+	standId.value = "";
+	areaId.value = "";
+	await nextTick();
+	search();
+}
+
+function showToast() {
+	routerViewRef.value.isPopShow = true;
+}
 
 function getImgUrl(title) {
 	return new URL(`../assets/images/${title}`, import.meta.url).href;
@@ -87,12 +120,14 @@ function getImgUrl(title) {
 					<template #right>
 						<div class="setting-right">
 							<GlobalLinkageSelect
-								v-model="currentStandArea"
+								v-model:standId="standId"
+								v-model:areaId="areaId"
 								v-if="currentPath.includes('setting') || currentPath.includes('connect')"
 							></GlobalLinkageSelect>
 							<GlobalSelect
 								v-model="currentState"
 								:list="stateList"
+								name="name"
 								v-if="currentPath.includes('connect')"
 							></GlobalSelect>
 							<GlobalDatePicker
@@ -103,23 +138,43 @@ function getImgUrl(title) {
 							<GlobalDatePicker
 								v-model="endDate"
 								:name="'选择结束日期'"
+								:start-date="startDate"
 								v-if="currentPath.includes('connect')"
 							></GlobalDatePicker>
-							<GlobalSelect
+							<!-- <GlobalSelect
 								:list="standList"
-								v-model="currentStand"
+								id="station_id"
+								name="name"
+								v-model="currentStandId"
 								v-if="currentPath.includes('stand')"
-							></GlobalSelect>
+							></GlobalSelect> -->
+							<GlobalInput
+								v-model="username"
+								placeholder="输入站点"
+								v-if="currentPath.includes('stand')"
+							></GlobalInput>
 							<GlobalInput
 								v-model="username"
 								placeholder="登录账号/姓名"
 								v-if="currentPath.includes('user')"
 							></GlobalInput>
-							<SettingButtonBorder v-if="!currentPath.includes('system')"> 搜索 </SettingButtonBorder>
-							<SettingButtonBorder v-if="!currentPath.includes('system')" type="clear"> 清空 </SettingButtonBorder>
+							<SettingButtonBorder
+								v-if="!currentPath.includes('system')"
+								@click="search"
+							>
+								搜索
+							</SettingButtonBorder>
+							<SettingButtonBorder
+								v-if="!currentPath.includes('system')"
+								type="clear"
+								@click="clearForm"
+							>
+								清空
+							</SettingButtonBorder>
 							<SettingButtonBorder
 								class="setting-btn"
 								v-if="currentPath.includes('setting')"
+								@click="showToast"
 							>
 								<div class="add-btn">
 									<img
@@ -133,6 +188,7 @@ function getImgUrl(title) {
 							<SettingButtonBorder
 								class="setting-btn"
 								v-if="currentPath.includes('stand')"
+								@click="routerViewRef.showStandPop()"
 							>
 								<div class="add-btn">
 									<img
@@ -146,6 +202,7 @@ function getImgUrl(title) {
 							<SettingButtonBorder
 								class="setting-btn"
 								v-if="currentPath.includes('user')"
+								@click="showToast"
 							>
 								<div class="add-btn">
 									<img
@@ -184,7 +241,20 @@ function getImgUrl(title) {
 						</div>
 					</div>
 					<div class="right">
-						<router-view></router-view>
+						<router-view v-slot="{ Component }">
+							<component
+								ref="routerViewRef"
+								:is="Component"
+								:username="username"
+								:startDate="startDate"
+								:endDate="endDate"
+								:currentState="currentState"
+								:currentStandId="standKeyword"
+								:standId="standId"
+								:areaId="areaId"
+							>
+							</component>
+						</router-view>
 					</div>
 				</div>
 			</GlobalContent>
@@ -297,7 +367,7 @@ function getImgUrl(title) {
 .setting-wrap .setting-main .left-nav-list .left-nav-item .left-nav.active div {
 	box-shadow: inset 0 0 9px 3px rgba(228, 132, 55, 0.78);
 	border-color: rgba(255, 185, 57, 0.6);
-	transition: .2s all ease-in;
+	transition: 0.2s all ease-in;
 }
 
 .setting-wrap .setting-main .left-nav-list .left-nav-item .left-nav div img {
