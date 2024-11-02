@@ -12,8 +12,7 @@ const router = useRouter();
 
 onMounted(() => {
 	checkLoginStatus();
-  
-})
+});
 
 function checkLoginStatus() {
 	// 如果已经登录并且token没过期直接回到上一个页面
@@ -21,14 +20,14 @@ function checkLoginStatus() {
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		router.push(prev);
 		return;
-  }
+	}
 	// 没有登录，自动登录
-  const autoToken = JSON.parse(localStorage.getItem("autoToken"));
-  if (autoToken) {
-    username.value = autoToken.username;
-    password.value = autoToken.password;
-    setTimeout(handleLogin, 1000);
-  }
+	const autoToken = JSON.parse(localStorage.getItem("autoToken"));
+	if (autoToken) {
+		username.value = autoToken.username;
+		password.value = autoToken.password;
+		setTimeout(handleLogin, 1000);
+	}
 }
 
 /**
@@ -37,20 +36,24 @@ function checkLoginStatus() {
  */
 async function handleLogin(e) {
 	try {
-		const { token_type, access_token, expires_in } = await API_HOME.login({
+		const { token_type, access_token, expires_in, user_role } = await API_HOME.login({
 			account: username.value,
 			password: password.value
 		});
-    // 如果需要自动登录保存账号密码到缓存
-    if (isAutoLogin.value) {
-      localStorage.setItem("autoToken", JSON.stringify({
-        username: username.value,
-        password: password.value
-      }))
-    }
+		// 如果需要自动登录保存账号密码到缓存
+		if (isAutoLogin.value) {
+			localStorage.setItem(
+				"autoToken",
+				JSON.stringify({
+					username: username.value,
+					password: password.value
+				})
+			);
+		}
 		const token = token_type + " " + access_token;
 		localStorage.setItem("token", token);
 		localStorage.setItem("tokenTime", 9999999999999999);
+		localStorage.setItem("userRole", user_role);
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		router.push(prev);
 	} catch (err) {

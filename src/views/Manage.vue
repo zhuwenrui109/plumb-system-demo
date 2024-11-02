@@ -97,8 +97,6 @@ async function toggleStatus(index) {
 	});
 	if (res.code != 200) {
 		dataList.value[index].status = item.status == 1 ? 0 : 1;
-	} else {
-		toastPlguin("修改成功");
 	}
 }
 

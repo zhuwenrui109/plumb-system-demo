@@ -1,4 +1,5 @@
 <script setup>
+import toastPlguin from "@/utils/toast";
 import { computed, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -27,6 +28,10 @@ const tabList = reactive([
 const currentRouter = computed(() => {
 	return router.currentRoute.value.fullPath;
 });
+
+function goList(name) {
+	router.push({ name })
+}
 </script>
 
 <template>
@@ -38,7 +43,7 @@ const currentRouter = computed(() => {
 				:class="{ active: currentRouter.includes(item.routerName) }"
 				v-for="(item, index) in tabList"
 				:key="index"
-				@mousedown="router.push({ name: item.routerName })"
+				@click="goList(item.routerName)"
 			>
 				{{ item.name }}
 			</div>

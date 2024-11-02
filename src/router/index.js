@@ -10,6 +10,7 @@ import User from '@/views/User.vue';
 import System from '@/views/System.vue';
 import HistoryFault from '@/views/HistoryFault.vue';
 import { clearToken, tokenExpressInTime } from '@/utils/tool';
+import toastPlguin from '@/utils/toast';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -23,7 +24,8 @@ const router = createRouter({
       name: 'home',
       component: Home,
       meta: {
-        title: "首页"
+        title: "首页",
+        needRole: false
       }
     },
     {
@@ -31,7 +33,8 @@ const router = createRouter({
       name: 'login',
       component: Login,
       meta: {
-        title: "登录"
+        title: "登录",
+        needRole: false
       }
     },
     {
@@ -39,7 +42,8 @@ const router = createRouter({
       name: 'alarm',
       component: HistoryAlarm,
       meta: {
-        title: "历史报警"
+        title: "历史报警",
+        needRole: false
       }
     },
     {
@@ -47,7 +51,8 @@ const router = createRouter({
       name: 'fault',
       component: HistoryFault,
       meta: {
-        title: "历史故障"
+        title: "历史故障",
+        needRole: false
       }
     },
     {
@@ -59,7 +64,8 @@ const router = createRouter({
           name: "setting",
           component: Manage,
           meta: {
-            title: "设备管理"
+            title: "设备管理",
+            needRole: true
           },
           props: true
         },
@@ -68,7 +74,8 @@ const router = createRouter({
           name: "connect",
           component: Connect,
           meta: {
-            title: "设备连接"
+            title: "设备连接",
+            needRole: true
           },
         },
         {
@@ -76,7 +83,8 @@ const router = createRouter({
           name: "stand",
           component: Stand,
           meta: {
-            title: "场站管理"
+            title: "场站管理",
+            needRole: true
           },
         },
         {
@@ -84,7 +92,8 @@ const router = createRouter({
           name: "user",
           component: User,
           meta: {
-            title: "账号管理"
+            title: "账号管理",
+            needRole: true
           },
         },
         {
@@ -92,7 +101,8 @@ const router = createRouter({
           name: "system",
           component: System,
           meta: {
-            title: "系统设置"
+            title: "系统设置",
+            needRole: true
           },
         }
       ]
@@ -101,8 +111,19 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  const role = localStorage.getItem("userRole");
   if ((localStorage.getItem('token') && !tokenExpressInTime()) || to.path === '/login') {
-    next();
+    if (!to.meta.needRole) {
+      next();
+    } else {
+      if (role == 2) {
+        toastPlguin("权限不足,请联系管理员");
+        console.log('form :>> ', from);
+        next(from.path);
+      } else {
+        next();
+      }
+    }
   } else {
     localStorage.setItem("preRoute", to.fullPath);
     clearToken();

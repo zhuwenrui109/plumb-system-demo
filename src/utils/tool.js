@@ -4,6 +4,7 @@
 export const clearToken = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("tokenTime");
+  localStorage.removeItem("tokenRole");
 }
 
 /**

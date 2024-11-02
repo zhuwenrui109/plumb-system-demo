@@ -16,7 +16,7 @@ loadWindowCount();
 
 async function loadStandList() {
 	const res = await API_HOME.getStandList();
-	store.dispatch("handleStandList", res.data);
+	await store.dispatch("handleStandList", res.data);
 }
 
 async function loadWindowCount() {
