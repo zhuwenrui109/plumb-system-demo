@@ -10,6 +10,9 @@ import SpeedController from "@/components/SpeedController.vue";
 import GlobalButton from "@/components/GlobalButton.vue";
 import PluginWrap from "@/components/PluginWrap.vue";
 import { API_HOME } from "@/api";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 
 const { WebVideoCtrl } = window;
 const pluginSpeed = ref(1);
@@ -29,7 +32,7 @@ onMounted(() => {
  */
 async function loadStandList() {
 	const res = await API_HOME.getStandList();
-	console.log('res :>> ', res);
+	console.log("res :>> ", res);
 	standList.push(...res.data);
 }
 
@@ -61,10 +64,10 @@ function capturePicData() {
 	if (oWndInfo != null) {
 		WebVideoCtrl.I_CapturePicData().then(
 			function (data) {
-				console.log('抓图成功并上传:>> ', data);
+				console.log("抓图成功并上传:>> ", data);
 			},
 			function () {
-				console.log('抓图失败！ :>> ', oWndInfo.szDeviceIdentify);
+				console.log("抓图失败！ :>> ", oWndInfo.szDeviceIdentify);
 			}
 		);
 	}
@@ -309,7 +312,10 @@ function handleStopPluginZoom(type) {
 					<div class="alarm-btn-list">
 						<GlobalButton name="报警消音"></GlobalButton>
 						<GlobalButton name="确认报警"></GlobalButton>
-						<GlobalButton name="历史报警"></GlobalButton>
+						<GlobalButton
+							name="历史报警"
+							@click="router.push({ name: 'alarm' })"
+						></GlobalButton>
 					</div>
 				</global-title>
 				<home-global-content
@@ -680,14 +686,6 @@ function handleStopPluginZoom(type) {
 	color: #fff;
 	opacity: 0.6;
 }
-
-/* .slide-enter-active, .slide-leave-active {
-  transform: scaleY(1);
-}
-
-.slide-enter, .slide-leave-to {
-  transform: scaleY(0);
-} */
 
 @keyframes ani {
 	0% {

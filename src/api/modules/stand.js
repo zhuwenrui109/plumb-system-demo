@@ -4,8 +4,12 @@ export const getList = (data) => {
   return request.post("api/stations", data);
 };
 
-export const getDetail = (id) => {
+export const getStandDetail = (id) => {
   return request.get(`api/stationsDetail/${id}`)
+};
+
+export const getRegionDetail = (id) => {
+  return request.get(`api/regionsDetail/${id}`)
 };
 
 export const editStand = (data) => {
@@ -14,4 +18,12 @@ export const editStand = (data) => {
 
 export const editRegion = (data) => {
   return request.post("api/regionsStore", data);
+};
+
+export const deleteStandDetail = (id) => {
+  return request.get(`api/stationsDelete/${id}`)
+};
+
+export const deleteRegionDetail = (id) => {
+  return request.get(`api/regionsDelete/${id}`)
 };

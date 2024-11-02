@@ -18,7 +18,7 @@ const current = defineModel();
 	<div class="global-select-wrap">
 		<select
 			class="global-select"
-			:class="{ disabled: current == '' }"
+			:class="{ disabled: current === '' }"
 			v-model="current"
 		>
 			<option
@@ -62,6 +62,7 @@ const current = defineModel();
 	outline: none;
 	width: 100%;
 	height: 100%;
+	box-sizing: border-box;
 	font-size: 15px;
 	line-height: 32px;
 	color: #fff;

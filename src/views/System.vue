@@ -1,30 +1,37 @@
 <script setup>
 import { API_HOME } from "@/api";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
-import { onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
 
 const current = ref("1");
+const windowCount = computed(() => {
+	current.value = store.state.windowCount;
+	return store.state.windowCount;
+});
 
 onMounted(() => {});
 
-watch(
-	() => store.state.windowCount,
-	newVal => {
-		current.value = newVal;
-	}
-);
+onUnmounted(() => {
+	loadWindowCount();
+})
 
 async function submitSetting() {
+	await nextTick();
 	const res = await API_HOME.saveSetting({
 		key: "windows_number",
-		value: current.value
+		value: windowCount.value
 	});
-	console.log("res :>> ", res);
-	if (res == 200) {
+	if (res.code == 200) {
+		
 	}
+}
+
+async function loadWindowCount() {
+	const res = await API_HOME.getWindowCount();
+	store.dispatch("handleWindowCount", res.data.value);
 }
 </script>
 
@@ -34,8 +41,8 @@ async function submitSetting() {
 		<div class="system-list">
 			<div
 				class="system-item"
-				:class="{ active: current == '1' }"
-				@click="current = '1'"
+				:class="{ active: windowCount == '1' }"
+				@click="store.dispatch('handleWindowCount', '1')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -49,8 +56,8 @@ async function submitSetting() {
 			</div>
 			<div
 				class="system-item chance2"
-				:class="{ active: current == '2' }"
-				@click="current = '2'"
+				:class="{ active: windowCount == '2' }"
+				@click="store.dispatch('handleWindowCount', '2')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -70,8 +77,8 @@ async function submitSetting() {
 			</div>
 			<div
 				class="system-item chance4"
-				:class="{ active: current == '4' }"
-				@click="current = '4'"
+				:class="{ active: windowCount == '4' }"
+				@click="store.dispatch('handleWindowCount', '4')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -103,8 +110,8 @@ async function submitSetting() {
 			</div>
 			<div
 				class="system-item chance9"
-				:class="{ active: current == '9' }"
-				@click="current = '9'"
+				:class="{ active: windowCount == '9' }"
+				@click="store.dispatch('handleWindowCount', '9')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -166,8 +173,8 @@ async function submitSetting() {
 			</div>
 			<div
 				class="system-item chance16"
-				:class="{ active: current == '16' }"
-				@click="current = '16'"
+				:class="{ active: windowCount == '16' }"
+				@click="store.dispatch('handleWindowCount', '16')"
 			>
 				<div class="bg">
 					<div

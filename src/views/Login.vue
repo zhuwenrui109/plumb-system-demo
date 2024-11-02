@@ -39,7 +39,7 @@ async function handleLogin(e) {
 	try {
 		const { token_type, access_token, expires_in } = await API_HOME.login({
 			account: username.value,
-			password: username.value
+			password: password.value
 		});
     // 如果需要自动登录保存账号密码到缓存
     if (isAutoLogin.value) {

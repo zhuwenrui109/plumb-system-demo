@@ -7,34 +7,36 @@ const isShow = defineModel();
 </script>
 
 <template>
-	<div
-		class="form-pop-wrap"
-		v-show="isShow"
-		@click="isShow = false"
-	>
+	<Transition name="fade">
 		<div
-			class="form-pop-main"
-			@click.stop
+			class="form-pop-wrap"
+			v-show="isShow"
+			@click="isShow = false"
 		>
-			<div class="title-wrap">
-				<div class="content">
-					<div class="title">{{ name }}</div>
+			<div
+				class="form-pop-main"
+				@click.stop
+			>
+				<div class="title-wrap">
+					<div class="content">
+						<div class="title">{{ name }}</div>
+						<img
+							src="../assets/images/icon-video-close.png"
+							alt=""
+							class="close"
+							@click="isShow = false"
+						/>
+					</div>
 					<img
-						src="../assets/images/icon-video-close.png"
+						src="../assets/images/form-pop-title-bg.png"
 						alt=""
-						class="close"
-						@click="isShow = false"
+						class="bg"
 					/>
 				</div>
-				<img
-					src="../assets/images/form-pop-title-bg.png"
-					alt=""
-					class="bg"
-				/>
+				<slot></slot>
 			</div>
-			<slot></slot>
 		</div>
-	</div>
+	</Transition>
 </template>
 
 <style scoped>

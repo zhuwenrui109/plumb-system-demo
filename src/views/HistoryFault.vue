@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { DatePicker, ConfigProvider } from "ant-design-vue";
 import * as echarts from "echarts";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
@@ -14,22 +14,30 @@ import dayjs, { Dayjs } from "dayjs";
 import GlobalSelect from "@/components/GlobalSelect.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import { API_FAULT } from "@/api";
+import { useStore } from "vuex";
 
 dayjs.locale("zh-cn");
 
-const timeScope = ref(0);
-const timeGap = ref(0);
+const store = useStore();
+
+const currentStand = ref({
+	name: ""
+});
+const currentArea = ref({
+	name: ""
+});
+const page = ref(1);
+const timeScope = ref(2);
+const timeGap = ref(30);
 const standId = ref("");
 const areaId = ref("");
 const date = ref("");
 const time = ref(dayjs("00:00:00", "HH:mm:ss"));
-const gap = ref();
 const locale = ref(zhCN);
 const chart = ref(null);
-const currentTimeUnit = ref(0);
 const chartOptions = ref({
 	title: {
-		text: "2020-12-20 13:00:00",
+		text: "",
 		top: 0,
 		left: 40,
 		textStyle: {
@@ -44,7 +52,7 @@ const chartOptions = ref({
 		show: true,
 		top: 30,
 		left: 0,
-		right: 0,
+		right: 35,
 		bottom: 0,
 		containLabel: true,
 		backgroundColor: "rgba(45, 45, 45, 0.7)",
@@ -77,7 +85,7 @@ const chartOptions = ref({
 		axisTick: {
 			show: false
 		},
-		data: ["衬衫\n衬衫衬衫", "羊毛衫", "雪纺衫", "裤子", "高跟鞋", "袜子"]
+		data: []
 	},
 	yAxis: {
 		type: "value",
@@ -99,10 +107,10 @@ const chartOptions = ref({
 	},
 	series: [
 		{
-			name: "销量",
+			name: "数量",
 			type: "line",
 			smooth: true,
-			data: [5, 20, 36, 10, 10, 20],
+			data: [],
 			symbol: "circle",
 			symbolSize: 10,
 			itemStyle: {
@@ -130,31 +138,77 @@ const chartOptions = ref({
 		}
 	]
 });
+const currentScopeUnit = ref(0);
+const currentGapUnit = ref(1);
 const timeUnit = ref([
 	{
-		title: "时",
+		name: "时",
 		value: 0
 	},
 	{
-		title: "分钟",
+		name: "分",
 		value: 1
 	}
 ]);
+let myChart = null;
+
+const standList = computed(() => store.state.standList);
+
+watch(
+	() => store.state.standList,
+	newVal => {
+		standId.value = newVal[0].station_id;
+		areaId.value = newVal[0].regions[0].region_id;
+		loadData();
+	}
+);
+
+watch(standId, newVal => {
+	currentStand.value = standList.value.find(item => item.station_id == newVal);
+})
+
+watch(areaId, newVal => {
+	currentArea.value = currentStand.value.regions.find(item => item.region_id == newVal);
+})
 
 onMounted(() => {
 	initDefaultDate();
 	echartsInit();
-	loadData();
+	if (standList.value.length) {
+		standId.value = standList.value[0].station_id;
+		areaId.value = standList.value[0].regions[0].region_id;
+		loadData();
+	}
 });
 
 async function loadData() {
+	const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	const res = await API_FAULT.getCharts({
-		region_id: "",
+		region_id: areaId.value,
 		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
-		range: "",
-		step: ""
+		range,
+		step
 	});
 	console.log("res :>> ", res);
+	res.data.time.forEach((item, index) => {
+		const arr = item.split(' ');
+		res.data.time[index] = `${arr[1]}\n${arr[0]}`;
+		if (res.data.data[index] == null) {
+			res.data.data[index] = 0;
+		}
+	});
+	myChart.setOption({
+		title: {
+			text: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`
+		},
+		xAxis: {
+      data: res.data.time
+    },
+		series: [{
+			data: res.data.data,
+		}]
+	})
 }
 
 function initDefaultDate() {
@@ -166,7 +220,7 @@ function initDefaultDate() {
 }
 
 function echartsInit() {
-	const myChart = echarts.init(chart.value);
+	myChart = echarts.init(chart.value);
 	myChart.setOption(chartOptions.value);
 }
 </script>
@@ -175,7 +229,7 @@ function echartsInit() {
 	<HomeGlobalContent class="fault-wrap">
 		<GlobalContent class="fault-content">
 			<SettingTopHandller
-				title="沈阳分输站-过滤区-历史数据"
+				:title="`${currentStand.name}-${currentArea.name}-历史数据`"
 				class="fault-top"
 			>
 				<template #left>
@@ -220,18 +274,22 @@ function echartsInit() {
 											<img
 												src="../assets/images/icon-fault-arr.png"
 												alt=""
+												@click="timeScope++"
 											/>
 											<img
 												src="../assets/images/icon-fault-arr.png"
 												alt=""
 												class="down"
+												@click="timeScope--"
 											/>
 										</div>
 									</div>
 									<GlobalSelect
 										class="timeUnit"
+										v-model="currentScopeUnit"
 										:list="timeUnit"
-										v-model="currentTimeUnit"
+										id="value"
+										name="name"
 									></GlobalSelect>
 								</div>
 							</div>
@@ -248,23 +306,27 @@ function echartsInit() {
 											<img
 												src="../assets/images/icon-fault-arr.png"
 												alt=""
+												@click="timeGap++"
 											/>
 											<img
 												src="../assets/images/icon-fault-arr.png"
 												alt=""
 												class="down"
+												@click="timeGap--"
 											/>
 										</div>
 									</div>
 									<GlobalSelect
 										class="timeUnit"
 										:list="timeUnit"
-										v-model="currentTimeUnit"
+										v-model="currentGapUnit"
+										id="value"
+										name="name"
 									></GlobalSelect>
 								</div>
 							</div>
 						</div>
-						<SettingButtonBorder> 查看 </SettingButtonBorder>
+						<SettingButtonBorder @click="loadData"> 查看 </SettingButtonBorder>
 					</div>
 				</template>
 			</SettingTopHandller>
@@ -318,7 +380,7 @@ function echartsInit() {
 					</div>
 				</div>
 			</GlobalContent>
-			<GlobalPagination></GlobalPagination>
+			<GlobalPagination v-model="page"></GlobalPagination>
 		</GlobalContent>
 	</HomeGlobalContent>
 </template>
@@ -396,7 +458,6 @@ function echartsInit() {
 	display: block;
 	width: 100%;
 	font-size: 15px;
-	color: rgba(255, 255, 255, 0.4);
 	background: none;
 	border: none;
 	outline: none;
@@ -414,6 +475,7 @@ input[type="number"] {
 	display: block;
 	width: 6px;
 	margin-bottom: 5px;
+	cursor: pointer;
 }
 
 .fault-wrap .fault-content .fault-left .date-list .date-item .input-list .input-item .arr-list img.down {

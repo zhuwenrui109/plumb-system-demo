@@ -1,6 +1,8 @@
 <script setup>
 import GlobalPagination from "@/components/GlobalPagination.vue";
+import toastPlguin from "@/utils/toast";
 import { Dayjs } from "dayjs";
+import { onMounted } from "vue";
 
 const props = defineProps({
 	standId: [String, Number],
@@ -14,6 +16,10 @@ const props = defineProps({
 		type: Dayjs,
 		default: ""
 	}
+})
+
+onMounted(() => {
+	toastPlguin("开发中...");
 })
 
 </script>

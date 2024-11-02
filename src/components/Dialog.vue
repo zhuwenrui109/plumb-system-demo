@@ -8,42 +8,44 @@ const props = defineProps({
 </script>
 
 <template>
-	<div class="dialog-wrap">
-		<div class="dialog-content">
-			<div class="title-wrap">
-				<div class="content">
-					<div class="title">温馨提示</div>
+	<Transition name="fade">
+		<div class="dialog-wrap">
+			<div class="dialog-content">
+				<div class="title-wrap">
+					<div class="content">
+						<div class="title">温馨提示</div>
+						<img
+							src="../assets/images/icon-video-close.png"
+							alt=""
+							class="close"
+							@click="cancelButton"
+						/>
+					</div>
 					<img
-						src="../assets/images/icon-video-close.png"
+						src="../assets/images/dialog-title-bg.png"
 						alt=""
-						class="close"
-						@click="cancelButton"
+						class="bg"
 					/>
 				</div>
-				<img
-					src="../assets/images/dialog-title-bg.png"
-					alt=""
-					class="bg"
-				/>
-			</div>
-			<div class="main">是否确认删除所选内容</div>
-			<div class="btn-list">
-				<SettingButtonBorder
-					type="clear"
-					class="btn"
-					@click="cancelButton"
-				>
-					取消
-				</SettingButtonBorder>
-				<SettingButtonBorder
-					class="btn"
-					@click="checkButton"
-				>
-					确认
-				</SettingButtonBorder>
+				<div class="main">是否确认删除所选内容</div>
+				<div class="btn-list">
+					<SettingButtonBorder
+						type="clear"
+						class="btn"
+						@click="cancelButton"
+					>
+						取消
+					</SettingButtonBorder>
+					<SettingButtonBorder
+						class="btn"
+						@click="checkButton"
+					>
+						确认
+					</SettingButtonBorder>
+				</div>
 			</div>
 		</div>
-	</div>
+	</Transition>
 </template>
 
 <style scoped>
@@ -99,9 +101,9 @@ const props = defineProps({
 }
 
 .dialog-wrap .dialog-content .title-wrap .close {
-  display: block;
-  width: 28px;
-  cursor: pointer;
+	display: block;
+	width: 28px;
+	cursor: pointer;
 }
 
 .dialog-wrap .dialog-content .main {

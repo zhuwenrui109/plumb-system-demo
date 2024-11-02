@@ -141,15 +141,8 @@ function getImgUrl(title) {
 								:start-date="startDate"
 								v-if="currentPath.includes('connect')"
 							></GlobalDatePicker>
-							<!-- <GlobalSelect
-								:list="standList"
-								id="station_id"
-								name="name"
-								v-model="currentStandId"
-								v-if="currentPath.includes('stand')"
-							></GlobalSelect> -->
 							<GlobalInput
-								v-model="username"
+								v-model="standKeyword"
 								placeholder="输入站点"
 								v-if="currentPath.includes('stand')"
 							></GlobalInput>
@@ -249,7 +242,7 @@ function getImgUrl(title) {
 								:startDate="startDate"
 								:endDate="endDate"
 								:currentState="currentState"
-								:currentStandId="standKeyword"
+								:standKeyword="standKeyword"
 								:standId="standId"
 								:areaId="areaId"
 							>

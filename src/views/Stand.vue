@@ -5,10 +5,12 @@ import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
+import dialogPlguin from "@/utils/dialog";
+import toastPlguin from "@/utils/toast";
 import { onMounted, ref, watch } from "vue";
 
 const props = defineProps({
-	username: String
+	standKeyword: String
 });
 
 const popConfig = ref({
@@ -56,7 +58,7 @@ async function loadData() {
 	currentStandId.value = "";
 	const res = await API_STAND.getList({
 		page: page.value,
-		keyword: props.username
+		keyword: props.standKeyword
 	});
 	console.log("res :>> ", res);
 	dataList.value = res.data.data;
@@ -64,7 +66,7 @@ async function loadData() {
 	pageConfig.value.pageSize = res.data.pageSize;
 }
 
-async function toggleStandStatus(stationIndex, regionIndex) {
+async function toggleStandStatus(stationIndex) {
 	dataList.value[stationIndex].status = dataList.value[stationIndex].status == "1" ? "0" : "1";
 	dataList.value[stationIndex].station_id;
 	const station_id = dataList.value[stationIndex].station_id;
@@ -72,14 +74,14 @@ async function toggleStandStatus(stationIndex, regionIndex) {
 		station_id,
 		status: dataList.value[stationIndex].status
 	});
-	console.log("res :>> ", res);
 	if (res.code != 200) {
 		dataList.value[stationIndex].status = dataList.value[stationIndex].status == "1" ? "0" : "1";
+		toastPlguin("修改失败");
 	}
 }
 
 function showStandPop() {
-	popConfig.value.name = "stand";
+	popConfig.value.type = "stand";
 	popConfig.value.name = "新增场站";
 	popConfig.value.title = "场站名称";
 	popConfig.value.placeholder = "请输入场站名称";
@@ -88,7 +90,7 @@ function showStandPop() {
 
 function showAreaPop(id) {
 	form.value.station_id = id;
-	popConfig.value.name = "region";
+	popConfig.value.type = "region";
 	popConfig.value.name = "新增工艺区";
 	popConfig.value.title = "工艺区名称";
 	popConfig.value.placeholder = "请输入工艺区名称";
@@ -103,6 +105,7 @@ async function handleSubmit() {
 	}
 	isPopShow.value = false;
 	loadData();
+	toastPlguin("修改成功");
 }
 
 async function toggleRegionStatus(stationIndex, regionIndex) {
@@ -117,17 +120,53 @@ async function toggleRegionStatus(stationIndex, regionIndex) {
 	console.log("res :>> ", res);
 	if (res.code != 200) {
 		dataList.value[stationIndex].regions[regionIndex].status = dataList.value[stationIndex].regions[regionIndex].status == "1" ? "0" : "1";
+		toastPlguin("修改失败");
 	}
 }
 
-function toggleArea(id) {
-	console.log("toggleArea");
-	currentStandId.value = currentStandId.value == id ? "" : id;
+function toggleArea(item) {
+	if (item.regions.length == 0) {
+		return;
+	}
+	currentStandId.value = currentStandId.value == item.station_id ? "" : item.station_id;
 }
 
-async function handleEdit(id) {
-	const res = await API_STAND.getDetail(id);
-	console.log("res :>> ", res);
+async function handleEdit(id, regionId = "") {
+	let res = null;
+	if (regionId) {
+		popConfig.value.type = "region";
+		popConfig.value.name = "新增工艺区";
+		popConfig.value.title = "工艺区名称";
+		popConfig.value.placeholder = "请输入工艺区名称";
+		res = await API_STAND.getRegionDetail(regionId);
+	} else {
+		popConfig.value.type = "stand";
+		popConfig.value.name = "新增场站";
+		popConfig.value.title = "场站名称";
+		popConfig.value.placeholder = "请输入场站名称";
+		res = await API_STAND.getStandDetail(id);
+	}
+	form.value = { ...res.data };
+	isPopShow.value = true;
+}
+
+async function handleDelete(id, regionId = "") {
+	dialogPlguin().then(
+		async () => {
+			let res = null;
+			console.log("regionId :>> ", regionId);
+			if (regionId) {
+				res = await API_STAND.deleteRegionDetail(regionId);
+			} else {
+				res = await API_STAND.deleteStandDetail(id);
+			}
+			if (res.code == 200) {
+				loadData();
+				toastPlguin("删除成功");
+			}
+		},
+		() => {}
+	);
 }
 </script>
 
@@ -155,6 +194,7 @@ async function handleEdit(id) {
 				class="tr"
 				v-for="(item, stationIndex) in dataList"
 				:key="item.station_id"
+				:class="{ active: item.station_id == currentStandId }"
 			>
 				<div class="td id">
 					<div class="td-item">
@@ -169,12 +209,9 @@ async function handleEdit(id) {
 				<div class="td stand">
 					<div
 						class="td-item"
-						@click="toggleArea(item.station_id)"
+						@click="toggleArea(item)"
 					>
-						<div
-							class="arr"
-							:class="{ active: item.station_id == currentStandId }"
-						>
+						<div class="arr">
 							<img
 								src="../assets/images/icon-setting-arr.png"
 								alt=""
@@ -207,11 +244,13 @@ async function handleEdit(id) {
 									src="../assets/images/icon-edit.png"
 									alt=""
 									class="handle-icon"
+									@click="handleEdit(item.station_id, region.region_id)"
 								/>
 								<img
 									src="../assets/images/icon-delete.png"
 									alt=""
 									class="handle-icon"
+									@click="handleDelete(item.station_id, region.region_id)"
 								/>
 							</div>
 						</div>
@@ -246,6 +285,7 @@ async function handleEdit(id) {
 							src="../assets/images/icon-delete.png"
 							alt=""
 							class="handle-icon"
+							@click="handleDelete(item.station_id)"
 						/>
 						<div
 							class="add-btn"
@@ -354,8 +394,11 @@ async function handleEdit(id) {
 	height: 39px;
 	padding-left: 28px;
 	border-left: 1px solid rgba(188, 188, 188, 0.2);
-	border-bottom: none;
 	cursor: pointer;
+}
+
+.stand-wrap .table .tr.active .td.stand .td-item {
+	border-bottom: none;
 }
 
 .stand-wrap .table .tr .td.stand .arr {
@@ -370,7 +413,7 @@ async function handleEdit(id) {
 	width: 100%;
 }
 
-.stand-wrap .table .tr .td.stand .arr.active {
+.stand-wrap .table .tr.active .td.stand .arr {
 	transition: 0.3s all linear;
 	transform: none;
 }
@@ -438,8 +481,11 @@ async function handleEdit(id) {
 	height: 40px;
 	box-sizing: border-box;
 	border-right: 1px solid rgba(188, 188, 188, 0.2);
-	border-bottom: 1px solid rgba(188, 188, 188, 0.2);
 	padding-left: 40px;
+}
+
+.stand-wrap .table .tr.active .td .td-item {
+	border-bottom: 1px solid rgba(188, 188, 188, 0.2);
 }
 
 .stand-wrap .table .tr .td .td-list .td-item {

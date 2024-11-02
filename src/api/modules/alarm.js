@@ -8,6 +8,6 @@ export const batchDelData = data => {
   return request.post("api/historyAlarmsDelete", data)
 };
 
-export const exprotData = data => {
-  return request.get(`api/exportHistoryAlarms?selected_id=${data}`)
+export const exprotData = (data, params) => {
+  return request.get(`api/exportHistoryAlarms?selected_id=${data}`, params)
 };

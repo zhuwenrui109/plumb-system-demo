@@ -7,7 +7,8 @@ import GlobalPagination from "@/components/GlobalPagination.vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import dialogPlguin from "@/utils/dialog";
-import { onMounted, reactive, ref, watch } from "vue";
+import toastPlguin from "@/utils/toast";
+import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
@@ -96,6 +97,8 @@ async function toggleStatus(index) {
 	});
 	if (res.code != 200) {
 		dataList.value[index].status = item.status == 1 ? 0 : 1;
+	} else {
+		toastPlguin("修改成功");
 	}
 }
 
@@ -104,6 +107,7 @@ async function handleSubmit() {
 	if (res.code == 200) {
 		loadData();
 		isPopShow.value = false;
+		toastPlguin("修改成功");
 	}
 }
 
@@ -111,9 +115,7 @@ async function handleEdit(id) {
 	const res = await API_MANAGE.getDetail(id);
 	console.log("res :>> ", res);
 	if (res.code == 200) {
-		form.value = {
-			...res.data
-		};
+		form.value = { ...res.data };
 		isPopShow.value = true;
 	}
 }
@@ -124,6 +126,7 @@ function handleDelete(id) {
 			console.log("确认");
 			await API_MANAGE.deleteManage(id);
 			loadData();
+			toastPlguin("删除成功");
 		},
 		() => {
 			console.log("取消");
@@ -251,6 +254,9 @@ function handleDelete(id) {
 						placeholder="输入阀值"
 						v-model="form.threshold_first"
 					></GlobalInput>
+					<div class="form-tips">
+						超出范围则报警
+					</div>
 				</div>
 				<div class="form-item chance">
 					<div class="name">二级报警值</div>
@@ -259,6 +265,9 @@ function handleDelete(id) {
 						placeholder="输入阀值"
 						v-model="form.threshold_second"
 					></GlobalInput>
+					<div class="form-tips">
+						超出范围则报警
+					</div>
 				</div>
 				<div class="form-item chance switch">
 					<div class="name">是否启用该设备:</div>
@@ -410,6 +419,10 @@ function handleDelete(id) {
 	padding: 23px 38px 44px;
 }
 
+.form-wrap .form-item {
+	position: relative;
+}
+
 .form-wrap .form-item.chance {
 	width: 100%;
 }
@@ -432,6 +445,15 @@ function handleDelete(id) {
 
 .form-wrap .form-item .input-chance {
 	width: 100%;
+}
+
+.form-wrap .form-item .form-tips {
+	position: absolute;
+	right: 10px;
+	bottom: 8px;
+	font-size: 14px;
+	color: rgba(255, 255, 255, .4);
+	pointer-events: none;
 }
 
 .form-wrap .select-wrap {

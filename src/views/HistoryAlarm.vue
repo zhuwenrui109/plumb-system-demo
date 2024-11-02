@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, reactive, ref } from "vue";
+import { nextTick, onMounted, reactive, ref, watch } from "vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
@@ -29,6 +29,10 @@ const currentRemarkId = ref("");
 
 onMounted(() => {
 	loadData();
+});
+
+watch(page, () => {
+	checkList.value = [];
 });
 
 async function loadData() {
@@ -78,11 +82,17 @@ async function clearForm() {
 /**
  * 导出
  */
-function exportData() {
+async function exportData() {
 	if (checkList.value.length == 0) {
 		return;
 	}
-	API_ALARM.exprotData(checkList.value.join(","));
+	const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
+	const url = window.URL.createObjectURL(res);
+	const link = document.createElement("a");
+	const date = new Date();
+	link.href = url;
+	link.setAttribute("download", "历史报警" + date.getTime());
+	link.click();
 }
 
 /**
@@ -95,7 +105,7 @@ async function batchDelete() {
 	const res = await API_ALARM.batchDelData({
 		alarm_id: checkList.value
 	});
-	console.log('res :>> ', res);
+	console.log("res :>> ", res);
 	if (res.code == 200) {
 		checkList.value = [];
 		loadData();
@@ -147,31 +157,34 @@ function toggleTools() {
 								alt=""
 							/>
 						</div>
-						<div
-							class="handle-list"
-							v-show="isToolsShow"
-						>
+						<Transition name="fade">
 							<div
-								class="handle-item"
-								@click="batchDelete"
+								class="handle-list"
+								v-show="isToolsShow"
 							>
-								<img
-									src="../assets/images/icon-delete.png"
-									alt=""
-								/>
-								<span>删除</span>
+								<div
+									class="handle-item"
+									@click="batchDelete"
+								>
+									<img
+										src="../assets/images/icon-delete.png"
+										alt=""
+									/>
+									<span>删除</span>
+								</div>
+								<div
+									class="handle-item chance"
+									@click="exportData"
+								>
+									<img
+										src="../assets/images/icon-export.png"
+										alt=""
+									/>
+									<span>导出</span>
+								</div>
+								<div class="mask"></div>
 							</div>
-							<div
-								class="handle-item"
-								@click="exportData"
-							>
-								<img
-									src="../assets/images/icon-export.png"
-									alt=""
-								/>
-								<span>导出</span>
-							</div>
-						</div>
+						</Transition>
 					</div>
 				</template>
 				<template #right>
@@ -230,7 +243,7 @@ function toggleTools() {
 						</div>
 						<div
 							class="tr"
-							v-for="(item, index) in dataList"
+							v-for="item in dataList"
 							:key="item.alarm_id"
 						>
 							<div
@@ -312,10 +325,7 @@ function toggleTools() {
 
 .history-wrap .history-content .history-handle {
 	position: relative;
-}
-
-.history-wrap .history-content .history-handle.active .btn img {
-	transform: rotate(180deg);
+	z-index: 10;
 }
 
 .history-wrap .history-content .history-handle .btn {
@@ -334,6 +344,11 @@ function toggleTools() {
 .history-wrap .history-content .history-handle .btn img {
 	display: block;
 	width: 8px;
+	transition: 0.2s all ease-in;
+}
+
+.history-wrap .history-content .history-handle.active .btn img {
+	transform: rotate(180deg);
 }
 
 .history-wrap .history-content .history-handle .handle-list {
@@ -348,6 +363,15 @@ function toggleTools() {
 	border-radius: 4px;
 }
 
+.history-wrap .history-content .history-handle .handle-list .mask {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: -1;
+}
+
 .history-wrap .history-content .history-handle .handle-list .handle-item {
 	display: flex;
 	align-items: center;
@@ -359,18 +383,19 @@ function toggleTools() {
 	cursor: pointer;
 }
 
-.history-wrap .history-content .history-handle .handle-list .handle-item:last-child {
+.history-wrap .history-content .history-handle .handle-list .handle-item.chance {
 	border-bottom: none;
 }
 
 .history-wrap .history-content .history-handle .handle-list .handle-item img {
 	display: block;
-	width: 17px;
+	width: 16px;
 }
 
 .history-wrap .history-content .history-handle .handle-list .handle-item span {
 	display: block;
 	font-size: 15px;
+	line-height: 16px;
 }
 
 .history-wrap .history-content .history-right {
