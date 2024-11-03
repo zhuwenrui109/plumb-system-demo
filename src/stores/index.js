@@ -3,7 +3,7 @@ import { createStore } from 'vuex'
 const store = createStore({
   state: {
     standList: [],
-    windowCount: 1
+    windowCount: 16
   },
   mutations: {
     setStandList(state, data) {
@@ -21,7 +21,36 @@ const store = createStore({
       context.commit("setWindowCount", data)
     }
   },
-  getters: {}
+  getters: {
+    getDeviceList(state) {
+      let arr = [];
+      if (!state.standList.length) {
+        return arr;
+      }
+      let deviceList = [];
+      state.standList.forEach((station, sIndex) => {
+        station.regions.forEach((region, rIndex) => {
+          // 防止测试数据没有设备
+          if (region.device) {
+            deviceList.push({
+              sIndex,
+              rIndex,
+              device: region.device
+            })
+          }
+        });
+      })
+      let j = 0,
+        o = j;
+      // windowCount为一组（页）
+      while (j < deviceList.length) {
+        j += state.windowCount;
+        arr.push([...deviceList.slice(o, j)]);
+        o = j;
+      }
+      return arr;
+    }
+  }
 })
 
 export default store

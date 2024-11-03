@@ -1,10 +1,11 @@
 <script setup>
 import Header from "@/components/Header.vue";
 import RouteTab from "@/components/RouteTab.vue";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { API_HOME } from "./api";
 import { useStore } from "vuex";
+import useWebSocket from "./utils/useWebSocket";
 
 const route = useRoute();
 const store = useStore();
@@ -13,6 +14,28 @@ const isLoginRouter = computed(() => route.name == "login");
 
 loadStandList();
 loadWindowCount();
+
+// 实时报警
+const alarm = useWebSocket({
+	heartBeatData: JSON.stringify({ target: "alarm" })
+});
+
+alarm.connect();
+
+watch(() => alarm.message.value, newVal => {
+	console.log('alarm :>> ', newVal);
+})
+
+// 实时报警
+const fault = useWebSocket({
+	heartBeatData: JSON.stringify({ target: "fault" })
+});
+
+fault.connect();
+
+watch(() => alarm.message.value, newVal => {
+	console.log('fault :>> ', newVal);
+})
 
 async function loadStandList() {
 	const res = await API_HOME.getStandList();

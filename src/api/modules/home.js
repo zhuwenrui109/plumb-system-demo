@@ -27,3 +27,15 @@ export const saveSetting = (data) => request.post("api/configStore", data);
  * @returns 
  */
 export const getWindowCount = () => request.get("api/config/windows_number");
+
+/**
+ * 控制云台上下左右
+ * @returns 
+ */
+export const handleDirection = data => request.post("api/direction", data);
+
+/**
+ * 控制云台速度
+ * @returns 
+ */
+export const handleSpeed = data => request.post("api/speed", data);

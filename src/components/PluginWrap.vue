@@ -1,20 +1,29 @@
 <script setup>
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useStore } from "vuex";
 
+const store = useStore();
 const g_iWndIndex = defineModel("iWndIndex");
 const g_iWndowType = defineModel("iWndowType"); // 分割数量
+const g_iWndowPage = defineModel("iWndowPage"); // 页数
 const { WebVideoCtrl } = window;
 const config = {
-	szIP: "192.168.1.64", // IP地址
 	iPrototocol: 1, // http协议，1表示http协议 2表示https协议
-	szPort: "80", // 端口
 	szUsername: "admin", // 用户名称
 	szPassword: "abcd1234" // 用户密码
 };
-const szDeviceIdentify = config.szIP + "_" + config.szPort;
 let iDevicePort = null;
 let iRtspPort = null;
 let iChannelID = null;
+
+const deviceList = computed(() => {
+	return store.getters.getDeviceList;
+});
+
+watch(g_iWndowType, newVal => {
+	console.log("newVal :>> ", newVal);
+	changeWndNum(newVal);
+});
 
 onMounted(() => {
 	initPlugin();
@@ -24,32 +33,23 @@ onUnmounted(() => {
 	WebVideoCtrl.I_DestroyPlugin();
 });
 
-watch(g_iWndowType, newVal => {
-	console.log("newVal :>> ", newVal);
-	changeWndNum(newVal);
-});
-
 /**
  * 监控控件初始化
  */
-async function initPlugin() {
-	return;
+function initPlugin() {
 	WebVideoCtrl.I_InitPlugin({
 		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
 		iWndowType: g_iWndowType.value,
 		cbSelWnd: function (xmlDoc) {
+			console.log("xmlDoc :>> ", xmlDoc);
 			g_iWndIndex.value = parseInt($(xmlDoc).find("SelectWnd").eq(0).text(), 10);
-			console.log("g_iWndIndex.value :>> ", g_iWndIndex.value);
 		},
 		cbDoubleClickWnd(iWndIndex) {
 			g_iWndIndex.value = iWndIndex;
 			if (g_iWndowType.value > 1) {
 				g_iWndowType.value = 1;
-				console.log("g_iWndowType.value :>> ", g_iWndowType.value);
 				changeWndNum(1);
-				enableDraw();
 			} else {
-				delAllSnapPolygon();
 				g_iWndowType.value = 4;
 				changeWndNum(4);
 			}
@@ -76,35 +76,41 @@ async function initPlugin() {
 /**
  * 登录
  */
-function loginPlugin() {
-	WebVideoCtrl.I_Login(config.szIP, config.iPrototocol, config.szPort, config.szUsername, config.szPassword, {
-		timeout: 3000,
-		success() {
-			console.log("成功");
-			setTimeout(function () {
-				setTimeout(function () {
-					getChannelInfo();
-				}, 1000);
-				getDevicePort();
-			}, 10);
-		},
-		error(oError) {
-			if (oError.errorCode == 2001) {
-				setTimeout(function () {
+async function loginPlugin() {
+	deviceList.value[g_iWndowPage.value].forEach((item, index) => {
+		if (item.device.monitor_ip) {
+			const { monitor_ip, monitor_port } = item.device;
+			WebVideoCtrl.I_Login(monitor_ip, config.iPrototocol, monitor_port, config.szUsername, config.szPassword, {
+				timeout: 3000,
+				success() {
+					console.log("成功");
 					setTimeout(function () {
-						getChannelInfo();
-					}, 1000);
-					getDevicePort();
-				}, 10);
-			}
-			console.log("err :>> ", oError.errorCode);
-			console.error("登录失败");
+						setTimeout(function () {
+							getChannelInfo(monitor_ip, monitor_port, index);
+						}, 1000);
+						getDevicePort(monitor_ip, monitor_port);
+					}, 10);
+				},
+				error(oError) {
+					if (oError.errorCode == 2001) {
+						setTimeout(function () {
+							setTimeout(function () {
+								getChannelInfo(monitor_ip, monitor_port);
+							}, 1000);
+							getDevicePort(monitor_ip, monitor_port);
+						}, 10);
+					}
+					console.log("err :>> ", oError.errorCode);
+					console.error("登录失败");
+				}
+			});
 		}
 	});
 }
 
 // 获取端口
-function getDevicePort() {
+function getDevicePort(ip, port) {
+	const szDeviceIdentify = `${ip}_${port}`;
 	if (null == szDeviceIdentify) {
 		return;
 	}
@@ -113,17 +119,19 @@ function getDevicePort() {
 		oPort => {
 			iDevicePort = oPort.iDevicePort;
 			iRtspPort = oPort.iRtspPort;
+			console.log("iDevicePort :>> ", iDevicePort);
 			console.log("获取端口成功! :>> ", szDeviceIdentify);
 		},
 		oError => {
 			const szInfo = "获取端口失败！";
-			console.log("szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg :>> ", szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
+			console.log("获取端口失败！ :>> ", szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
 		}
 	);
 }
 
 // 获取通道
-function getChannelInfo() {
+function getChannelInfo(ip, port, index) {
+	const szDeviceIdentify = `${ip}_${port}`;
 	if (null == szDeviceIdentify) {
 		return;
 	}
@@ -142,7 +150,7 @@ function getChannelInfo() {
 					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
 				}
 			});
-			clickStartRealPlay(0);
+			clickStartRealPlay(szDeviceIdentify, index);
 		},
 		error: function (oError) {
 			console.log(
@@ -161,7 +169,11 @@ function getChannelInfo() {
  */
 async function changeWndNum(iType) {
 	await nextTick();
-	console.log("iType :>> ", iType);
+	if (iType == 1) {
+		enableDraw();
+	} else {
+		delAllSnapPolygon();
+	}
 	WebVideoCtrl.I_ChangeWndNum(iType).then(
 		() => {
 			console.log('"窗口分割成功！" :>> ', "窗口分割成功！");
@@ -177,7 +189,7 @@ async function changeWndNum(iType) {
  * 开始预览
  * @param iWndIndex 在哪一个窗口预览
  */
-function clickStartRealPlay(iWndIndex) {
+function clickStartRealPlay(szDeviceIdentify, iWndIndex) {
 	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
 
 	if (null == szDeviceIdentify) {
@@ -232,16 +244,12 @@ function enableDraw() {
  * 清空图形
  */
 function delAllSnapPolygon() {
-	// if (!g_bEnableDraw) {
-	// 	return;
-	// }
-
 	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex).then(
 		() => {
 			console.log("清空图形成功！");
 		},
 		oError => {
-			console.log('清空图形失败！ :>> ', oError.errorCode, oError.errorMsg);
+			console.log("清空图形失败！ :>> ", oError.errorCode, oError.errorMsg);
 		}
 	);
 }
@@ -310,11 +318,13 @@ function refresh() {
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr"
+				:class="{ disable: deviceList.length == 1 }"
 			/>
 			<img
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr right"
+				:class="{ disable: deviceList.length == 1 }"
 			/>
 		</div>
 		<div class="plugin-content">
@@ -378,10 +388,16 @@ function refresh() {
 .plugin-wrap .arr-wrap .arr {
 	display: block;
 	width: 40px;
+	cursor: pointer;
 }
 
 .plugin-wrap .arr-wrap .arr.right {
 	transform: rotate(180deg);
+}
+
+.plugin-wrap .arr-wrap .arr.disable {
+	opacity: 0.4;
+	cursor: none;
 }
 
 .plugin-wrap .plugin-content {

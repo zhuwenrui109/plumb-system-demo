@@ -1,5 +1,5 @@
 <script setup>
-import { API_MANAGE } from "@/api";
+import { API_HOME, API_MANAGE } from "@/api";
 import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
@@ -10,8 +10,10 @@ import dialogPlguin from "@/utils/dialog";
 import toastPlguin from "@/utils/toast";
 import { onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useStore } from "vuex";
 
 const route = useRoute();
+const store = useStore();
 const props = defineProps({
 	standId: {
 		type: [String, Number],
@@ -88,6 +90,14 @@ async function loadData() {
 	pageConfig.value.pageSize = res.data.per_page;
 }
 
+/**
+ * 刷新场站列表
+ */
+async function refreshStandList() {
+	const { data } = await API_HOME.getStandList();
+	store.dispatch("handleStandList", data);
+}
+
 async function toggleStatus(index) {
 	const item = dataList.value[index];
 	dataList.value[index].status = item.status == 1 ? 0 : 1;
@@ -98,12 +108,14 @@ async function toggleStatus(index) {
 	if (res.code != 200) {
 		dataList.value[index].status = item.status == 1 ? 0 : 1;
 	}
+	refreshStandList();
 }
 
 async function handleSubmit() {
 	const res = await API_MANAGE.editManage(form.value);
 	if (res.code == 200) {
 		loadData();
+		refreshStandList();
 		isPopShow.value = false;
 		toastPlguin("修改成功");
 	}
@@ -124,6 +136,7 @@ function handleDelete(id) {
 			console.log("确认");
 			await API_MANAGE.deleteManage(id);
 			loadData();
+			refreshStandList();
 			toastPlguin("删除成功");
 		},
 		() => {
@@ -252,9 +265,7 @@ function handleDelete(id) {
 						placeholder="输入阀值"
 						v-model="form.threshold_first"
 					></GlobalInput>
-					<div class="form-tips">
-						超出范围则报警
-					</div>
+					<div class="form-tips">超出范围则报警</div>
 				</div>
 				<div class="form-item chance">
 					<div class="name">二级报警值</div>
@@ -263,9 +274,7 @@ function handleDelete(id) {
 						placeholder="输入阀值"
 						v-model="form.threshold_second"
 					></GlobalInput>
-					<div class="form-tips">
-						超出范围则报警
-					</div>
+					<div class="form-tips">超出范围则报警</div>
 				</div>
 				<div class="form-item chance switch">
 					<div class="name">是否启用该设备:</div>
@@ -450,7 +459,7 @@ function handleDelete(id) {
 	right: 10px;
 	bottom: 8px;
 	font-size: 14px;
-	color: rgba(255, 255, 255, .4);
+	color: rgba(255, 255, 255, 0.4);
 	pointer-events: none;
 }
 

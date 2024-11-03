@@ -1,16 +1,21 @@
 <!-- 设备列表 -->
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import GlobalContent from "./GlobalContent.vue";
 import BScroll from "@better-scroll/core";
 import MouseWheel from "@better-scroll/mouse-wheel";
 import ObserveDom from "@better-scroll/observe-dom";
 import ScrollBar from "@better-scroll/scroll-bar";
+import { useStore } from "vuex";
 
 BScroll.use(MouseWheel);
 BScroll.use(ObserveDom);
 BScroll.use(ScrollBar);
 
+const store = useStore();
+const page = defineModel("page");
+const index = defineModel("index");
+const type = defineModel("type");
 const props = defineProps({
 	list: {
 		type: Array,
@@ -26,13 +31,20 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 		required: false
-	}
+	},
 });
 
-const currentNavIndex = ref(-1);
 const areaNavScroll = ref(null);
 const scrollBar = ref(null);
 let scroll = null;
+
+const deviceList = computed(() => store.getters.getDeviceList[page.value]);
+const currentNavIndex = computed(() => {
+	if (type.value > 1) {
+		return -1;
+	}
+	return deviceList.value[index.value].sIndex;
+})
 
 onMounted(() => {
 	// 初始化滚动

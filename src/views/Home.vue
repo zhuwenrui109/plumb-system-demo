@@ -3,38 +3,47 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
 import GlobalButton from "@/components/GlobalButton.vue";
 import PluginWrap from "@/components/PluginWrap.vue";
-import { API_HOME } from "@/api";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+import useWebSocket from "@/utils/useWebSocket";
 
 const router = useRouter();
+const store = useStore();
 
 const { WebVideoCtrl } = window;
 const pluginSpeed = ref(1);
 const g_iWndIndex = ref(0);
 const g_iWndowType = ref(4);
+const g_iWndowPage = ref(0);
 const isSelect = ref(false);
-const standList = reactive([]);
 const alarmList = ref([]);
+const deepList = ref([]);
+
+const standList = computed(() => store.state.standList);
 
 onMounted(() => {
-	setTimeout(testPluginError, 1000 * 10);
-	loadStandList();
+	// setTimeout(testPluginError, 1000 * 10);
 });
 
-/**
- * 获取场站列表
- */
-async function loadStandList() {
-	const res = await API_HOME.getStandList();
-	console.log("res :>> ", res);
-	standList.push(...res.data);
-}
+// 实时浓度
+const concentration = useWebSocket({
+	heartBeatData: JSON.stringify({ target: "concentration" })
+});
+
+concentration.connect();
+
+watch(
+	() => concentration.message.value,
+	newVal => {
+		deepList.value = [...newVal];
+	}
+);
 
 /**
  * 测试浓度超标警报录制视频
@@ -90,9 +99,8 @@ function handlePluginZoom(type) {
 	if (g_iWndowType.value == 1 && oWndInfo) {
 		WebVideoCtrl.I_PTZControl(type, false, {
 			iWndIndex: g_iWndIndex.value,
-			iPTZSpeed: pluginSpeed.value,
 			success: function (xmlDoc) {
-				console.log("xmlDoc :>> ", xmlDoc);
+				iPTZSpeed: pluginSpeed.value, console.log("xmlDoc :>> ", xmlDoc);
 				console.log("调焦成功 :>> ", oWndInfo.szDeviceIdentify);
 			},
 			error: function (oError) {
@@ -135,7 +143,12 @@ function handleStopPluginZoom(type) {
 				></global-title>
 				<!-- 设备列表内容 -->
 				<home-global-content class="devices-content">
-					<devices-list :list="standList"></devices-list>
+					<devices-list
+						:list="standList"
+						v-model:page="g_iWndowPage"
+						v-model:index="g_iWndIndex"
+						v-model:type="g_iWndowType"
+					></devices-list>
 				</home-global-content>
 			</div>
 			<!-- 监控视频 -->
@@ -143,6 +156,7 @@ function handleStopPluginZoom(type) {
 				<PluginWrap
 					v-model:iWndIndex="g_iWndIndex"
 					v-model:iWndowType="g_iWndowType"
+					v-model:iWndowPage="g_iWndowPage"
 				></PluginWrap>
 			</div>
 			<!-- 云台控制 -->
@@ -164,7 +178,11 @@ function handleStopPluginZoom(type) {
 						class="control-direction"
 						:class="{ active: g_iWndowType == 1 }"
 					>
-						<control :class="{ 'control-wrap-active': g_iWndowType == 1 }"></control>
+						<control
+							:class="{ 'control-wrap-active': g_iWndowType == 1 }"
+							v-model:device="g_iWndIndex"
+							v-model:page="g_iWndowPage"
+						></control>
 						<div
 							class="start-control"
 							@mousedown="handlePlugin"
@@ -240,65 +258,18 @@ function handleStopPluginZoom(type) {
 					:isAutoScroll="true"
 				>
 					<div class="density-list">
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
-						</div>
-						<div class="density-item">
-							<div class="area-name">沈阳分输站-过滤区</div>
-							<div class="density-num">浓度: <span class="english">1000ppm.m</span></div>
-							<div class="density-num">光强: <span class="english">9</span></div>
+						<div
+							class="density-item"
+							v-for="item in deepList"
+							:key="item.device_id"
+						>
+							<div class="area-name">{{ item.station.name }}-{{ item.region.name }}</div>
+							<div class="density-num">
+								浓度: <span class="english">{{ item.gas }}ppm.m</span>
+							</div>
+							<div class="density-num">
+								光强: <span class="english">{{ item.light }}</span>
+							</div>
 						</div>
 					</div>
 				</home-global-content>

@@ -1,8 +1,9 @@
 <script setup>
+import { API_CONNECT } from "@/api";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import toastPlguin from "@/utils/toast";
 import { Dayjs } from "dayjs";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 
 const props = defineProps({
 	standId: [String, Number],
@@ -18,10 +19,23 @@ const props = defineProps({
 	}
 })
 
+const page = ref(1);
+
 onMounted(() => {
-	toastPlguin("开发中...");
+	loadData();
 })
 
+
+async function loadData() {
+	const res = await API_CONNECT.getList({
+		page: page.value,
+		station_id: "",
+		region_id: "",
+		start_date: "",
+		end_date: ""
+	});
+	console.log('res :>> ', res);
+}
 </script>
 
 <template>

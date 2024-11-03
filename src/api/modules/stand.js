@@ -27,3 +27,11 @@ export const deleteStandDetail = (id) => {
 export const deleteRegionDetail = (id) => {
   return request.get(`api/regionsDelete/${id}`)
 };
+
+export const standSort = (id) => {
+  return request.get(`api/stationSort/${id}`)
+};
+
+export const areaSort = (id) => {
+  return request.get(`api/regionSort/${id}`)
+};

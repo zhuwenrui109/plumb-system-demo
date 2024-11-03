@@ -1,16 +1,21 @@
 <script setup>
 import { API_HOME } from '@/api';
+import { computed } from 'vue';
+import { useStore } from 'vuex';
 
+const pageindex = defineModel("page")
+const deviceIndex = defineModel("device");
+const store = useStore();
 
+const deviceList = computed(() => store.getters.getDeviceList);
 
 /**
  * 控制云台方向
  * @param {String} type 0：停止，1：上，2：下,3:左，4：右，5：左上，6：右上，7：左下，8：右下，
  */
 async function handleControl(key) {
-	console.log("key :>> ", key);
 	const res = await API_HOME.handleDirection({
-		device_id: "0",
+		device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id,
 		value: key
 	})
 	console.log('res :>> ', res);

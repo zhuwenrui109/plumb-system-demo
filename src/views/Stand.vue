@@ -1,5 +1,5 @@
 <script setup>
-import { API_STAND } from "@/api";
+import { API_STAND, API_HOME } from "@/api";
 import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
@@ -8,7 +8,9 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import dialogPlguin from "@/utils/dialog";
 import toastPlguin from "@/utils/toast";
 import { onMounted, ref, watch } from "vue";
+import { useStore } from "vuex";
 
+const store = useStore();
 const props = defineProps({
 	standKeyword: String
 });
@@ -66,6 +68,18 @@ async function loadData() {
 	pageConfig.value.pageSize = res.data.pageSize;
 }
 
+async function refreshStand() {
+	const { data } = await API_HOME.getStandList();
+	store.dispatch("handleStandList", data);
+}
+
+async function handleSort(type, id) {
+	const res = type == 0 ? await API_STAND.standSort(id) : await API_STAND.areaSort(id);
+	console.log('res :>> ', res);
+	loadData();
+	refreshStand();
+}
+
 async function toggleStandStatus(stationIndex) {
 	dataList.value[stationIndex].status = dataList.value[stationIndex].status == "1" ? "0" : "1";
 	dataList.value[stationIndex].station_id;
@@ -78,6 +92,7 @@ async function toggleStandStatus(stationIndex) {
 		dataList.value[stationIndex].status = dataList.value[stationIndex].status == "1" ? "0" : "1";
 		toastPlguin("修改失败");
 	}
+	refreshStand();
 }
 
 function showStandPop() {
@@ -105,6 +120,7 @@ async function handleSubmit() {
 	}
 	isPopShow.value = false;
 	loadData();
+	refreshStand();
 	toastPlguin("修改成功");
 }
 
@@ -122,6 +138,7 @@ async function toggleRegionStatus(stationIndex, regionIndex) {
 		dataList.value[stationIndex].regions[regionIndex].status = dataList.value[stationIndex].regions[regionIndex].status == "1" ? "0" : "1";
 		toastPlguin("修改失败");
 	}
+	refreshStand();
 }
 
 function toggleArea(item) {
@@ -154,7 +171,6 @@ async function handleDelete(id, regionId = "") {
 	dialogPlguin().then(
 		async () => {
 			let res = null;
-			console.log("regionId :>> ", regionId);
 			if (regionId) {
 				res = await API_STAND.deleteRegionDetail(regionId);
 			} else {
@@ -162,6 +178,7 @@ async function handleDelete(id, regionId = "") {
 			}
 			if (res.code == 200) {
 				loadData();
+				refreshStand();
 				toastPlguin("删除成功");
 			}
 		},
@@ -203,7 +220,7 @@ async function handleDelete(id, regionId = "") {
 							alt=""
 							class="address"
 						/>
-						<span class="english">{{ item.station_id }}</span>
+						<span class="english">{{ stationIndex + 1 }}</span>
 					</div>
 				</div>
 				<div class="td stand">
@@ -228,7 +245,7 @@ async function handleDelete(id, regionId = "") {
 							class="td-item"
 							v-for="(region, regionIndex) in item.regions"
 						>
-							<div class="num english">{{ region.sort + 1 }}</div>
+							<div class="num english">{{ regionIndex + 1 }}</div>
 							<div class="txt english">{{ region.name }}</div>
 							<div class="btn-list">
 								<GlobalSwitch
@@ -239,6 +256,7 @@ async function handleDelete(id, regionId = "") {
 									src="../assets/images/icon-sorting.png"
 									alt=""
 									class="sorting"
+									@click="handleSort(1, region.region_id)"
 								/>
 								<img
 									src="../assets/images/icon-edit.png"
@@ -270,6 +288,7 @@ async function handleDelete(id, regionId = "") {
 							src="../assets/images/icon-sorting.png"
 							alt=""
 							class="sorting"
+							@click="handleSort(0, item.station_id)"
 						/>
 					</div>
 				</div>

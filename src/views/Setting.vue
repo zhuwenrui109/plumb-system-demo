@@ -124,12 +124,12 @@ function getImgUrl(title) {
 								v-model:areaId="areaId"
 								v-if="currentPath.includes('setting') || currentPath.includes('connect')"
 							></GlobalLinkageSelect>
-							<GlobalSelect
+							<!-- <GlobalSelect
 								v-model="currentState"
 								:list="stateList"
 								name="name"
 								v-if="currentPath.includes('connect')"
-							></GlobalSelect>
+							></GlobalSelect> -->
 							<GlobalDatePicker
 								v-model="startDate"
 								:name="'选择开始日期'"

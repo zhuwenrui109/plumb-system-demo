@@ -20,12 +20,9 @@ dayjs.locale("zh-cn");
 
 const store = useStore();
 
-const currentStand = ref({
-	name: ""
-});
-const currentArea = ref({
-	name: ""
-});
+const dataList = ref();
+const currentStand = ref({ name: "" });
+const currentArea = ref({ name: "" });
 const page = ref(1);
 const timeScope = ref(2);
 const timeGap = ref(30);
@@ -51,7 +48,7 @@ const chartOptions = ref({
 	grid: {
 		show: true,
 		top: 30,
-		left: 0,
+		left: 5,
 		right: 35,
 		bottom: 0,
 		containLabel: true,
@@ -159,6 +156,7 @@ watch(
 	newVal => {
 		standId.value = newVal[0].station_id;
 		areaId.value = newVal[0].regions[0].region_id;
+		loadChartsData();
 		loadData();
 	}
 );
@@ -177,11 +175,12 @@ onMounted(() => {
 	if (standList.value.length) {
 		standId.value = standList.value[0].station_id;
 		areaId.value = standList.value[0].regions[0].region_id;
+		loadChartsData();
 		loadData();
 	}
 });
 
-async function loadData() {
+async function loadChartsData() {
 	const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
 	const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	const res = await API_FAULT.getCharts({
@@ -209,6 +208,19 @@ async function loadData() {
 			data: res.data.data,
 		}]
 	})
+}
+
+async function loadData() {
+	console.log("loadData");
+	const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
+	const res = await API_FAULT.getList({
+		region_id: areaId.value,
+		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
+		range,
+		step
+	})
+	console.log('res :>> ', res);
 }
 
 function initDefaultDate() {
@@ -326,7 +338,7 @@ function echartsInit() {
 								</div>
 							</div>
 						</div>
-						<SettingButtonBorder @click="loadData"> 查看 </SettingButtonBorder>
+						<SettingButtonBorder @click="loadChartsData"> 查看 </SettingButtonBorder>
 					</div>
 				</template>
 			</SettingTopHandller>
