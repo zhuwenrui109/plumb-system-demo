@@ -2,6 +2,7 @@
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 
 const props = defineProps({
+	message: String,
 	checkButton: Function,
 	cancelButton: Function
 });
@@ -27,7 +28,7 @@ const props = defineProps({
 						class="bg"
 					/>
 				</div>
-				<div class="main">是否确认删除所选内容</div>
+				<div class="main">{{ message }}</div>
 				<div class="btn-list">
 					<SettingButtonBorder
 						type="clear"

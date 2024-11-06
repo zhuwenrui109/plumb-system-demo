@@ -39,3 +39,15 @@ export const handleDirection = data => request.post("api/direction", data);
  * @returns 
  */
 export const handleSpeed = data => request.post("api/speed", data);
+
+/**
+ * 报警消音
+ * @returns 
+ */
+export const alarmMuted = data => request.post("api/mute", data);
+
+/**
+ * 报警消音
+ * @returns 
+ */
+export const submitCheckAlarm = data => request.post("api/confirmAlarm", data);

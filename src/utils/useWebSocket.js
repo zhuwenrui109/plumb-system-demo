@@ -49,12 +49,12 @@ export default function useWebSocket(options = {}) {
     state.socket = new WebSocket(state.options.url)
 
     state.socket.onopen = openEvent => {
-      console.log('socket连接:', openEvent)
+      // console.log('socket连接:', openEvent)
       state.reconnectAttempts = 0
       status.value = SocketStatus.Connected
       error.value = null
       state.socket.send(state.options.heartBeatData)
-      console.log('socket心跳发送:', state.options.heartBeatData)
+      // console.log('socket心跳发送:', state.options.heartBeatData)
     }
 
     state.socket.onmessage = msgEvent => {
@@ -66,13 +66,11 @@ export default function useWebSocket(options = {}) {
       const { data } = msgEvent
       const msg = JSON.parse(data)
 
-      console.log('msg :>> ', msg);
-
       message.value = msg
     }
 
     state.socket.onclose = closeEvent => {
-      console.log('socket关闭:', closeEvent)
+      // console.log('socket关闭:', closeEvent)
       status.value = SocketStatus.Disconnected
       // 非正常关闭,尝试重连
       if (closeEvent.code !== SocketCloseCode) {
@@ -81,7 +79,7 @@ export default function useWebSocket(options = {}) {
     }
 
     state.socket.onerror = errEvent => {
-      console.log('socket报错:', errEvent)
+      // console.log('socket报错:', errEvent)
       status.value = SocketStatus.Disconnected
       error.value = errEvent
       // 连接失败，尝试重连
@@ -91,7 +89,7 @@ export default function useWebSocket(options = {}) {
 
   const disconnect = () => {
     if (state.socket && (state.socket.OPEN || state.socket.CONNECTING)) {
-      console.log('socket断开连接')
+      // console.log('socket断开连接')
       status.value = SocketStatus.Disconnecting
       state.socket.onmessage = null
       state.socket.onerror = null
@@ -110,7 +108,7 @@ export default function useWebSocket(options = {}) {
     onHeartBeat(() => {
       if (status.value === SocketStatus.Connected) {
         state.socket.send(state.options.heartBeatData)
-        console.log('socket心跳发送:', state.options.heartBeatData)
+        // console.log('socket心跳发送:', state.options.heartBeatData)
       }
     })
   }
@@ -137,11 +135,11 @@ export default function useWebSocket(options = {}) {
     }
     stopHeartBeat()
     if (state.reconnectAttempts < state.options.maxReconnectAttempts) {
-      console.log('socket重连:', state.reconnectAttempts)
+      // console.log('socket重连:', state.reconnectAttempts)
 
       // 重连间隔，5秒起步，下次递增1秒
       const interval = Math.max(state.options.reconnectInterval, state.reconnectAttempts * 1000)
-      console.log('间隔时间：', interval)
+      // console.log('间隔时间：', interval)
       state.reconnectTimeout = setTimeout(() => {
         if (status.value !== SocketStatus.Connected && status.value !== SocketStatus.Connecting) {
           connect()

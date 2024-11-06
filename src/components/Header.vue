@@ -1,9 +1,15 @@
 <!-- 头部 -->
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import dialogPlguin from "@/utils/dialog";
+import { clearToken, tokenExpressInTime } from "@/utils/tool";
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useStore } from "vuex";
 
+const store = useStore();
 const route = useRoute();
+const router = useRouter();
+
 const date = ref("");
 const time = ref("");
 let timer = null;
@@ -13,8 +19,15 @@ onMounted(() => {
 	timer = setInterval(timeInit, 1000);
 });
 
+onUnmounted(() => {
+	clearInterval(timer);
+	timer = null;
+});
+
+const isHome = computed(() => route.name == "home");
+
 function timeInit() {
-	if (route.name == 'login') {
+	if (route.name == "login") {
 		return;
 	}
 	const tm = new Date();
@@ -28,19 +41,50 @@ function timeInit() {
 	time.value = `${hours}:${minutes}:${secound}`;
 }
 
-onUnmounted(() => {
-	clearInterval(timer);
-})
+function handleLogout() {
+	WebVideoCtrl.I_DestroyPlugin();
+	dialogPlguin({
+		message: "是否确认退出登录"
+	}).then(
+		() => {
+			clearToken();
+			localStorage.getItem("autoToken") && localStorage.removeItem("autoToken");
+			router.push({
+				name: "login"
+			})
+		},
+		() => {
+			isHome.value && store.state.pluginDom();
+		}
+	);
+}
 </script>
 
 <template>
 	<div class="wrap">
-		<div class="time" v-if="route.name != 'login'">{{ date }} {{ time }}</div>
+		<div
+			class="time"
+			v-if="route.name != 'login'"
+		>
+			{{ date }} {{ time }}
+		</div>
 		<img
 			src="../assets/images/header-bg.png"
 			alt=""
 			class="header-bg"
 		/>
+		<div
+			class="logout-wrap"
+			v-if="route.name != 'login'"
+			@click="handleLogout"
+		>
+			<img
+				src="../assets/images/icon-logout.png"
+				alt=""
+				class="icon"
+			/>
+			<span>退出登录</span>
+		</div>
 		<div class="line"></div>
 		<div class="line right"></div>
 	</div>
@@ -69,6 +113,28 @@ onUnmounted(() => {
 	font-weight: lighter;
 }
 
+.wrap .logout-wrap {
+	position: absolute;
+	top: 50%;
+	right: 30px;
+	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	column-gap: 5px;
+	cursor: pointer;
+}
+
+.wrap .logout-wrap .icon {
+	display: block;
+	width: 34px;
+}
+
+.wrap .logout-wrap span {
+	display: block;
+	font-size: 12px;
+}
+
 .wrap .line {
 	position: absolute;
 	left: 0;
@@ -76,7 +142,7 @@ onUnmounted(() => {
 	transform: translateY(-50%);
 	width: 644px;
 	height: 2px;
-	background: linear-gradient(to right, transparent 80%, rgba(255, 255, 255, .6) 90%);
+	background: linear-gradient(to right, transparent 80%, rgba(255, 255, 255, 0.6) 90%);
 }
 
 .wrap .line::after {

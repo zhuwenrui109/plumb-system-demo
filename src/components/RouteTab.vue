@@ -16,7 +16,7 @@ const tabList = reactive([
 		routerName: "alarm"
 	},
 	{
-		name: "历史故障",
+		name: "历史数据",
 		routerName: "fault"
 	},
 	{

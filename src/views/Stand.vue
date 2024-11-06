@@ -62,7 +62,10 @@ async function loadData() {
 		page: page.value,
 		keyword: props.standKeyword
 	});
-	console.log("res :>> ", res);
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...")
+		return;
+	}
 	dataList.value = res.data.data;
 	pageConfig.value.total = res.data.total;
 	pageConfig.value.pageSize = res.data.pageSize;
@@ -168,7 +171,9 @@ async function handleEdit(id, regionId = "") {
 }
 
 async function handleDelete(id, regionId = "") {
-	dialogPlguin().then(
+	dialogPlguin({
+		message: "是否确认删除所选内容"
+	}).then(
 		async () => {
 			let res = null;
 			if (regionId) {

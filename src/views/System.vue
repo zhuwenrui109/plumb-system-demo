@@ -1,6 +1,7 @@
 <script setup>
 import { API_HOME } from "@/api";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
+import toastPlguin from "@/utils/toast";
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
 
@@ -12,7 +13,9 @@ const windowCount = computed(() => {
 	return store.state.windowCount;
 });
 
-onMounted(() => {});
+onMounted(() => {
+	loadWindowCount();
+});
 
 onUnmounted(() => {
 	loadWindowCount();
@@ -25,7 +28,7 @@ async function submitSetting() {
 		value: windowCount.value
 	});
 	if (res.code == 200) {
-		
+		toastPlguin("修改成功")
 	}
 }
 
@@ -56,8 +59,8 @@ async function loadWindowCount() {
 			</div>
 			<div
 				class="system-item chance2"
-				:class="{ active: windowCount == '2' }"
-				@click="store.dispatch('handleWindowCount', '2')"
+				:class="{ active: windowCount == '1*2' }"
+				@click="store.dispatch('handleWindowCount', '1*2')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -77,8 +80,8 @@ async function loadWindowCount() {
 			</div>
 			<div
 				class="system-item chance4"
-				:class="{ active: windowCount == '4' }"
-				@click="store.dispatch('handleWindowCount', '4')"
+				:class="{ active: windowCount == '2' }"
+				@click="store.dispatch('handleWindowCount', '2')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -110,8 +113,8 @@ async function loadWindowCount() {
 			</div>
 			<div
 				class="system-item chance9"
-				:class="{ active: windowCount == '9' }"
-				@click="store.dispatch('handleWindowCount', '9')"
+				:class="{ active: windowCount == '3' }"
+				@click="store.dispatch('handleWindowCount', '3')"
 			>
 				<div class="bg">
 					<div class="pic">
@@ -173,8 +176,8 @@ async function loadWindowCount() {
 			</div>
 			<div
 				class="system-item chance16"
-				:class="{ active: windowCount == '16' }"
-				@click="store.dispatch('handleWindowCount', '16')"
+				:class="{ active: windowCount == '4' }"
+				@click="store.dispatch('handleWindowCount', '4')"
 			>
 				<div class="bg">
 					<div

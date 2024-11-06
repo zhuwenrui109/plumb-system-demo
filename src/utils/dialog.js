@@ -6,7 +6,7 @@ divDom.style.opacity = 0;
 divDom.style.transition = ".3s all linear";
 document.body.appendChild(divDom);
 
-const dialogPlguin = () => {
+const dialogPlguin = message => {
   divDom.style.opacity = 1;
   return new Promise((resolve, reject) => {
     // 确认
@@ -25,7 +25,7 @@ const dialogPlguin = () => {
       }, 350);
       reject()
     }
-    const vNode = createVNode(Dialog, { checkButton, cancelButton });
+    const vNode = createVNode(Dialog, { ...message, checkButton, cancelButton });
     render(vNode, divDom)
   })
 }

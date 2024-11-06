@@ -9,20 +9,12 @@ const props = defineProps({
 })
 const speed = defineModel("speed");
 
-const wrap = ref(null);
-const wrapWidth = ref(0);
+const lineWidth = computed(() => Math.round(speed.value / 30 * 100) + "%");
 
-const lineWidth = computed(() => (Math.round(wrapWidth.value / 7) * speed.value) + "px");
-
-onMounted(() => {
-	wrapWidth.value = wrap.value.clientWidth;
-})
+onMounted(() => {})
 
 function handleSpeed(key) {
-	console.log('props.disabled :>> ', props.disabled);
-	if (props.disabled) {
-		return
-	}
+	if (props.disabled) return;
 	switch (key) {
 		case 0:
       if (speed.value <= 1) return;
@@ -30,7 +22,7 @@ function handleSpeed(key) {
 			break;
 
 		case 1:
-			if (speed.value >= 7) return;
+			if (speed.value >= 30) return;
 			speed.value++;
 			break;
 
@@ -44,11 +36,11 @@ function handleSpeed(key) {
 <template>
 	<div class="speed-controller-wrap">
 		<div class="top-wrap">
-			<div class="num english" v-for="(item, index) in 8">{{ index }}</div>
-			<!-- <div class="num english">0</div>
-			<div class="num english">3</div>
-			<div class="num english">5</div>
-			<div class="num english">7</div> -->
+			<!-- <div class="num english" v-for="(item, index) in 8">{{ index }}</div> -->
+			<div class="num english">0</div>
+			<div class="num english">10</div>
+			<div class="num english">20</div>
+			<div class="num english">30</div>
 		</div>
 		<div class="btn-wrap">
 			<img
@@ -59,7 +51,7 @@ function handleSpeed(key) {
 			/>
 			<!-- 速度条 -->
 			<div class="line-wrap">
-				<div class="line" ref="wrap">
+				<div class="line">
 					<div :style="{ width: lineWidth }"></div>
 				</div>
 			</div>
@@ -116,6 +108,7 @@ function handleSpeed(key) {
 }
 
 .speed-controller-wrap .btn-wrap .line-wrap .line {
+	position: relative;
 	width: 100%;
 	height: 14px;
 	box-sizing: border-box;
@@ -125,6 +118,9 @@ function handleSpeed(key) {
 }
 
 .speed-controller-wrap .btn-wrap .line-wrap .line div {
+	position: absolute;
+	top: 0;
+	left: 0;
 	width: 10%;
 	height: 100%;
 	background: #be163d;

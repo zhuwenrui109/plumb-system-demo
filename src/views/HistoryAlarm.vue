@@ -10,6 +10,7 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import { API_ALARM } from "@/api";
 import dayjs from "dayjs";
+import toastPlguin from "@/utils/toast";
 
 const currentStandArea = ref(0);
 const standId = ref("");
@@ -52,6 +53,10 @@ async function loadData() {
 		start_date,
 		end_date
 	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...")
+		return;
+	}
 	dataList.splice(0, dataList.length);
 	dataList.push(...res.data.data);
 	pageConfig.value.total = res.data.total;
@@ -83,10 +88,11 @@ async function clearForm() {
  * 导出
  */
 async function exportData() {
-	if (checkList.value.length == 0) {
-		return;
-	}
-	const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
+	// if (checkList.value.length == 0) {
+	// 	return;
+	// }
+	// const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
+	const res = await API_ALARM.exprotData("0", { responseType: "blob" });
 	const url = window.URL.createObjectURL(res);
 	const link = document.createElement("a");
 	const date = new Date();
@@ -170,7 +176,7 @@ function toggleTools() {
 										src="../assets/images/icon-delete.png"
 										alt=""
 									/>
-									<span>删除</span>
+									<span>删除选中</span>
 								</div>
 								<div
 									class="handle-item chance"
@@ -180,7 +186,7 @@ function toggleTools() {
 										src="../assets/images/icon-export.png"
 										alt=""
 									/>
-									<span>导出</span>
+									<span>全部导出</span>
 								</div>
 								<div class="mask"></div>
 							</div>
@@ -355,7 +361,8 @@ function toggleTools() {
 	position: absolute;
 	top: calc(100% + 10px);
 	left: 0;
-	width: 88px;
+	/* width: 88px; */
+	width: 110px;
 	box-sizing: border-box;
 	background: #222;
 	border: 1px solid rgba(108, 108, 108, 0.8);

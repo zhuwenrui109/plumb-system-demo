@@ -4,7 +4,7 @@
 export const clearToken = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("tokenTime");
-  localStorage.removeItem("tokenRole");
+  localStorage.removeItem("userRole");
 }
 
 /**
@@ -19,3 +19,18 @@ export const tokenExpressInTime = () => {
   // console.log('Number(tokenTime) :>> ', Number(tokenTime));
   return (date.getTime() - Number(tokenTime)) > 0 ? true : false
 }
+
+export function debounce(fn, delay = 300) {
+  let timer = null
+  return function (...args) {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    timer = setTimeout(() => {
+      fn.call(this, ...args)
+    }, delay);
+  }
+}
+
+

@@ -85,6 +85,10 @@ async function loadData() {
 		station_id: props.standId,
 		region_id: props.areaId
 	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+		return;
+	}
 	dataList.value = res.data.data;
 	pageConfig.value.total = res.data.total;
 	pageConfig.value.pageSize = res.data.per_page;
@@ -131,7 +135,9 @@ async function handleEdit(id) {
 }
 
 function handleDelete(id) {
-	dialogPlguin().then(
+	dialogPlguin({
+		message: "是否确认删除所选内容"
+	}).then(
 		async () => {
 			console.log("确认");
 			await API_MANAGE.deleteManage(id);

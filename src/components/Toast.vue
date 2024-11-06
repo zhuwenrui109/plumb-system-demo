@@ -24,6 +24,7 @@ const props = defineProps({
 	justify-content: center;
 	width: 100%;
 	height: 100%;
+	z-index: 1000;
 }
 
 .toast-wrap .content {

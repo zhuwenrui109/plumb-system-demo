@@ -12,23 +12,55 @@ import PluginWrap from "@/components/PluginWrap.vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import useWebSocket from "@/utils/useWebSocket";
+import { API_HOME } from "@/api";
+import toastPlguin from "@/utils/toast";
+import FormPop from "@/components/FormPop.vue";
+import GlobalInput from "@/components/GlobalInput.vue";
+import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 
 const router = useRouter();
 const store = useStore();
 
 const { WebVideoCtrl } = window;
-const pluginSpeed = ref(1);
+const pluginDom = ref(null);
+const pluginSpeed = ref(10);
 const g_iWndIndex = ref(0);
 const g_iWndowType = ref(4);
 const g_iWndowPage = ref(0);
-const isSelect = ref(false);
-const alarmList = ref([]);
 const deepList = ref([]);
+const alarmCheckList = ref([]);
+const isPopShow = ref(false);
+const form = ref({
+	confirm_user: "",
+	remark: ""
+});
 
 const standList = computed(() => store.state.standList);
+const deviceList = computed(() => store.getters.getDeviceList[g_iWndowPage.value]);
+const alarmList = computed(() => store.state.alarmList);
+const faultList = computed(() => store.state.faultList);
 
 onMounted(() => {
 	// setTimeout(testPluginError, 1000 * 10);
+});
+
+watch(isPopShow, newVal => {
+	if (newVal) {
+		WebVideoCtrl.I_DestroyPlugin();
+	} else {
+		pluginDom.value.initPlugin();
+	}
+});
+
+let timer = null;
+watch(pluginSpeed, newVal => {
+	if (timer) {
+		clearTimeout(timer);
+		timer = null;
+	}
+	timer = setTimeout(() => {
+		changeSpeed(newVal);
+	}, 1000);
 });
 
 // 实时浓度
@@ -58,6 +90,13 @@ function testPluginError() {
 	};
 	capturePicData();
 	alarmList.value.push(test);
+}
+
+async function changeSpeed(value) {
+	const res = await API_HOME.handleSpeed({
+		device_id: deviceList.value[g_iWndIndex.value].device.device_id,
+		value
+	});
 }
 
 function goPlugin() {
@@ -130,6 +169,67 @@ function handleStopPluginZoom(type) {
 		});
 	}
 }
+
+function toggleCheckAlarm(id) {
+	if (alarmCheckList.value.includes(id)) {
+		alarmCheckList.value.splice(alarmCheckList.value.indexOf(id), 1);
+	} else {
+		alarmCheckList.value.push(id);
+	}
+}
+
+/**
+ * 设备消音
+ */
+async function handleAlarmMuted() {
+	if (!alarmCheckList.value.length) {
+		toastPlguin("请检查是否选择");
+		return;
+	}
+	const alarm_ids = [...alarmCheckList.value];
+	try {
+		const res = await API_HOME.alarmMuted({
+			alarm_ids
+		});
+		if (res.code == 200) {
+			alarmCheckList.value = [];
+		} else {
+			toastPlguin("消音失败");
+		}
+	} catch (err) {
+		toastPlguin("消音失败");
+	}
+}
+
+function showCheckForm() {
+	if (!alarmCheckList.value.length) {
+		toastPlguin("请检查是否选择");
+		return;
+	}
+	isPopShow.value = true;
+}
+
+async function submitCheckList() {
+	const { confirm_user, remark } = form.value;
+	if (!confirm_user && !remark) {
+		toastPlguin("请检查确认人和备注");
+		return;
+	}
+	try {
+		const { code } = await API_HOME.submitCheckAlarm({
+			alarm_ids: alarmCheckList.value,
+			confirm_user,
+			remark
+		});
+		if (code == 200) {
+			isPopShow.value = false;
+		} else {
+			toastPlguin("提交失败");
+		}
+	} catch (err) {
+		toastPlguin("提交失败");
+	}
+}
 </script>
 
 <template>
@@ -154,6 +254,8 @@ function handleStopPluginZoom(type) {
 			<!-- 监控视频 -->
 			<div class="home-item chance">
 				<PluginWrap
+					ref="pluginDom"
+					:deepList="deepList"
 					v-model:iWndIndex="g_iWndIndex"
 					v-model:iWndowType="g_iWndowType"
 					v-model:iWndowPage="g_iWndowPage"
@@ -165,12 +267,14 @@ function handleStopPluginZoom(type) {
 					name="云台控制"
 					english="PTZ control"
 				>
-					<div
-						class="control-tips"
-						v-show="g_iWndowType > 1"
-					>
-						云台不可控
-					</div>
+					<Transition name="fade">
+						<div
+							class="control-tips"
+							v-show="g_iWndowType > 1"
+						>
+							云台不可控
+						</div>
+					</Transition>
 				</global-title>
 				<!-- 设备列表内容 -->
 				<home-global-content>
@@ -281,8 +385,14 @@ function handleStopPluginZoom(type) {
 					english="alarm"
 				>
 					<div class="alarm-btn-list">
-						<GlobalButton name="报警消音"></GlobalButton>
-						<GlobalButton name="确认报警"></GlobalButton>
+						<GlobalButton
+							name="报警消音"
+							@click="handleAlarmMuted"
+						></GlobalButton>
+						<GlobalButton
+							name="确认报警"
+							@click="showCheckForm"
+						></GlobalButton>
 						<GlobalButton
 							name="历史报警"
 							@click="router.push({ name: 'alarm' })"
@@ -300,7 +410,12 @@ function handleStopPluginZoom(type) {
 							class="alarm-item"
 							v-for="(item, index) in alarmList"
 							:key="index"
+							:id="item.alarm_id"
+							:stand-name="item.station.name"
+							:area-name="item.region.name"
+							:check-list="alarmCheckList"
 							@go-detail="goPlugin"
+							@handle-check="toggleCheckAlarm"
 						>
 							<div class="alarm">
 								<img
@@ -308,12 +423,8 @@ function handleStopPluginZoom(type) {
 									alt=""
 									class="icon"
 								/>
-								<div class="level">
-									{{ item.title }}
-								</div>
-								<div class="english">
-									{{ item.value }}
-								</div>
+								<div class="level">{{ item.level }}级别</div>
+								<div class="english">{{ item.density }}PPM.M</div>
 							</div>
 						</global-tips-item>
 					</div>
@@ -328,23 +439,12 @@ function handleStopPluginZoom(type) {
 				<home-global-content class="fault-wrap">
 					<div class="fault-list">
 						<global-tips-item
-							:isSelect="isSelect"
-							class="fault-item"
-						>
-							<div class="fault">
-								<div class="top">
-									<img
-										src="../assets/images/icon-warning.png"
-										alt=""
-										class="icon"
-									/>
-									<div class="title">云台通讯故障</div>
-								</div>
-								<div class="content">处理方法：拆掉，组装</div>
-							</div>
-						</global-tips-item>
-						<global-tips-item
-							:isSelect="isSelect"
+							:isSelect="false"
+							v-for="(item, index) in faultList"
+							:key="index"
+							:id="item.device_id"
+							:stand-name="item.station.name"
+							:area-name="item.region.name"
 							class="fault-item"
 						>
 							<div class="fault">
@@ -364,6 +464,39 @@ function handleStopPluginZoom(type) {
 			</div>
 		</div>
 	</div>
+	<FormPop
+		name="确认报警"
+		v-model="isPopShow"
+	>
+		<div class="form-wrap">
+			<div class="form-item">
+				<div class="name">确认人</div>
+				<GlobalInput
+					class="form-input"
+					placeholder="请输入"
+					v-model="form.confirm_user"
+				></GlobalInput>
+			</div>
+			<div class="form-item">
+				<div class="name">备注</div>
+				<div class="txt-area-box">
+					<textarea
+						placeholder="请输入"
+						rows="5"
+						v-model="form.remark"
+					></textarea>
+				</div>
+			</div>
+			<div class="form-item">
+				<SettingButtonBorder
+					class="btn"
+					@click="submitCheckList"
+				>
+					确认提交
+				</SettingButtonBorder>
+			</div>
+		</div>
+	</FormPop>
 </template>
 
 <style scoped>
@@ -503,7 +636,7 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item .density-wrap {
-	height: 180px;
+	height: 200px;
 	box-sizing: border-box;
 	padding: 0 20px 0 15px;
 }
@@ -556,7 +689,7 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap {
-	height: 180px;
+	height: 200px;
 	padding-right: 15px;
 	padding-left: 8px;
 }
@@ -615,15 +748,18 @@ function handleStopPluginZoom(type) {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap {
-	height: 180px;
+	height: 200px;
 	box-sizing: border-box;
-	padding: 8px 15px 30px;
+	padding: 0 15px;
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap .fault-list {
 	display: flex;
 	align-items: flex-start;
 	justify-content: flex-start;
+	flex-wrap: wrap;
+	padding: 8px 0;
+	gap: 8px 4px;
 	column-gap: 10px;
 }
 
@@ -638,7 +774,15 @@ function handleStopPluginZoom(type) {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
+	background: repeating-linear-gradient(116deg, transparent, transparent 10px, rgba(0, 0, 0, 0.2) 15px, rgba(0, 0, 0, 0.2) 26px);
+	background-size: 100% 60px;
+	background-color: rgba(68, 32, 3, 0.8);
+	box-shadow: inset 0 0 9px 4px rgba(238, 149, 53, 0.8);
+	padding: 11px 0;
+	padding-left: 27px;
 	margin-bottom: 14px;
+	border-radius: 4px;
+	animation: ani2 0.2s infinite alternate ease-in-out, ani 0.7s infinite both linear;
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap .fault-list .fault-item .fault .top .icon {
@@ -656,6 +800,55 @@ function handleStopPluginZoom(type) {
 	font-size: 14px;
 	color: #fff;
 	opacity: 0.6;
+}
+
+.form-wrap {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 24px 40px 35px;
+}
+
+.form-wrap .form-item {
+	width: 100%;
+	margin-bottom: 24px;
+}
+
+.form-wrap .form-item:last-child {
+	margin-bottom: 0;
+}
+
+.form-wrap .form-item .name {
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+
+.form-wrap .form-item .form-input {
+	width: 100%;
+}
+
+.form-wrap .form-item .txt-area-box {
+	height: 115px;
+	box-sizing: border-box;
+	padding: 10px 22px;
+	background: rgba(39, 39, 39, 0.36);
+	border: 2px solid rgba(221, 221, 221, 0.17);
+	border-radius: 2px;
+}
+
+.form-wrap .form-item .txt-area-box textarea {
+	display: block;
+	width: 100%;
+	height: 100%;
+	font-size: 14px;
+	border: none;
+	outline: none;
+	resize: none;
+	background: none;
+}
+
+.form-wrap .form-item .btn {
+	width: 208px;
+	margin: 0 auto;
 }
 
 @keyframes ani {

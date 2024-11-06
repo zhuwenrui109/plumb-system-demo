@@ -40,9 +40,9 @@ let scroll = null;
 
 const deviceList = computed(() => store.getters.getDeviceList[page.value]);
 const currentNavIndex = computed(() => {
-	if (type.value > 1) {
-		return -1;
-	}
+	// if (type.value > 1) {
+	// 	return -1;
+	// }
 	return deviceList.value[index.value].sIndex;
 })
 
@@ -89,11 +89,22 @@ function destroyScroll() {
 	scroll.destroy();
 }
 
-function toggleSite(index) {
+function handleCheckArea(sIndex, rIndex) {
+	const current = deviceList.value.findIndex(item => item.sIndex == sIndex && item.rIndex == rIndex);
+	if (current >= 0) {
+		index.value = current;
+		type.value = 1;
+	}
+}
+
+function toggleSite(sIndex) {
 	if (!props.list.length) {
 		return;
 	}
-	currentNavIndex.value = currentNavIndex.value == index ? -1 : index;
+	// currentNavIndex.value = currentNavIndex.value == index ? -1 : index;
+	const current = deviceList.value.findIndex(item => item.sIndex == sIndex);
+	console.log('current :>> ', current);
+	index.value = current;
 	refreshScroll();
 }
 </script>
@@ -110,7 +121,7 @@ function toggleSite(index) {
 					:class="{ active: currentNavIndex >= 0 && currentNavIndex == siteIndex }"
 					v-for="(site, siteIndex) in list"
 					:key="site.station_id"
-					@mousedown="toggleSite(siteIndex)"
+					@click="toggleSite(siteIndex)"
 				>
 					<div class="area-nav-first-top">
 						<img
@@ -139,7 +150,7 @@ function toggleSite(index) {
 							class="area-nav-secound-item"
 							v-for="(area, areaIndex) in site.regions"
 							:key="area.station_id"
-							@mousedown.stop
+							@click.stop="handleCheckArea(siteIndex, areaIndex)"
 						>
 							<div class="area-name">
 								{{ area.name }}

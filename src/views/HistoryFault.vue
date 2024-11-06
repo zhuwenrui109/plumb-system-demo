@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { DatePicker, ConfigProvider } from "ant-design-vue";
 import * as echarts from "echarts";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
@@ -20,16 +20,16 @@ dayjs.locale("zh-cn");
 
 const store = useStore();
 
-const dataList = ref();
+const dataList = ref([]);
 const currentStand = ref({ name: "" });
 const currentArea = ref({ name: "" });
 const page = ref(1);
-const timeScope = ref(2);
-const timeGap = ref(30);
+const timeScope = ref(1);
+const timeGap = ref(5);
 const standId = ref("");
 const areaId = ref("");
 const date = ref("");
-const time = ref(dayjs("00:00:00", "HH:mm:ss"));
+const time = ref(dayjs("21:17:55s", "HH:mm:ss"));
 const locale = ref(zhCN);
 const chart = ref(null);
 const chartOptions = ref({
@@ -120,7 +120,7 @@ const chartOptions = ref({
 				color: "#f85827"
 			},
 			areaStyle: {
-				color: echarts.graphic.LinearGradient(0, 0, 0, 1, [
+				color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
 					{
 						offset: 0,
 						color: "rgb(248, 88, 39)"
@@ -135,8 +135,8 @@ const chartOptions = ref({
 		}
 	]
 });
-const currentScopeUnit = ref(0);
-const currentGapUnit = ref(1);
+const currentScopeUnit = ref(1);
+const currentGapUnit = ref(2);
 const timeUnit = ref([
 	{
 		name: "时",
@@ -145,9 +145,17 @@ const timeUnit = ref([
 	{
 		name: "分",
 		value: 1
+	},
+	{
+		name: "秒",
+		value: 2
 	}
 ]);
 let myChart = null;
+const pageConfig = ref({
+	total: 1,
+	pageSize: 4
+})
 
 const standList = computed(() => store.state.standList);
 
@@ -163,11 +171,11 @@ watch(
 
 watch(standId, newVal => {
 	currentStand.value = standList.value.find(item => item.station_id == newVal);
-})
+});
 
 watch(areaId, newVal => {
 	currentArea.value = currentStand.value.regions.find(item => item.region_id == newVal);
-})
+});
 
 onMounted(() => {
 	initDefaultDate();
@@ -180,9 +188,26 @@ onMounted(() => {
 	}
 });
 
+onUnmounted(() => {
+	destoryCharts();
+});
+
 async function loadChartsData() {
-	const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
-	const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
+	let range = 0;
+	let step = 0;
+	console.log("currentScopeUnit.value :>> ", currentScopeUnit.value);
+	if (currentScopeUnit.value == 2) {
+		range = timeScope.value;
+	} else {
+		range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	}
+	if (currentGapUnit.value == 2) {
+		step = timeGap.value;
+	} else {
+		step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
+	}
+	// const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	// const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	const res = await API_FAULT.getCharts({
 		region_id: areaId.value,
 		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
@@ -191,7 +216,7 @@ async function loadChartsData() {
 	});
 	console.log("res :>> ", res);
 	res.data.time.forEach((item, index) => {
-		const arr = item.split(' ');
+		const arr = item.split(" ");
 		res.data.time[index] = `${arr[1]}\n${arr[0]}`;
 		if (res.data.data[index] == null) {
 			res.data.data[index] = 0;
@@ -202,25 +227,48 @@ async function loadChartsData() {
 			text: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`
 		},
 		xAxis: {
-      data: res.data.time
-    },
-		series: [{
-			data: res.data.data,
-		}]
-	})
+			data: res.data.time
+		},
+		series: [
+			{
+				data: res.data.data
+			}
+		]
+	});
 }
 
 async function loadData() {
-	console.log("loadData");
-	const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
-	const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
-	const res = await API_FAULT.getList({
+	let range = 0;
+	let step = 0;
+	if (currentScopeUnit.value == 2) {
+		range = timeScope.value;
+	} else {
+		range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	}
+	if (currentGapUnit.value == 2) {
+		step = timeGap.value;
+	} else {
+		step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
+	}
+	// const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
+	// const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
+	const { data } = await API_FAULT.getList({
 		region_id: areaId.value,
 		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
 		range,
 		step
-	})
-	console.log('res :>> ', res);
+	});
+	console.log('data :>> ', data);
+	pageConfig.value.total = data.length;
+	let j = 0,
+		o = j;
+	// windowCount为一组（页）
+	while (j < data.length) {
+		j += 4;
+		dataList.value.push([...data.slice(o, j)]);
+		o = j;
+	}
+	// dataList.value = [...res.data];
 }
 
 function initDefaultDate() {
@@ -228,12 +276,21 @@ function initDefaultDate() {
 	let year = d.getFullYear().toString();
 	let month = d.getMonth() + 1 < 10 ? "0" + (d.getMonth() + 1).toString() : (d.getMonth() + 1).toString();
 	let day = d.getDate() < 10 ? "0" + d.getDate().toString() : d.getDate().toString();
-	date.value = dayjs(year + "-" + month + "-" + day);
+	// date.value = dayjs(year + "-" + month + "-" + day);
+	date.value = dayjs("2024-11-05");
 }
 
 function echartsInit() {
 	myChart = echarts.init(chart.value);
 	myChart.setOption(chartOptions.value);
+}
+
+function destoryCharts() {
+	if (!myChart) {
+		return;
+	}
+	myChart.dispose();
+	myChart = null;
 }
 </script>
 
@@ -338,7 +395,16 @@ function echartsInit() {
 								</div>
 							</div>
 						</div>
-						<SettingButtonBorder @click="loadChartsData"> 查看 </SettingButtonBorder>
+						<SettingButtonBorder
+							@click="
+								() => {
+									loadChartsData();
+									loadData();
+								}
+							"
+						>
+							查看
+						</SettingButtonBorder>
 					</div>
 				</template>
 			</SettingTopHandller>
@@ -358,41 +424,20 @@ function echartsInit() {
 						<div class="td">水平角度</div>
 						<div class="td">垂直角度</div>
 					</div>
-					<div class="tr">
-						<div class="td date english">2021-12-12 13:00:00</div>
-						<div class="td info">沈阳分输站-过滤区</div>
-						<div class="td english color">1OOOPPm.m</div>
-						<div class="td english">5400</div>
-						<div class="td english">360</div>
-						<div class="td english">360</div>
-					</div>
-					<div class="tr">
-						<div class="td date english">2021-12-12 13:00:00</div>
-						<div class="td info">沈阳分输站-过滤区</div>
-						<div class="td english color">1OOOPPm.m</div>
-						<div class="td english">5400</div>
-						<div class="td english">360</div>
-						<div class="td english">360</div>
-					</div>
-					<div class="tr">
-						<div class="td date english">2021-12-12 13:00:00</div>
-						<div class="td info">沈阳分输站-过滤区</div>
-						<div class="td english color">1OOOPPm.m</div>
-						<div class="td english">5400</div>
-						<div class="td english">360</div>
-						<div class="td english">360</div>
-					</div>
-					<div class="tr">
-						<div class="td date english">2021-12-12 13:00:00</div>
-						<div class="td info">沈阳分输站-过滤区</div>
-						<div class="td english color">1OOOPPm.m</div>
-						<div class="td english">5400</div>
-						<div class="td english">360</div>
-						<div class="td english">360</div>
+					<div
+						class="tr"
+						v-for="item in dataList[page - 1]"
+					>
+						<div class="td date english">{{ item.created_at }}</div>
+						<div class="td info">{{ item.station.name }}-{{ item.region.name }}</div>
+						<div class="td english color">{{ item.gas }}PPm.m</div>
+						<div class="td english">{{ item.light }}</div>
+						<div class="td english">{{ item.horizontal }}</div>
+						<div class="td english">{{ item.vertical }}</div>
 					</div>
 				</div>
 			</GlobalContent>
-			<GlobalPagination v-model="page"></GlobalPagination>
+			<GlobalPagination v-model="page" :total="pageConfig.total" :page-size="pageConfig.pageSize"></GlobalPagination>
 		</GlobalContent>
 	</HomeGlobalContent>
 </template>

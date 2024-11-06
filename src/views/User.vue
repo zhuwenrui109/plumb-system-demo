@@ -65,6 +65,10 @@ async function loadData() {
 		page: page.value,
 		keyword: props.username
 	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...")
+		return;
+	}
 	dataList.value = res.data.data;
 }
 
@@ -76,7 +80,10 @@ async function handleEdit(id) {
 }
 
 function handleDelete(id) {
-	dialogPlguin().then(async () => {
+	dialogPlguin({
+		message: "是否确认删除所选内容"
+	}).then(
+		async () => {
 		const res = await API_USER.deleteUser(id);
 		if (res.code == 200) {
 			loadData();

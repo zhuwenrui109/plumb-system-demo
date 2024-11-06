@@ -1,22 +1,70 @@
 <script setup>
 import { API_HOME } from "@/api";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
+import toastPlguin from "@/utils/toast";
 import { tokenExpressInTime } from "@/utils/tool";
-import { onMounted, ref } from "vue";
+import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+
+const { alarm, fault, loadStandList, loadWindowCount } = inject("getData");
+
+const store = useStore();
 
 const isAutoLogin = ref(false);
 const username = ref("18804030703");
 const password = ref("123456");
 const router = useRouter();
+const date = ref("");
+const time = ref("");
+let timer = null;
 
 onMounted(() => {
+	console.log("onMounted");
 	checkLoginStatus();
+	timeInit();
+	timer = setInterval(timeInit, 1000);
+	if (localStorage.getItem("autoToken")) {
+		isAutoLogin.value = true;
+	}
 });
+
+onUnmounted(() => {
+	clearInterval(timer);
+	timer = null;
+});
+
+watch(
+	() => alarm.message.value,
+	newVal => {
+		console.log("alarm :>> ", newVal);
+		store.dispatch("handleAlarmList", newVal);
+	}
+);
+
+watch(
+	() => alarm.message.value,
+	newVal => {
+		console.log("fault :>> ", newVal);
+		store.dispatch("handleFaultList", newVal);
+	}
+);
+
+function timeInit() {
+	const tm = new Date();
+	const y = tm.getFullYear();
+	const m = (tm.getMonth() + 1).toString().padStart(2, "0");
+	const d = tm.getDate().toString().padStart(2, "0");
+	const hours = tm.getHours().toString().padStart(2, "0");
+	const minutes = tm.getMinutes().toString().padStart(2, "0");
+	const secound = tm.getSeconds().toString().padStart(2, "0");
+	date.value = `${y}-${m}-${d}`;
+	time.value = `${hours}:${minutes}:${secound}`;
+}
 
 function checkLoginStatus() {
 	// 如果已经登录并且token没过期直接回到上一个页面
-	if (localStorage.getItem("token") || !tokenExpressInTime()) {
+	if (localStorage.getItem("token") && !tokenExpressInTime()) {
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		router.push(prev);
 		return;
@@ -24,9 +72,13 @@ function checkLoginStatus() {
 	// 没有登录，自动登录
 	const autoToken = JSON.parse(localStorage.getItem("autoToken"));
 	if (autoToken) {
+		toastPlguin("登录中...")
 		username.value = autoToken.username;
 		password.value = autoToken.password;
 		setTimeout(handleLogin, 1000);
+		alarm.connect();
+		fault.connect();
+		loadStandList();
 	}
 }
 
@@ -55,6 +107,9 @@ async function handleLogin(e) {
 		localStorage.setItem("tokenTime", 9999999999999999);
 		localStorage.setItem("userRole", user_role);
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
+		alarm.connect();
+		fault.connect();
+		loadStandList();
 		router.push(prev);
 	} catch (err) {
 		console.log("err :>> ", err);
@@ -70,7 +125,7 @@ function toggleAutoLogin() {
 	<div class="login">
 		<div class="time-wrap">
 			<div class="line"></div>
-			<div class="time english">2014-10-13 13:00:00</div>
+			<div class="time english">{{ date }} {{ time }}</div>
 			<div class="line chance"></div>
 		</div>
 		<home-global-content class="content">

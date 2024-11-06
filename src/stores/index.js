@@ -3,22 +3,43 @@ import { createStore } from 'vuex'
 const store = createStore({
   state: {
     standList: [],
-    windowCount: 16
+    windowCount: 0,
+    alarmList: [],
+    faultList: [],
+    pluginDom: null
   },
   mutations: {
     setStandList(state, data) {
       state.standList = [...data];
     },
+    setAlarmList(state, data) {
+      state.alarmList = [...data];
+    },
+    setFaultList(state, data) {
+      state.faultList = [...data];
+    },
     setWindowCount(state, data) {
       state.windowCount = data;
+    },
+    setPluginDom(state, data) {
+      state.pluginDom = data;
     }
   },
   actions: {
     handleStandList(context, data) {
       context.commit("setStandList", data)
     },
+    handleAlarmList(context, data) {
+      context.commit("setAlarmList", data)
+    },
+    handleFaultList(context, data) {
+      context.commit("setFaultList", data)
+    },
     handleWindowCount(context, data) {
       context.commit("setWindowCount", data)
+    },
+    handlePluginDom(context, data) {
+      context.commit("setPluginDom", data)
     }
   },
   getters: {
@@ -31,7 +52,7 @@ const store = createStore({
       state.standList.forEach((station, sIndex) => {
         station.regions.forEach((region, rIndex) => {
           // 防止测试数据没有设备
-          if (region.device) {
+          if (Object.keys(region.device).length > 0) {
             deviceList.push({
               sIndex,
               rIndex,
@@ -40,11 +61,18 @@ const store = createStore({
           }
         });
       })
+      if (state.windowCount == 0) {
+        return arr;
+      }
       let j = 0,
         o = j;
       // windowCount为一组（页）
       while (j < deviceList.length) {
-        j += state.windowCount;
+        if (state.windowCount == "1*2") {
+          j += 2;
+        } else {
+          j += state.windowCount * state.windowCount;
+        }
         arr.push([...deviceList.slice(o, j)]);
         o = j;
       }

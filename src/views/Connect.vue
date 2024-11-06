@@ -2,7 +2,7 @@
 import { API_CONNECT } from "@/api";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import toastPlguin from "@/utils/toast";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { onMounted, ref } from "vue";
 
 const props = defineProps({
@@ -17,24 +17,48 @@ const props = defineProps({
 		type: Dayjs,
 		default: ""
 	}
-})
+});
 
 const page = ref(1);
+const dataList = ref([]);
+const pageConfig = ref({
+	total: 1,
+	pageSize: 10
+});
 
 onMounted(() => {
 	loadData();
-})
+});
 
+defineExpose({
+	page,
+	loadData
+});
 
 async function loadData() {
+	let start_date = "";
+	let end_date = "";
+	if (props.startDate) {
+		start_date = dayjs(props.startDate).format("YYYY-MM-DD");
+	}
+	if (props.endDate) {
+		end_date = dayjs(props.endDate).format("YYYY-MM-DD");
+	}
 	const res = await API_CONNECT.getList({
 		page: page.value,
-		station_id: "",
-		region_id: "",
-		start_date: "",
-		end_date: ""
+		station_id: props.standId,
+		region_id: props.areaId,
+		start_date,
+		end_date
 	});
-	console.log('res :>> ', res);
+	console.log("res :>> ", res);
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+		return;
+	}
+	dataList.value = [...res.data.data];
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
 }
 </script>
 
@@ -50,34 +74,48 @@ async function loadData() {
 				<div class="td connect">连接</div>
 				<div class="td date">时间</div>
 			</div>
-			<div class="tr">
+			<div
+				class="tr"
+				v-for="item in dataList"
+			>
 				<div class="td id">
 					<img
 						src="../assets/images/icon-camera.png"
 						alt=""
 						class="user"
 					/>
-					<span class="english">1001</span>
+					<span class="english">{{ item.device_id }}</span>
 				</div>
-				<div class="td english">192.168.10.100 : 8090</div>
-				<div class="td english">192.168.10.100 : 8090</div>
-				<div class="td">沈阳分输站</div>
-				<div class="td">过滤区</div>
-				<div class="td connect success">
-					<span class="dir"></span>
+				<div class="td english">{{ item.device.sensor_ip }}</div>
+				<div class="td english">{{ item.device.monitor_ip }}</div>
+				<div class="td">{{ item.station.name }}</div>
+				<div class="td">{{ item.region.name }}</div>
+				<div
+					class="td connect"
+					:class="{ success: item.type == 1 }"
+				>
+					<span
+						class="dir"
+						v-if="item.type == 1"
+					></span>
 					<img
 						src="../assets/images/icon-unconnect.png"
 						alt=""
-						style="display: none"
+						v-else
 					/>
-					<span>已连接</span>
+					<span>{{ item.type == 1 ? "连接中" : "断开中" }}</span>
 				</div>
 				<div class="td date english">
-					2024/09/25 10:00:15
+					{{ item.created_at }}
 				</div>
 			</div>
 		</div>
-		<GlobalPagination></GlobalPagination>
+		<GlobalPagination
+			v-model="page"
+			:total="pageConfig.total"
+			:page-size="pageConfig.pageSize"
+			@change-page="loadData"
+		></GlobalPagination>
 	</div>
 </template>
 
@@ -149,14 +187,11 @@ async function loadData() {
 	width: 250px;
 	padding-left: 100px;
 	column-gap: 10px;
+	color: #f85827;
 }
 
 .global-table-wrap .table .tr .td.connect.success {
 	color: #15c675;
-}
-
-.global-table-wrap .table .tr .td.connect.fail {
-	color: #f85827;
 }
 
 .global-table-wrap .table .tr .td.connect span {
@@ -166,8 +201,12 @@ async function loadData() {
 .global-table-wrap .table .tr .td.connect .dir {
 	width: 8px;
 	height: 8px;
-	background: #15c675;
+	background: #f85827;
 	border-radius: 50%;
+}
+
+.global-table-wrap .table .tr .td.connect.success .dir {
+	background: #15c675;
 }
 
 .global-table-wrap .table .tr .td.connect img {

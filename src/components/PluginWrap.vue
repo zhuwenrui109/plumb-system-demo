@@ -1,11 +1,14 @@
 <script setup>
+import { API_HOME } from "@/api";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
+const props = defineProps(["deepList"]);
 const g_iWndIndex = defineModel("iWndIndex");
 const g_iWndowType = defineModel("iWndowType"); // 分割数量
 const g_iWndowPage = defineModel("iWndowPage"); // 页数
+
 const { WebVideoCtrl } = window;
 const config = {
 	iPrototocol: 1, // http协议，1表示http协议 2表示https协议
@@ -15,7 +18,9 @@ const config = {
 let iDevicePort = null;
 let iRtspPort = null;
 let iChannelID = null;
+let interval = null;
 
+const userType = computed(() => store.state.windowCount);
 const deviceList = computed(() => {
 	return store.getters.getDeviceList;
 });
@@ -25,21 +30,39 @@ watch(g_iWndowType, newVal => {
 	changeWndNum(newVal);
 });
 
+loadWindowCount();
+
 onMounted(() => {
-	initPlugin();
+	// initPlugin();
+	store.dispatch("handlePluginDom", initPlugin);
 });
+
+defineExpose({
+	initPlugin
+});
+
+async function loadWindowCount() {
+	const res = await API_HOME.getWindowCount();
+	await store.dispatch("handleWindowCount", res.data.value);
+	initPlugin();
+}
 
 onUnmounted(() => {
 	WebVideoCtrl.I_DestroyPlugin();
+	if (interval) {
+		clearInterval(interval);
+		interval = null;
+	}
 });
 
 /**
  * 监控控件初始化
  */
 function initPlugin() {
+	g_iWndowType.value = userType.value;
 	WebVideoCtrl.I_InitPlugin({
 		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
-		iWndowType: g_iWndowType.value,
+		iWndowType: Number(userType.value),
 		cbSelWnd: function (xmlDoc) {
 			console.log("xmlDoc :>> ", xmlDoc);
 			g_iWndIndex.value = parseInt($(xmlDoc).find("SelectWnd").eq(0).text(), 10);
@@ -57,13 +80,7 @@ function initPlugin() {
 		cbInitPluginComplete() {
 			WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(
 				() => {
-					// 检查插件是否最新
-					WebVideoCtrl.I_CheckPluginVersion().then(bFlag => {
-						if (bFlag) {
-							alert("检测到新的插件版本，双击开发包目录里的HCWebSDKPlugin.exe升级！");
-						}
-						loginPlugin();
-					});
+					loginPlugin();
 				},
 				() => {
 					alert("插件初始化失败，请确认是否已安装插件；如果未安装，请双击开发包目录里的HCWebSDKPlugin.exe安装！");
@@ -77,34 +94,40 @@ function initPlugin() {
  * 登录
  */
 async function loginPlugin() {
-	deviceList.value[g_iWndowPage.value].forEach((item, index) => {
-		if (item.device.monitor_ip) {
-			const { monitor_ip, monitor_port } = item.device;
-			WebVideoCtrl.I_Login(monitor_ip, config.iPrototocol, monitor_port, config.szUsername, config.szPassword, {
-				timeout: 3000,
-				success() {
-					console.log("成功");
+	const list = [...deviceList.value[g_iWndowPage.value]];
+	list.forEach((item, index) => {
+		if (!item.device) {
+			return;
+		}
+		const { monitor_ip, monitor_port } = item.device;
+		console.log("monitor_ip :>> ", monitor_ip);
+		console.log("monitor_port :>> ", monitor_port);
+		console.log("config.szUsername :>> ", config.szUsername);
+		console.log("config.szPassword :>> ", config.szPassword);
+		WebVideoCtrl.I_Login(monitor_ip, 1, monitor_port, config.szUsername, config.szPassword, {
+			timeout: 5000,
+			success() {
+				console.log("成功");
+				setTimeout(function () {
+					setTimeout(function () {
+						getChannelInfo(monitor_ip, monitor_port, index);
+					}, 1000);
+					getDevicePort(monitor_ip, monitor_port);
+				}, 10);
+			},
+			error(oError) {
+				if (oError.errorCode == 2001) {
 					setTimeout(function () {
 						setTimeout(function () {
-							getChannelInfo(monitor_ip, monitor_port, index);
+							getChannelInfo(monitor_ip, monitor_port);
 						}, 1000);
 						getDevicePort(monitor_ip, monitor_port);
 					}, 10);
-				},
-				error(oError) {
-					if (oError.errorCode == 2001) {
-						setTimeout(function () {
-							setTimeout(function () {
-								getChannelInfo(monitor_ip, monitor_port);
-							}, 1000);
-							getDevicePort(monitor_ip, monitor_port);
-						}, 10);
-					}
-					console.log("err :>> ", oError.errorCode);
-					console.error("登录失败");
 				}
-			});
-		}
+				console.log("err :>> ", oError.errorCode);
+				console.error("登录失败");
+			}
+		});
 	});
 }
 
@@ -174,15 +197,25 @@ async function changeWndNum(iType) {
 	} else {
 		delAllSnapPolygon();
 	}
-	WebVideoCtrl.I_ChangeWndNum(iType).then(
-		() => {
-			console.log('"窗口分割成功！" :>> ', "窗口分割成功！");
-		},
-		oError => {
-			const szInfo = "窗口分割失败！";
-			console.log("szInfo, oError.errorCode, oError.errorMsg :>> ", szInfo, oError.errorCode, oError.errorMsg);
-		}
-	);
+	if ("1*2" == iType) {
+		WebVideoCtrl.I_ArrangeWindow(iType).then(
+			() => {
+				console.log("窗口分割成功！");
+			},
+			oError => {
+				console.log("窗口分割失败！");
+			}
+		);
+	} else {
+		WebVideoCtrl.I_ChangeWndNum(parseInt(iType, 10)).then(
+			() => {
+				console.log("窗口分割成功！");
+			},
+			oError => {
+				console.log("窗口分割失败！");
+			}
+		);
+	}
 }
 
 /**
@@ -205,6 +238,12 @@ function clickStartRealPlay(szDeviceIdentify, iWndIndex) {
 			iWndIndex,
 			success: function () {
 				console.log("开始预览成功！ :>> ", szDeviceIdentify);
+				if (g_iWndowType.value == "1*2") {
+					changeWndNum(g_iWndowType.value);
+				}
+				if (userType.value == 1) {
+					enableDraw();
+				}
 			},
 			error: function (oError) {
 				console.log("开始预览失败！ :>> ", szDeviceIdentify, oError.errorCode, oError.errorMsg);
@@ -232,7 +271,10 @@ function enableDraw() {
 		() => {
 			// g_bEnableDraw = true;
 			console.log("启用绘制成功！");
-			setSnapPolygon();
+			interval = setInterval(() => {
+				const info = getDeviceInfo();
+				setSnapPolygon(info);
+			}, 1000);
 		},
 		oError => {
 			console.log("启用绘制失败！ :>> ", oError.errorCode, oError.errorMsg);
@@ -241,12 +283,38 @@ function enableDraw() {
 }
 
 /**
+ * 获取设备实时信息以及时间
+ */
+function getDeviceInfo() {
+	const { device_id } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
+	const info = props.deepList.find(item => item.device_id == device_id);
+	console.log("info :>> ", info);
+	return info;
+}
+
+function getTime() {
+	const tm = new Date();
+	const y = tm.getFullYear();
+	const m = (tm.getMonth() + 1).toString().padStart(2, "0");
+	const d = tm.getDate().toString().padStart(2, "0");
+	const hours = tm.getHours().toString().padStart(2, "0");
+	const minutes = tm.getMinutes().toString().padStart(2, "0");
+	const secound = tm.getSeconds().toString().padStart(2, "0");
+	return `${y}-${m}-${d} ${hours}:${minutes}:${secound}`;
+}
+
+/**
  * 清空图形
  */
 function delAllSnapPolygon() {
+	if (interval) {
+		clearInterval(interval);
+		interval = null;
+	}
 	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex).then(
 		() => {
 			console.log("清空图形成功！");
+			disableDraw();
 		},
 		oError => {
 			console.log("清空图形失败！ :>> ", oError.errorCode, oError.errorMsg);
@@ -255,24 +323,34 @@ function delAllSnapPolygon() {
 }
 
 /**
+ * 禁用多边形绘制
+ */
+function disableDraw() {
+	WebVideoCtrl.I_SetSnapDrawMode(0, -1).then(
+		() => {
+			console.log("禁用绘制成功！");
+		},
+		oError => {
+			console.log("禁用绘制失败！");
+		}
+	);
+}
+
+/**
  * 设置图形，页面打开时可以设置以前设置过的图形
  */
-function setSnapPolygon() {
-	// if (!g_bEnableDraw) {
-	// 	return;
-	// }
-
+function setSnapPolygon(deviceInfo) {
 	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex.value);
-
+	const time = getTime();
 	var szInfo = "<?xml version='1.0' encoding='utf-8'?>";
 	szInfo += "<SnapPolygonList>";
 	szInfo += "<SnapPolygon>";
 	szInfo += "<id>1</id>";
 	szInfo += "<polygonType>0</polygonType>";
-	szInfo += "<tips>沈阳分输站-过滤区      </tips>";
-	szInfo += "<tips>浓度:1000ppm.m      </tips>";
-	szInfo += "<tips>光强:8      </tips>";
-	szInfo += "<tips>2014-10-13 13:00:00</tips>";
+	szInfo += `<tips>${deviceInfo.station.name}-${deviceInfo.region.name}      </tips>`;
+	szInfo += `<tips>浓度:${deviceInfo.gas}ppm.m      </tips>`;
+	szInfo += `<tips>光强:${deviceInfo.light}      </tips>`;
+	szInfo += `<tips>${time}</tips>`;
 	szInfo += "<isClosed>true</isClosed>";
 	szInfo += "<color><r>236</r><g>198</g><b>157</b></color>";
 	szInfo += "<pointList>";
@@ -297,7 +375,10 @@ function setSnapPolygon() {
  * 刷新
  */
 function refresh() {
-	clickStartRealPlay(0);
+	deviceList.value[g_iWndowPage.value].forEach((item, index) => {
+		const { monitor_ip, monitor_port } = item.device;
+		clickStartRealPlay(`${monitor_ip}_${monitor_port}`, index);
+	});
 }
 </script>
 

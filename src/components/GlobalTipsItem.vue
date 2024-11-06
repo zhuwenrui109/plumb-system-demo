@@ -4,9 +4,14 @@ const props = defineProps({
 	isSelect: Boolean,
 	num: [String, Number],
 	title: String,
-	date: String
+	date: String,
+	id: [String, Number],
+	standName: String,
+	areaName: String,
+	time: String,
+	checkList: Array
 });
-const emit = defineEmits(["goDetail"]);
+const emit = defineEmits(["goDetail", "handleCheck"]);
 </script>
 
 <template>
@@ -18,10 +23,19 @@ const emit = defineEmits(["goDetail"]);
 			<div
 				class="check"
 				v-if="isSelect"
-			></div>
-			<div class="num english">107</div>
+				@click="emit('handleCheck', id)"
+			>
+				<Transition name="fade">
+					<img
+						src="../assets/images/icon-hook.png"
+						alt=""
+						v-show="checkList.includes(id)"
+					/>
+				</Transition>
+			</div>
+			<div class="num english">{{ id }}</div>
 			<div class="title-wrap">
-				<div class="title">沈阳分输站-过滤区</div>
+				<div class="title">{{ standName }}-{{ areaName }}</div>
 				<div class="time english">2014-10-13 13:00:00</div>
 			</div>
 			<img
@@ -65,12 +79,23 @@ const emit = defineEmits(["goDetail"]);
 }
 
 .tips-wrap .top-wrap .check {
+	position: relative;
 	width: 12px;
 	height: 12px;
 	box-sizing: border-box;
 	border: 1px solid rgba(108, 108, 108, 1);
 	background: rgba(255, 255, 255, 0.17);
 	margin-right: 15px;
+	cursor: pointer;
+}
+
+.tips-wrap .top-wrap .check img {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: block;
+	width: 80%;
 }
 
 .tips-wrap .top-wrap .num {
