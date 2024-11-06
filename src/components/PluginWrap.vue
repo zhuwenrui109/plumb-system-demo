@@ -94,6 +94,9 @@ function initPlugin() {
  * 登录
  */
 async function loginPlugin() {
+	if (!deviceList.value.length) {
+		return;
+	}
 	const list = [...deviceList.value[g_iWndowPage.value]];
 	list.forEach((item, index) => {
 		if (!item.device) {
@@ -371,6 +374,27 @@ function setSnapPolygon(deviceInfo) {
 		}
 	);
 }
+
+/**
+ * 退出登录
+ */
+function logout() {
+	// var szDeviceIdentify = $("#ip").val();
+
+	if (null == szDeviceIdentify) {
+		return;
+	}
+
+	WebVideoCtrl.I_Logout(szDeviceIdentify).then(
+		() => {
+			console.log("退出成功！");
+		},
+		() => {
+			console.log("退出失败！");
+		}
+	);
+}
+
 /**
  * 刷新
  */

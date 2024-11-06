@@ -31,20 +31,20 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 		required: false
-	},
+	}
 });
 
 const areaNavScroll = ref(null);
 const scrollBar = ref(null);
 let scroll = null;
 
-const deviceList = computed(() => store.getters.getDeviceList[page.value]);
+const deviceList = computed(() => store.getters.getDeviceList);
 const currentNavIndex = computed(() => {
-	// if (type.value > 1) {
-	// 	return -1;
-	// }
-	return deviceList.value[index.value].sIndex;
-})
+	if (!deviceList.value.length) {
+		return -1;
+	}
+	return deviceList.value[page.value][index.value].sIndex;
+});
 
 onMounted(() => {
 	// 初始化滚动
@@ -90,7 +90,7 @@ function destroyScroll() {
 }
 
 function handleCheckArea(sIndex, rIndex) {
-	const current = deviceList.value.findIndex(item => item.sIndex == sIndex && item.rIndex == rIndex);
+	const current = deviceList.value[page.value].findIndex(item => item.sIndex == sIndex && item.rIndex == rIndex);
 	if (current >= 0) {
 		index.value = current;
 		type.value = 1;
@@ -102,10 +102,16 @@ function toggleSite(sIndex) {
 		return;
 	}
 	// currentNavIndex.value = currentNavIndex.value == index ? -1 : index;
-	const current = deviceList.value.findIndex(item => item.sIndex == sIndex);
-	console.log('current :>> ', current);
-	index.value = current;
-	refreshScroll();
+	deviceList.value.forEach((item, pageIndex) => {
+		const current = item.findIndex(item => item.sIndex == sIndex);
+		if (current >= 0) {
+			index.value = current;
+			page.value = pageIndex;
+			refreshScroll();
+			return;
+		}
+	});
+	// const current = deviceList.value;
 }
 </script>
 

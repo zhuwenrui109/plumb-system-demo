@@ -68,6 +68,7 @@ const store = createStore({
         o = j;
       // windowCount为一组（页）
       while (j < deviceList.length) {
+        console.log("while");
         if (state.windowCount == "1*2") {
           j += 2;
         } else {
