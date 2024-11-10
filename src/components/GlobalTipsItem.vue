@@ -80,8 +80,8 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 
 .tips-wrap .top-wrap .check {
 	position: relative;
-	width: 12px;
-	height: 12px;
+	width: 16px;
+	height: 16px;
 	box-sizing: border-box;
 	border: 1px solid rgba(108, 108, 108, 1);
 	background: rgba(255, 255, 255, 0.17);

@@ -28,9 +28,10 @@ const props = defineProps({
 }
 
 .toast-wrap .content {
-	width: 240px;
-  height: 52px;
+	/* width: 240px; */
+  /* height: 52px; */
 	box-sizing: border-box;
+	padding: 10px 20px;
 	background: repeating-linear-gradient(116deg, transparent, transparent 10px, rgba(0, 0, 0, 0.2) 15px, rgba(0, 0, 0, 0.2) 26px);
 	background-size: 100% 60px;
 	background-color: #631d13;
@@ -39,8 +40,8 @@ const props = defineProps({
 	box-shadow: inset 0 0 9px 4px rgba(252, 69, 44, 0.8);
 	border: 1px solid rgba(255, 160, 102, 0.8);
   border-radius: 4px;
-	font-size: 16px;
-  line-height: 50px;
+	font-size: 14px;
+  /* line-height: 50px; */
 	text-align: center;
 }
 

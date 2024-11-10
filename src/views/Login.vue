@@ -12,8 +12,9 @@ const { alarm, fault, loadStandList, loadWindowCount } = inject("getData");
 const store = useStore();
 
 const isAutoLogin = ref(false);
-const username = ref("18804030703");
-const password = ref("123456");
+// 账号：18804030703；密码：123456；
+const username = ref("");
+const password = ref("");
 const router = useRouter();
 const date = ref("");
 const time = ref("");
@@ -87,6 +88,9 @@ function checkLoginStatus() {
  * @param {Event} e Event
  */
 async function handleLogin(e) {
+	if (!username || !password) {
+		toastPlguin("请检查账号密码是否正确")
+	}
 	try {
 		const { token_type, access_token, expires_in, user_role } = await API_HOME.login({
 			account: username.value,

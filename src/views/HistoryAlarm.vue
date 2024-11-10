@@ -11,6 +11,7 @@ import GlobalPagination from "@/components/GlobalPagination.vue";
 import { API_ALARM } from "@/api";
 import dayjs from "dayjs";
 import toastPlguin from "@/utils/toast";
+import dialogPlguin from "@/utils/dialog";
 
 const currentStandArea = ref(0);
 const standId = ref("");
@@ -54,7 +55,7 @@ async function loadData() {
 		end_date
 	});
 	if (!res.data.data.length) {
-		toastPlguin("暂无内容...")
+		toastPlguin("暂无内容...");
 		return;
 	}
 	dataList.splice(0, dataList.length);
@@ -104,18 +105,22 @@ async function exportData() {
 /**
  * 批量删除
  */
-async function batchDelete() {
+function batchDelete() {
 	if (checkList.value.length == 0) {
 		return;
 	}
-	const res = await API_ALARM.batchDelData({
-		alarm_id: checkList.value
+	dialogPlguin({
+		message: "是否确认删除所选内容"
+	}).then(async () => {
+		const res = await API_ALARM.batchDelData({
+			alarm_id: checkList.value
+		});
+		console.log("res :>> ", res);
+		if (res.code == 200) {
+			checkList.value = [];
+			loadData();
+		}
 	});
-	console.log("res :>> ", res);
-	if (res.code == 200) {
-		checkList.value = [];
-		loadData();
-	}
 }
 
 /**
@@ -289,7 +294,7 @@ function toggleTools() {
 								<Transition>
 									<div
 										class="tips-more"
-										v-show="item.remark.length > 16 && currentRemarkId == item.alarm_id"
+										v-show="item.remark != 'null' && item.remark.length > 16 && currentRemarkId == item.alarm_id"
 									>
 										{{ item.remark }}
 									</div>
@@ -338,6 +343,7 @@ function toggleTools() {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
+	align-self: flex-end;
 	column-gap: 10px;
 	cursor: pointer;
 }
@@ -359,7 +365,7 @@ function toggleTools() {
 
 .history-wrap .history-content .history-handle .handle-list {
 	position: absolute;
-	top: calc(100% + 10px);
+	top: 100%;
 	left: 0;
 	/* width: 88px; */
 	width: 110px;
@@ -384,8 +390,7 @@ function toggleTools() {
 	align-items: center;
 	justify-content: flex-start;
 	column-gap: 6px;
-	padding: 15px 0;
-	padding-left: 14px;
+	padding: 15px 14px;
 	border-bottom: 1px solid rgba(108, 108, 108, 0.8);
 	cursor: pointer;
 }
@@ -401,7 +406,7 @@ function toggleTools() {
 
 .history-wrap .history-content .history-handle .handle-list .handle-item span {
 	display: block;
-	font-size: 15px;
+	font-size: 12px;
 	line-height: 16px;
 }
 

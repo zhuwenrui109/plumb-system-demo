@@ -32,12 +32,13 @@ export default defineConfig({
     },
   },
   server: {
+    host: "0.0.0.0",
     port: 8080,
     open: true,
     cors: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.1.24:8080/',
+        target: 'http://192.168.1.24:8008/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, "")
       }
@@ -46,6 +47,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: '[ext]/[name]-[hash].[ext]',
         manualChunks: (id) => {
           if (id.includes("node_modules")) {
             return "vendor";

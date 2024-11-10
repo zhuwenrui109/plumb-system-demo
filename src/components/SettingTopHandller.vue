@@ -36,6 +36,7 @@ const props = defineProps({
 }
 
 .setting-top-handller .left-handle {
+	line-height: 36px;
 	margin-right: auto;
 }
 </style>

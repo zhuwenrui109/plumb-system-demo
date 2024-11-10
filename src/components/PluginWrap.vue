@@ -103,10 +103,6 @@ async function loginPlugin() {
 			return;
 		}
 		const { monitor_ip, monitor_port } = item.device;
-		console.log("monitor_ip :>> ", monitor_ip);
-		console.log("monitor_port :>> ", monitor_port);
-		console.log("config.szUsername :>> ", config.szUsername);
-		console.log("config.szPassword :>> ", config.szPassword);
 		WebVideoCtrl.I_Login(monitor_ip, 1, monitor_port, config.szUsername, config.szPassword, {
 			timeout: 5000,
 			success() {
@@ -195,11 +191,11 @@ function getChannelInfo(ip, port, index) {
  */
 async function changeWndNum(iType) {
 	await nextTick();
-	if (iType == 1) {
-		enableDraw();
-	} else {
-		delAllSnapPolygon();
-	}
+	// if (iType == 1) {
+	// 	enableDraw();
+	// } else {
+	// 	delAllSnapPolygon();
+	// }
 	if ("1*2" == iType) {
 		WebVideoCtrl.I_ArrangeWindow(iType).then(
 			() => {
@@ -245,7 +241,10 @@ function clickStartRealPlay(szDeviceIdentify, iWndIndex) {
 					changeWndNum(g_iWndowType.value);
 				}
 				if (userType.value == 1) {
-					enableDraw();
+					interval = setInterval(() => {
+						console.log("interval");
+						setTextOverlay(szDeviceIdentify, iChannelID);
+					}, 1000 * 10);
 				}
 			},
 			error: function (oError) {
@@ -267,22 +266,65 @@ function clickStartRealPlay(szDeviceIdentify, iWndIndex) {
 }
 
 /**
- * 启用多边形绘制
+ * 设置osg信息
  */
-function enableDraw() {
-	WebVideoCtrl.I_SetPlayModeType(6).then(
-		() => {
-			// g_bEnableDraw = true;
-			console.log("启用绘制成功！");
-			interval = setInterval(() => {
-				const info = getDeviceInfo();
-				setSnapPolygon(info);
-			}, 1000);
+function setTextOverlay(szDeviceIdentify) {
+	if (!deviceList.value) {
+		return;
+	}
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	const szUrl = "ISAPI/System/Video/inputs/channels/" + oWndInfo.iChannelID + "/overlays";
+	const deviceInfo = getDeviceInfo();
+	WebVideoCtrl.I_GetTextOverlay(szUrl, oWndInfo.szDeviceIdentify, {
+		success: function (data) {
+			$(data).find("TextOverlay").eq(0).find("displayText").eq(0).text(`${deviceInfo.station.name}-${deviceInfo.region.name}`);
+			$(data).find("TextOverlay").eq(0).find("positionX").eq(0).text("20");
+			$(data).find("TextOverlay").eq(0).find("positionY").eq(0).text("20");
+			$(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
+			$(data).find("TextOverlay").eq(1).find("displayText").eq(0).text(`浓度:${deviceInfo.gas}ppm.m`);
+			$(data).find("TextOverlay").eq(1).find("positionX").eq(0).text("220");
+			$(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
+			$(data).find("TextOverlay").eq(2).find("displayText").eq(0).text(`光强:${deviceInfo.light}`);
+			$(data).find("TextOverlay").eq(2).find("positionX").eq(0).text("380");
+			$(data).find("TextOverlay").eq(2).find("positionY").eq(0).text("5");
+			var xmldoc = toXMLStr(data);
+			var newOptions = {
+				type: "PUT",
+				data: xmldoc,
+				success: function () {
+					console.log("绘制osd信息成功");
+				},
+				error: function (oError) {
+					console.log("设置osd信息失败！");
+				}
+			};
+
+			WebVideoCtrl.I_SendHTTPRequest(szDeviceIdentify, szUrl, newOptions);
 		},
-		oError => {
-			console.log("启用绘制失败！ :>> ", oError.errorCode, oError.errorMsg);
+		error: function (oError) {
+			showOPInfo(szDeviceIdentify + " 设置osd信息失败！", oError.errorCode, oError.errorMsg);
 		}
-	);
+	});
+}
+
+function toXMLStr(oXmlDoc) {
+	var szXmlDoc = "";
+
+	try {
+		var oSerializer = new XMLSerializer();
+		szXmlDoc = oSerializer.serializeToString(oXmlDoc);
+	} catch (e) {
+		try {
+			szXmlDoc = oXmlDoc.xml;
+		} catch (e) {
+			return "";
+		}
+	}
+	if (szXmlDoc.indexOf("<?xml") == -1) {
+		szXmlDoc = "<?xml version='1.0' encoding='utf-8'?>" + szXmlDoc;
+	}
+
+	return szXmlDoc;
 }
 
 /**
@@ -291,88 +333,7 @@ function enableDraw() {
 function getDeviceInfo() {
 	const { device_id } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
 	const info = props.deepList.find(item => item.device_id == device_id);
-	console.log("info :>> ", info);
 	return info;
-}
-
-function getTime() {
-	const tm = new Date();
-	const y = tm.getFullYear();
-	const m = (tm.getMonth() + 1).toString().padStart(2, "0");
-	const d = tm.getDate().toString().padStart(2, "0");
-	const hours = tm.getHours().toString().padStart(2, "0");
-	const minutes = tm.getMinutes().toString().padStart(2, "0");
-	const secound = tm.getSeconds().toString().padStart(2, "0");
-	return `${y}-${m}-${d} ${hours}:${minutes}:${secound}`;
-}
-
-/**
- * 清空图形
- */
-function delAllSnapPolygon() {
-	if (interval) {
-		clearInterval(interval);
-		interval = null;
-	}
-	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex).then(
-		() => {
-			console.log("清空图形成功！");
-			disableDraw();
-		},
-		oError => {
-			console.log("清空图形失败！ :>> ", oError.errorCode, oError.errorMsg);
-		}
-	);
-}
-
-/**
- * 禁用多边形绘制
- */
-function disableDraw() {
-	WebVideoCtrl.I_SetSnapDrawMode(0, -1).then(
-		() => {
-			console.log("禁用绘制成功！");
-		},
-		oError => {
-			console.log("禁用绘制失败！");
-		}
-	);
-}
-
-/**
- * 设置图形，页面打开时可以设置以前设置过的图形
- */
-function setSnapPolygon(deviceInfo) {
-	WebVideoCtrl.I_ClearSnapInfo(g_iWndIndex.value);
-	const time = getTime();
-	var szInfo = "<?xml version='1.0' encoding='utf-8'?>";
-	szInfo += "<SnapPolygonList>";
-	szInfo += "<SnapPolygon>";
-	szInfo += "<id>1</id>";
-	szInfo += "<polygonType>0</polygonType>";
-	szInfo += `<tips>${deviceInfo.station.name}-${deviceInfo.region.name}      </tips>`;
-	szInfo += `<tips>浓度:${deviceInfo.gas}ppm.m      </tips>`;
-	szInfo += `<tips>光强:${deviceInfo.light}      </tips>`;
-	szInfo += `<tips>${time}</tips>`;
-	szInfo += "<isClosed>true</isClosed>";
-	szInfo += "<color><r>236</r><g>198</g><b>157</b></color>";
-	szInfo += "<pointList>";
-	szInfo += "<point><x>0</x><y>0.9</y></point>";
-	szInfo += "<point><x>1</x><y>0.9</y></point>";
-	szInfo += "<point><x>1</x><y>1</y></point>";
-	szInfo += "<point><x>0</x><y>1</y></point>";
-	szInfo += "</pointList>";
-	szInfo += "</SnapPolygon>";
-	szInfo += "</SnapPolygonList>";
-
-	WebVideoCtrl.I_SetSnapPolygonInfo(g_iWndIndex.value, szInfo).then(
-		() => {
-			console.log("设置图形成功！");
-		},
-		oError => {
-			console.log("设置图形失败！ :>> ", oError.errorCode, oError.errorMsg);
-		}
-	);
 }
 
 /**
@@ -423,17 +384,19 @@ function refresh() {
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr"
-				:class="{ disable: deviceList.length == 1 }"
+				v-show="g_iWndowType == 4 && deviceList.length > 1"
 			/>
 			<img
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr right"
-				:class="{ disable: deviceList.length == 1 }"
+				v-show="g_iWndowType == 4 && deviceList.length > 1"
 			/>
 		</div>
 		<div class="plugin-content">
-			<div id="divPlugin"></div>
+			<div id="divPlugin">
+				<img src="../assets/images/plugin-video-bg.png" alt="">
+			</div>
 		</div>
 		<!-- <img
 			src="../assets/images/plugin-bg.png"
@@ -462,7 +425,13 @@ function refresh() {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
+	column-gap: 10px;
 	cursor: pointer;
+}
+
+.plugin-wrap .plugin-refresh:hover {
+	opacity: .7;
+	transition: .1s all linear;
 }
 
 .plugin-wrap .plugin-refresh img {
@@ -521,5 +490,10 @@ function refresh() {
 .plugin-wrap .plugin-content > div {
 	width: 100%;
 	height: 100%;
+}
+
+.plugin-wrap .plugin-content > div img {
+	display: block;
+	width: 100%;
 }
 </style>

@@ -262,7 +262,7 @@ async function loadData() {
 	pageConfig.value.total = data.length;
 	let j = 0,
 		o = j;
-	// windowCount为一组（页）
+	// 分页
 	while (j < data.length) {
 		j += 4;
 		dataList.value.push([...data.slice(o, j)]);
@@ -317,6 +317,7 @@ function destoryCharts() {
 										v-model:value="date"
 										class="global-date"
 										:inputReadOnly="true"
+										:allow-clear="false"
 									>
 										<template #suffixIcon></template>
 									</DatePicker>
@@ -325,6 +326,7 @@ function destoryCharts() {
 										picker="time"
 										class="global-date"
 										:inputReadOnly="true"
+										:allow-clear="false"
 									>
 										<template #suffixIcon></template>
 									</DatePicker>

@@ -11,6 +11,7 @@ import System from '@/views/System.vue';
 import HistoryFault from '@/views/HistoryFault.vue';
 import { clearToken, tokenExpressInTime } from '@/utils/tool';
 import toastPlguin from '@/utils/toast';
+import Test from '@/views/Test.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,6 +26,15 @@ const router = createRouter({
       component: Home,
       meta: {
         title: "首页",
+        needRole: false
+      }
+    },
+    {
+      path: '/test',
+      name: 'test',
+      component: Test,
+      meta: {
+        title: "测试",
         needRole: false
       }
     },

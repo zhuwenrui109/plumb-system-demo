@@ -6,10 +6,11 @@ import SettingTopHandller from "@/components/SettingTopHandller.vue";
 import { computed, nextTick, ref } from "vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import { useRoute, useRouter } from "vue-router";
-import GlobalSelect from "@/components/GlobalSelect.vue";
 import GlobalDatePicker from "@/components/GlobalDatePicker.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import { useStore } from "vuex";
+import dialogPlguin from "@/utils/dialog";
+import { clearToken } from "@/utils/tool";
 
 const route = useRoute();
 const router = useRouter();
@@ -44,11 +45,6 @@ const navList = ref([
 		icon: "icon-left-nav-manage.png"
 	},
 	{
-		title: "设备连接",
-		name: "connect",
-		icon: "icon-left-nav-connect.png"
-	},
-	{
 		title: "场站管理",
 		name: "stand",
 		icon: "icon-left-nav-stand.png"
@@ -62,6 +58,11 @@ const navList = ref([
 		title: "系统设置",
 		name: "system",
 		icon: "icon-left-nav-system.png"
+	},
+	{
+		title: "退出登录",
+		name: "logout",
+		icon: "icon-left-nav-logout.png"
 	}
 ]);
 
@@ -88,7 +89,7 @@ const currentPath = computed(() => {
 
 function search() {
 	routerViewRef.value.page = 1;
-	routerViewRef.value.loadData();
+	routerViewRef.value.search();
 }
 
 async function clearForm() {
@@ -101,6 +102,34 @@ async function clearForm() {
 	areaId.value = "";
 	await nextTick();
 	search();
+}
+
+function changeRouter(name) {
+	if (name == "logout") {
+		handleLogout();
+		return;
+	}
+	router.push({ name });
+}
+
+function handleLogout() {
+	WebVideoCtrl.I_DestroyPlugin();
+	dialogPlguin({
+		message: "是否确认退出登录"
+	}).then(
+		() => {
+			clearToken();
+			localStorage.getItem("autoToken") && localStorage.removeItem("autoToken");
+			setTimeout(() => {
+				router.push({
+					name: "login"
+				});
+			}, 400);
+		},
+		() => {
+			isHome.value && store.state.pluginDom();
+		}
+	);
 }
 
 function showToast() {
@@ -215,7 +244,7 @@ function getImgUrl(title) {
 							class="left-nav-item"
 							v-for="(item, index) in navList"
 							:key="index"
-							@mousedown="router.push({ name: item.name })"
+							@click="changeRouter(item.name)"
 						>
 							<div
 								class="left-nav"

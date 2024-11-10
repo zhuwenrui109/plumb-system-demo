@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --open --host=192.168.1.42",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host=192.168.1.42"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@better-scroll/core": "^2.5.1",

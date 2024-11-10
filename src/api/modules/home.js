@@ -51,3 +51,21 @@ export const alarmMuted = data => request.post("api/mute", data);
  * @returns 
  */
 export const submitCheckAlarm = data => request.post("api/confirmAlarm", data);
+
+/**
+ * 控制雨刷
+ * @returns 
+ */
+export const handleWiper = data => request.post("api/wiper", data);
+
+/**
+ * 获取是否正在自动巡航中
+ * @returns 
+ */
+export const getAutoStatus = data => request.post("api/cruiseStatus", data);
+
+/**
+ * 关闭自动巡航
+ * @returns 
+ */
+export const closeAuto = data => request.post("api/cruiseClose", data);

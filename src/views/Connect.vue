@@ -54,6 +54,7 @@ async function loadData() {
 	console.log("res :>> ", res);
 	if (!res.data.data.length) {
 		toastPlguin("暂无内容...");
+		dataList.value = new Array();
 		return;
 	}
 	dataList.value = [...res.data.data];

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 
 const props = defineProps({
 	disabled: {
@@ -9,12 +9,34 @@ const props = defineProps({
 })
 const speed = defineModel("speed");
 
+const timer = ref(null);
+
 const lineWidth = computed(() => Math.round(speed.value / 30 * 100) + "%");
 
 onMounted(() => {})
 
+onUnmounted(() => {
+	if (timer.value) {
+		clearInterval(timer.value);
+	}
+})
+
+function handleMousedown(key) {
+	timer.value = setInterval(() => {
+		handleSpeed(key);
+	}, 200);
+}
+
+function handleMouseup() {
+	if (timer.value) {
+		clearInterval(timer.value);
+		timer.value = null;
+	}
+}
+
 function handleSpeed(key) {
 	if (props.disabled) return;
+	console.log("handleSpeed");
 	switch (key) {
 		case 0:
       if (speed.value <= 1) return;
@@ -47,7 +69,8 @@ function handleSpeed(key) {
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn"
-				@click="handleSpeed(0)"
+				@mousedown="handleMousedown(0)"
+				@mouseup="handleMouseup"
 			/>
 			<!-- 速度条 -->
 			<div class="line-wrap">
@@ -59,7 +82,8 @@ function handleSpeed(key) {
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn right"
-				@click="handleSpeed(1)"
+				@mousedown="handleMousedown(1)"
+				@mouseup="handleMouseup"
 			/>
 		</div>
 	</div>

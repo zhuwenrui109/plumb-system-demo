@@ -42,7 +42,7 @@ onMounted(() => {
 defineExpose({
 	page,
 	isPopShow,
-	loadData,
+	search,
 	showStandPop
 });
 
@@ -57,18 +57,33 @@ watch(isPopShow, newVal => {
 });
 
 async function loadData() {
-	currentStandId.value = "";
 	const res = await API_STAND.getList({
 		page: page.value,
 		keyword: props.standKeyword
 	});
 	if (!res.data.data.length) {
-		toastPlguin("暂无内容...")
+		toastPlguin("暂无内容...");
+		dataList.value = new Array();
 		return;
 	}
-	dataList.value = res.data.data;
+	dataList.value = [...res.data.data];
 	pageConfig.value.total = res.data.total;
-	pageConfig.value.pageSize = res.data.pageSize;
+	pageConfig.value.pageSize = res.data.per_page;
+}
+
+async function search() {
+	const res = await API_STAND.getList({
+		page: page.value,
+		keyword: props.standKeyword
+	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+		return;
+	}
+	currentStandId.value = "";
+	dataList.value = [...res.data.data];
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
 }
 
 async function refreshStand() {
@@ -78,7 +93,7 @@ async function refreshStand() {
 
 async function handleSort(type, id) {
 	const res = type == 0 ? await API_STAND.standSort(id) : await API_STAND.areaSort(id);
-	console.log('res :>> ', res);
+	console.log("res :>> ", res);
 	loadData();
 	refreshStand();
 }
@@ -116,6 +131,10 @@ function showAreaPop(id) {
 }
 
 async function handleSubmit() {
+	if (!form.value.station_id || !form.value.region_id) {
+		toastPlguin("请检查场站与工艺区是否填写");
+		return;
+	}
 	if (popConfig.value.type == "stand") {
 		await API_STAND.editStand(form.value);
 	} else {
@@ -124,7 +143,7 @@ async function handleSubmit() {
 	isPopShow.value = false;
 	loadData();
 	refreshStand();
-	toastPlguin("修改成功");
+	toastPlguin("添加成功");
 }
 
 async function toggleRegionStatus(stationIndex, regionIndex) {
@@ -225,7 +244,7 @@ async function handleDelete(id, regionId = "") {
 							alt=""
 							class="address"
 						/>
-						<span class="english">{{ stationIndex + 1 }}</span>
+						<span class="english">{{ pageConfig.pageSize * (page - 1) + stationIndex + 1 }}</span>
 					</div>
 				</div>
 				<div class="td stand">
@@ -250,7 +269,7 @@ async function handleDelete(id, regionId = "") {
 							class="td-item"
 							v-for="(region, regionIndex) in item.regions"
 						>
-							<div class="num english">{{ regionIndex + 1 }}</div>
+							<div class="num english">{{ pageConfig.pageSize * (page - 1) + regionIndex + 1 }}</div>
 							<div class="txt english">{{ region.name }}</div>
 							<div class="btn-list">
 								<GlobalSwitch

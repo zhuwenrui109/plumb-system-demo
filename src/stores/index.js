@@ -6,9 +6,17 @@ const store = createStore({
     windowCount: 0,
     alarmList: [],
     faultList: [],
-    pluginDom: null
+    pluginDom: null,
+    user: {
+      username: "",
+      role: "",
+      token: ""
+    }
   },
   mutations: {
+    setUser(state, data) {
+      state.user = data;
+    },
     setStandList(state, data) {
       state.standList = [...data];
     },
@@ -26,6 +34,9 @@ const store = createStore({
     }
   },
   actions: {
+    handleUser(context, data) {
+      context.commit("setUser", data)
+    },
     handleStandList(context, data) {
       context.commit("setStandList", data)
     },
@@ -45,7 +56,7 @@ const store = createStore({
   getters: {
     getDeviceList(state) {
       let arr = [];
-      if (!state.standList.length) {
+      if (!state.standList.length || state.windowCount == 0) {
         return arr;
       }
       let deviceList = [];
@@ -61,9 +72,6 @@ const store = createStore({
           }
         });
       })
-      if (state.windowCount == 0) {
-        return arr;
-      }
       let j = 0,
         o = j;
       // windowCount为一组（页）

@@ -11,7 +11,6 @@ const isShow = defineModel();
 		<div
 			class="form-pop-wrap"
 			v-show="isShow"
-			@click="isShow = false"
 		>
 			<div
 				class="form-pop-main"

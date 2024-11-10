@@ -18,8 +18,10 @@ const pageTotal = computed(() => Math.ceil(props.total / props.pageSize))
 
 const list = computed(() => {
 	const result = [];
-	// 总页码小于等于5；大于5
-	if (pageTotal.value <= 5) {
+	// 没有的情况下
+	if (pageTotal.value == 0) {
+		result.push(1);
+	} else if (pageTotal.value <= 5) { // 总页码小于等于5；大于5
 		// 总页码小于等于5的情况
 		for (let i = 1; i <= pageTotal.value; i++) {
 			result.push(i);

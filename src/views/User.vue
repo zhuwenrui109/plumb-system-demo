@@ -14,7 +14,12 @@ const props = defineProps({
 	username: String
 });
 
+const dataList = ref([]);
 const roleList = ref([
+	{
+		name: "请选择",
+		value: ""
+	},
 	{
 		name: "管理员",
 		value: "1"
@@ -26,14 +31,17 @@ const roleList = ref([
 ]);
 const isPopShow = ref(false);
 const page = ref(1);
-const dataList = ref([]);
+const pageConfig = ref({
+	total: 1,
+	pageSize: 8
+});
 const form = ref({
 	id: "",
 	account: "",
 	password: "",
 	checkpassword: "",
 	name: "",
-	role: "1",
+	role: "",
 	status: "1"
 });
 
@@ -43,7 +51,7 @@ onMounted(() => {
 
 defineExpose({
 	isPopShow,
-	loadData
+	search
 });
 
 watch(isPopShow, newVal => {
@@ -54,7 +62,7 @@ watch(isPopShow, newVal => {
 			password: "",
 			checkpassword: "",
 			name: "",
-			role: "1",
+			role: "",
 			status: "1"
 		};
 	}
@@ -66,10 +74,27 @@ async function loadData() {
 		keyword: props.username
 	});
 	if (!res.data.data.length) {
-		toastPlguin("暂无内容...")
+		toastPlguin("暂无内容...");
+		dataList.value = new Array();
 		return;
 	}
 	dataList.value = res.data.data;
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
+}
+
+async function search() {
+	const res = await API_USER.getList({
+		page: page.value,
+		keyword: props.username
+	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+		return;
+	}
+	dataList.value = res.data.data;
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
 }
 
 async function handleEdit(id) {
@@ -82,13 +107,13 @@ async function handleEdit(id) {
 function handleDelete(id) {
 	dialogPlguin({
 		message: "是否确认删除所选内容"
-	}).then(
-		async () => {
+	}).then(async () => {
 		const res = await API_USER.deleteUser(id);
 		if (res.code == 200) {
 			loadData();
-		} else {
 			toastPlguin("删除成功");
+		} else {
+			toastPlguin("删除失败");
 		}
 	});
 }
@@ -108,6 +133,15 @@ async function toggleStatus(index) {
 
 async function handleSubmit() {
 	const data = { ...form.value };
+	for (const key in data) {
+		if (Object.prototype.hasOwnProperty.call(data, key)) {
+			const item = data[key];
+			if (key != "id" && item == "") {
+				toastPlguin("请检查全部信息是否填写");
+				return;
+			}
+		}
+	}
 	if (form.value.password != form.value.checkpassword) {
 		toastPlguin("两次密码不一致");
 		return;
@@ -120,6 +154,7 @@ async function handleSubmit() {
 	console.log("res :>> ", res);
 	if (res.code == 200) {
 		isPopShow.value = false;
+		toastPlguin("添加成功");
 		loadData();
 	} else {
 		toastPlguin("添加失败");
@@ -150,7 +185,7 @@ async function handleSubmit() {
 						alt=""
 						class="user"
 					/>
-					<span class="english">{{ item.id }}</span>
+					<span class="english">{{ pageConfig.pageSize * (page - 1) + index + 1 }}</span>
 				</div>
 				<div class="td english">{{ item.account }}</div>
 				<div class="td">{{ item.name }}</div>
@@ -229,7 +264,10 @@ async function handleSubmit() {
 				</div>
 				<div class="form-item chance switch">
 					<div class="name">是否启用该角色:</div>
-					<GlobalSwitch v-model="form.status"></GlobalSwitch>
+					<GlobalSwitch
+						v-model="form.status"
+						@click="form.status = form.status == '1' ? '0' : '1'"
+					></GlobalSwitch>
 				</div>
 				<div class="form-item chance">
 					<SettingButtonBorder

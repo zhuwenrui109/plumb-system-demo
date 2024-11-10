@@ -3,7 +3,7 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
@@ -34,7 +34,7 @@ const form = ref({
 	confirm_user: "",
 	remark: ""
 });
-const audio = ref(null);
+const path = ref("");
 
 const standList = computed(() => store.state.standList);
 const deviceList = computed(() => store.getters.getDeviceList[g_iWndowPage.value]);
@@ -75,8 +75,6 @@ watch(
 	() => concentration.message.value,
 	newVal => {
 		deepList.value = [...newVal];
-		// audio.value.play();
-		// audio.value.muted = true;
 	}
 );
 
@@ -143,7 +141,7 @@ function handlePluginZoom(type) {
 		WebVideoCtrl.I_PTZControl(type, false, {
 			iWndIndex: g_iWndIndex.value,
 			success: function (xmlDoc) {
-				console.log("xmlDoc :>> ", xmlDoc);
+				iPTZSpeed: pluginSpeed.value, console.log("xmlDoc :>> ", xmlDoc);
 				console.log("调焦成功 :>> ", oWndInfo.szDeviceIdentify);
 			},
 			error: function (oError) {
@@ -182,12 +180,87 @@ function toggleCheckAlarm(id) {
 	}
 }
 
-async function toggleWiper(action) {
-	const res = await API_HOME.handleWiper({
-		device_id: deviceList.value[g_iWndIndex.value].device.device_id,
-		action
-	})
-	console.log('res :>> ', res);
+// 开始录像
+function clickStartRecord() {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	console.log("oWndInfo :>> ", oWndInfo);
+	if (oWndInfo != null) {
+		const szFileName = oWndInfo.szDeviceIdentify + "_" + oWndInfo.iChannelID + "_" + new Date().getTime();
+
+		WebVideoCtrl.I_StartRecord(szFileName, {
+			bDateDir: true, //是否生成日期文件
+			success: function () {
+				toastPlguin("开始录像成功！");
+				console.log("开始录像成功！");
+			},
+			error: function (oError) {
+				toastPlguin("开始录像失败！");
+				console.log("开始录像失败！");
+			}
+		});
+	}
+}
+
+// 停止录像
+function clickStopRecord() {
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	console.log("oWndInfo :>> ", oWndInfo);
+	if (oWndInfo != null) {
+		WebVideoCtrl.I_StopRecord({
+			success: function () {
+				toastPlguin("停止录像成功！");
+				console.log("停止录像成功！");
+			},
+			error: function (oError) {
+				toastPlguin("停止录像失败！");
+				console.log("停止录像失败！");
+			}
+		});
+	}
+}
+
+// 获取本地参数
+let g_oLocalConfig = null;
+function clickGetLocalCfg() {
+	WebVideoCtrl.I_GetLocalCfg().then(
+		oLocalConfig => {
+			g_oLocalConfig = oLocalConfig;
+			g_oLocalConfig.secretKey = "\x7F\x7F\x7F\x7F\x7F\x7F\x7F\x7F";
+			path.value = oLocalConfig.recordPath;
+		},
+		oError => {
+			console.log("本地配置获取失败！");
+		}
+	);
+}
+
+// 设置本地参数
+async function clickSetLocalCfg() {
+	g_oLocalConfig.secretKey = await WebVideoCtrl.I_GetEncryptString(g_oLocalConfig.secretKey);
+	WebVideoCtrl.I_SetLocalCfg(g_oLocalConfig).then(
+		() => {
+			console.log("配置设置成功");
+		},
+		oError => {
+			console.log("配置设置失败");
+		}
+	);
+}
+
+// 打开选择框 0：文件夹  1：文件
+function clickOpenFileDlg() {
+	WebVideoCtrl.I_OpenFileDlg(0).then(
+		function (szDirPath) {
+			if (szDirPath != -1 && szDirPath != "" && szDirPath != null) {
+				path.value = szDirPath;
+				g_oLocalConfig.recordPath = szDirPath;
+				clickSetLocalCfg();
+			}
+		},
+		function () {
+			console.log("打开文件路径失败");
+		}
+	);
 }
 
 /**
@@ -205,7 +278,6 @@ async function handleAlarmMuted() {
 		});
 		if (res.code == 200) {
 			alarmCheckList.value = [];
-			toastPlguin("已消音");
 		} else {
 			toastPlguin("消音失败");
 		}
@@ -236,7 +308,6 @@ async function submitCheckList() {
 		});
 		if (code == 200) {
 			isPopShow.value = false;
-			toastPlguin("确认报警成功");
 		} else {
 			toastPlguin("提交失败");
 		}
@@ -335,13 +406,13 @@ async function submitCheckList() {
 						<GlobalBlackContent>
 							<div class="control-item">
 								<span class="name">雨刷开/关</span>
-								<span class="icon" @click="toggleWiper(0)">
+								<span class="icon">
 									<img
 										src="../assets/images/icon-wipers-on.png"
 										alt=""
 									/>
 								</span>
-								<span class="icon" @click="toggleWiper(1)">
+								<span class="icon">
 									<img
 										src="../assets/images/icon-wipers-off.png"
 										alt=""
@@ -364,130 +435,26 @@ async function submitCheckList() {
 		</div>
 
 		<div class="bottom-wrap">
-			<!-- 实时浓度 -->
-			<div class="home-item">
-				<global-title
-					name="实时浓度"
-					english="concentration"
-				></global-title>
-				<home-global-content
-					class="density-wrap"
-					:isNeedScroll="true"
-					:isAutoScroll="true"
-				>
-					<div class="density-list">
-						<div
-							class="density-item"
-							v-for="item in deepList"
-							:key="item.device_id"
-						>
-							<div class="area-name">{{ item.station.name }}-{{ item.region.name }}</div>
-							<div class="density-num">
-								浓度: <span class="english">{{ item.gas }}ppm.m</span>
-							</div>
-							<div class="density-num">
-								光强: <span class="english">{{ item.light }}</span>
-							</div>
-						</div>
-					</div>
-				</home-global-content>
+			<GlobalButton
+				name="开始录像"
+				@click="clickStartRecord"
+			></GlobalButton>
+			<GlobalButton
+				name="停止录像"
+				@click="clickStopRecord"
+			></GlobalButton>
+			<GlobalButton
+				name="获取路径"
+				@click="clickGetLocalCfg"
+			></GlobalButton>
+			<div class="path-txt">
+				{{ path }}
 			</div>
-			<!-- 实时报警 -->
-			<div class="home-item alarm-item">
-				<global-title
-					name="实时报警"
-					english="alarm"
-				>
-					<div class="alarm-btn-list">
-						<GlobalButton
-							name="报警消音"
-							@click="handleAlarmMuted"
-						></GlobalButton>
-						<GlobalButton
-							name="确认报警"
-							@click="showCheckForm"
-						></GlobalButton>
-						<GlobalButton
-							name="历史报警"
-							@click="router.push({ name: 'alarm' })"
-						></GlobalButton>
-					</div>
-				</global-title>
-				<home-global-content
-					class="alarm-wrap"
-					:isNeedScroll="true"
-					:isNeedScrollBar="true"
-				>
-					<div class="alarm-list">
-						<global-tips-item
-							:isSelect="true"
-							class="alarm-item"
-							v-for="(item, index) in alarmList"
-							:key="index"
-							:id="item.device_id"
-							:stand-name="item.station.name"
-							:area-name="item.region.name"
-							:check-list="alarmCheckList"
-							@go-detail="goPlugin"
-							@handle-check="toggleCheckAlarm"
-						>
-							<div class="alarm">
-								<img
-									src="../assets/images/icon-warning.png"
-									alt=""
-									class="icon"
-								/>
-								<div class="level">{{ item.level }}级别</div>
-								<div class="english">{{ item.density }}PPM.M</div>
-							</div>
-						</global-tips-item>
-					</div>
-				</home-global-content>
-			</div>
-			<!-- 实时故障 -->
-			<div class="home-item fault-item">
-				<global-title
-					name="实时故障"
-					english="fault"
-				></global-title>
-				<home-global-content class="fault-wrap">
-					<div class="fault-list">
-						<global-tips-item
-							:isSelect="false"
-							v-for="(item, index) in faultList"
-							:key="index"
-							:id="item.device_id"
-							:stand-name="item.station.name"
-							:area-name="item.region.name"
-							class="fault-item"
-						>
-							<div class="fault">
-								<div class="top">
-									<img
-										src="../assets/images/icon-warning.png"
-										alt=""
-										class="icon"
-									/>
-									<div class="title">云台通讯故障</div>
-								</div>
-								<!-- <div class="content">处理方法：拆掉，组装</div> -->
-							</div>
-						</global-tips-item>
-					</div>
-				</home-global-content>
-			</div>
+			<GlobalButton
+				name="设置路径"
+				@click="clickOpenFileDlg"
+			></GlobalButton>
 		</div>
-		<!-- <audio
-			preload="auto"
-			loop
-			autoplay
-			ref="audio"
-		>
-			<source
-				src="../assets/audio/alarm.mp3"
-				type="audio/mpeg"
-			/>
-		</audio> -->
 	</div>
 	<FormPop
 		name="确认报警"
@@ -652,7 +619,8 @@ async function submitCheckList() {
 
 .bottom-wrap {
 	display: flex;
-	justify-content: space-between;
+	justify-content: flex-start;
+	column-gap: 10px;
 	width: 100%;
 }
 
@@ -689,19 +657,15 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .area-name {
-	width: 45%;
-	font-size: 14px;
+	font-size: 16px;
 	color: #fff;
 	opacity: 0.6;
-	flex-shrink: 0;
+	margin-right: 22px;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .density-num {
-	font-size: 14px;
-}
-
-.bottom-wrap .home-item .density-wrap .density-list .density-item .density-num:nth-of-type(2) {
-	flex: 1;
+	font-size: 16px;
+	margin-right: 22px;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .density-num .english {
@@ -809,6 +773,7 @@ async function submitCheckList() {
 	box-shadow: inset 0 0 9px 4px rgba(238, 149, 53, 0.8);
 	padding: 11px 0;
 	padding-left: 27px;
+	margin-bottom: 14px;
 	border-radius: 4px;
 	animation: ani2 0.2s infinite alternate ease-in-out, ani 0.7s infinite both linear;
 }

@@ -1,5 +1,6 @@
 <script setup>
 import { API_HOME } from '@/api';
+import toastPlguin from '@/utils/toast';
 import { computed } from 'vue';
 import { useStore } from 'vuex';
 
@@ -11,7 +12,7 @@ const deviceList = computed(() => store.getters.getDeviceList);
 
 /**
  * 控制云台方向
- * @param {String} type 0：停止，1：上，2：下,3:左，4：右，5：左上，6：右上，7：左下，8：右下，
+ * @param {String} type 0：停止，1：上，2：下,3:左，4：右，5：左上，6：右上，7：左下，8：右下，9：开启自动巡航
  */
 async function handleControl(key) {
 	const res = await API_HOME.handleDirection({
@@ -19,6 +20,20 @@ async function handleControl(key) {
 		value: key
 	})
 	console.log('res :>> ', res);
+}
+
+async function handleAuto() {
+	const res = await API_HOME.getAutoStatus({
+		device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id
+	})
+	if (!res.data.status) {
+		handleControl(9);
+	} else {
+		const res = await API_HOME.closeAuto({
+			device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id
+		})
+		console.log('res :>> ', res);
+	}
 }
 </script>
 
@@ -83,6 +98,7 @@ async function handleControl(key) {
 				src="../assets/images/control-auto-active.png"
 				alt=""
 				class="auto-btn active"
+				@click="handleAuto"
 			/>
 		</div>
 	</div>

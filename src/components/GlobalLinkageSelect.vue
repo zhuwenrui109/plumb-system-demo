@@ -42,7 +42,13 @@ function handleSelectStand() {
 			region_id: ""
 		});
 	}
-	currentAreaId.value = areaList.value.regions[0].region_id;
+	if (areaList.value.regions[0].region_id) {
+		areaList.value.regions.unshift({
+			name: "选择工艺区",
+			region_id: ""
+		});
+	}
+	// currentAreaId.value = areaList.value.regions[0].region_id;
 }
 </script>
 

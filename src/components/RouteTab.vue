@@ -86,6 +86,10 @@ function goList(name) {
 	transition: 0.2s all linear;
 }
 
+.tab-wrap .tab-content .tab-item:hover {
+	opacity: 1;
+}
+
 .tab-wrap .tab-content .tab-item::after {
 	position: absolute;
 	content: "";

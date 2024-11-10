@@ -37,7 +37,7 @@ const form = ref({
 	sensor_ip: "",
 	sensor_port: "",
 	monitor_ip: "",
-	monitor_port: "",
+	monitor_port: "80",
 	region_id: "",
 	station_id: "",
 	threshold_first: "",
@@ -63,7 +63,7 @@ watch(isPopShow, newVal => {
 			sensor_ip: "",
 			sensor_port: "",
 			monitor_ip: "",
-			monitor_port: "",
+			monitor_port: "80",
 			region_id: "",
 			station_id: "",
 			threshold_first: "",
@@ -76,7 +76,7 @@ watch(isPopShow, newVal => {
 defineExpose({
 	page,
 	isPopShow,
-	loadData
+	search
 });
 
 async function loadData() {
@@ -87,9 +87,25 @@ async function loadData() {
 	});
 	if (!res.data.data.length) {
 		toastPlguin("暂无内容...");
+		dataList.value = new Array();
 		return;
 	}
-	dataList.value = res.data.data;
+	dataList.value = [...res.data.data];
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
+}
+
+async function search() {
+	const res = await API_MANAGE.getList({
+		page: page.value,
+		station_id: props.standId,
+		region_id: props.areaId
+	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+		return;
+	}
+	dataList.value = [...res.data.data];
 	pageConfig.value.total = res.data.total;
 	pageConfig.value.pageSize = res.data.per_page;
 }
@@ -116,12 +132,25 @@ async function toggleStatus(index) {
 }
 
 async function handleSubmit() {
+	for (const key in form.value) {
+		if (Object.prototype.hasOwnProperty.call(form.value, key)) {
+			const item = form.value[key];
+			if (key != "device_id" && item == "") {
+				toastPlguin("请检查全部信息是否填写");
+				return;
+			}
+		}
+	}
+	if (form.value.threshold_first >= form.value.threshold_second) {
+		toastPlguin("一级报警值需要小于二级报警值")
+		return;
+	}
 	const res = await API_MANAGE.editManage(form.value);
 	if (res.code == 200) {
 		loadData();
 		refreshStandList();
 		isPopShow.value = false;
-		toastPlguin("修改成功");
+		toastPlguin("添加成功");
 	}
 }
 
