@@ -49,6 +49,7 @@ function handleSelectStand() {
 		});
 	}
 	// currentAreaId.value = areaList.value.regions[0].region_id;
+	currentAreaId.value = "";
 }
 </script>
 

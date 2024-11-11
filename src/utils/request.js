@@ -31,25 +31,20 @@ request.interceptors.response.use(
       return Promise.resolve(response.data);
     }
   }, (error) => {
-    console.log("错误信息", error);
     if (error.response.status) {
       switch (error.response.status) {
         case 400:
-          console.log("有异常");
           break;
         case 401:
-          console.log("登录状态失效");
-
           break;
         case 500:
-          console.log("接口翻车");
           break;
         // 还可以自己添加其他状态码
         default:
           break;
       }
     }
-    return Promise.reject(new Error(error.message));
+    return Promise.reject(error.response.data);
   }
 );
 

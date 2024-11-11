@@ -2,9 +2,11 @@
 import toastPlguin from "@/utils/toast";
 import { computed, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useStore } from "vuex";
 
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
 
 const tabList = reactive([
 	{
@@ -29,8 +31,12 @@ const currentRouter = computed(() => {
 	return router.currentRoute.value.fullPath;
 });
 
+const userRole = computed(() => {
+	return store.state.user.role;
+});
+
 function goList(name) {
-	router.push({ name })
+	router.push({ name });
 }
 </script>
 
@@ -40,7 +46,7 @@ function goList(name) {
 		<div class="tab-content">
 			<div
 				class="tab-item"
-				:class="{ active: currentRouter.includes(item.routerName) }"
+				:class="{ active: currentRouter.includes(item.routerName), disabled: item.routerName == 'setting' && userRole == 2 }"
 				v-for="(item, index) in tabList"
 				:key="index"
 				@click="goList(item.routerName)"
@@ -84,6 +90,15 @@ function goList(name) {
 	opacity: 0.5;
 	cursor: pointer;
 	transition: 0.2s all linear;
+}
+
+.tab-wrap .tab-content .tab-item.disabled {
+	cursor: none;
+	opacity: .2;
+}
+
+.tab-wrap .tab-content .tab-item.disabled:hover {
+	opacity: .2;
 }
 
 .tab-wrap .tab-content .tab-item:hover {

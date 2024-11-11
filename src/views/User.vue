@@ -35,6 +35,7 @@ const pageConfig = ref({
 	total: 1,
 	pageSize: 8
 });
+const formName = ref("新增账号");
 const form = ref({
 	id: "",
 	account: "",
@@ -56,15 +57,18 @@ defineExpose({
 
 watch(isPopShow, newVal => {
 	if (!newVal) {
-		form.value = {
-			id: "",
-			account: "",
-			password: "",
-			checkpassword: "",
-			name: "",
-			role: "",
-			status: "1"
-		};
+		setTimeout(() => {
+			form.value = {
+				id: "",
+				account: "",
+				password: "",
+				checkpassword: "",
+				name: "",
+				role: "",
+				status: "1"
+			};
+			formName.value = "新增账号";
+		}, 300);
 	}
 });
 
@@ -98,6 +102,7 @@ async function search() {
 }
 
 async function handleEdit(id) {
+	formName.value = "编辑账号";
 	const res = await API_USER.getDetail(id);
 	console.log("res :>> ", res);
 	form.value = { ...res.data };
@@ -132,6 +137,7 @@ async function toggleStatus(index) {
 }
 
 async function handleSubmit() {
+	let text = "添加";
 	const data = { ...form.value };
 	for (const key in data) {
 		if (Object.prototype.hasOwnProperty.call(data, key)) {
@@ -149,15 +155,16 @@ async function handleSubmit() {
 	delete data.checkpassword;
 	if (data.id && !data.password) {
 		delete data.password;
+		text = "修改";
 	}
 	const res = await API_USER.addUser(data);
 	console.log("res :>> ", res);
 	if (res.code == 200) {
 		isPopShow.value = false;
-		toastPlguin("添加成功");
+		toastPlguin(text + "成功");
 		loadData();
 	} else {
-		toastPlguin("添加失败");
+		toastPlguin(text + "失败");
 	}
 }
 </script>
@@ -215,7 +222,7 @@ async function handleSubmit() {
 		</div>
 		<GlobalPagination v-model="page"></GlobalPagination>
 		<FormPop
-			name="添加账号"
+			:name="formName"
 			v-model="isPopShow"
 		>
 			<div class="form-wrap">

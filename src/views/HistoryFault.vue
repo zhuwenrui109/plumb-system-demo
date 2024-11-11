@@ -169,14 +169,6 @@ watch(
 	}
 );
 
-watch(standId, newVal => {
-	currentStand.value = standList.value.find(item => item.station_id == newVal);
-});
-
-watch(areaId, newVal => {
-	currentArea.value = currentStand.value.regions.find(item => item.region_id == newVal);
-});
-
 onMounted(() => {
 	initDefaultDate();
 	echartsInit();
@@ -238,6 +230,8 @@ async function loadChartsData() {
 }
 
 async function loadData() {
+	currentStand.value = standList.value.find(item => item.station_id == standId.value);
+	currentArea.value = currentStand.value.regions.find(item => item.region_id == areaId.value);
 	let range = 0;
 	let step = 0;
 	if (currentScopeUnit.value == 2) {

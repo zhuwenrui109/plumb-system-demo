@@ -69,3 +69,9 @@ export const getAutoStatus = data => request.post("api/cruiseStatus", data);
  * @returns 
  */
 export const closeAuto = data => request.post("api/cruiseClose", data);
+
+/**
+ * 用户信息
+ * @returns 
+ */
+export const getUserInfo = () => request.get("api/auth/currentUser");

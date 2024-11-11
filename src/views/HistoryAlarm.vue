@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
@@ -12,6 +12,9 @@ import { API_ALARM } from "@/api";
 import dayjs from "dayjs";
 import toastPlguin from "@/utils/toast";
 import dialogPlguin from "@/utils/dialog";
+import { useStore } from "vuex";
+
+const store = useStore();
 
 const currentStandArea = ref(0);
 const standId = ref("");
@@ -32,6 +35,8 @@ const currentRemarkId = ref("");
 onMounted(() => {
 	loadData();
 });
+
+const userRole = computed(() => store.state.user.role);
 
 watch(page, () => {
 	checkList.value = [];
@@ -176,6 +181,7 @@ function toggleTools() {
 								<div
 									class="handle-item"
 									@click="batchDelete"
+									v-show="userRole == 1"
 								>
 									<img
 										src="../assets/images/icon-delete.png"
@@ -210,12 +216,12 @@ function toggleTools() {
 						></GlobalInput>
 						<GlobalDatePicker
 							v-model="startDate"
-							:name="'选择开始日期'"
+							:name="'报警开始日期'"
 						></GlobalDatePicker>
 						<GlobalDatePicker
 							v-model="endDate"
 							:start-date="startDate"
-							:name="'选择结束日期'"
+							:name="'报警结束日期'"
 						></GlobalDatePicker>
 						<SettingButtonBorder @click="search"> 搜索 </SettingButtonBorder>
 						<SettingButtonBorder

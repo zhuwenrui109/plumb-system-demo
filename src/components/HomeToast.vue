@@ -1,18 +1,34 @@
-@import './base.css';
-@import "./font.css";
+<script setup>
+const props = defineProps({
+	message: String
+});
+</script>
 
-html,
-body {
-  color: #fff;
-  background: #000;
-}
+<template>
+	<div class="home-toast-wrap">
+		<div class="content">
+			{{ message }}
+		</div>
+	</div>
+</template>
 
-.english {
-  font-family: "fifawelcome";
-}
-
-.custom-message {
+<style scoped>
+.home-toast-wrap {
+	position: fixed;
+	top: 0;
+	left: 0;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
   box-sizing: border-box;
+  padding-bottom: 50px;
+	z-index: 1000;
+}
+
+.home-toast-wrap .content {
+	box-sizing: border-box;
 	padding: 10px 20px;
 	background: repeating-linear-gradient(116deg, transparent, transparent 10px, rgba(0, 0, 0, 0.2) 15px, rgba(0, 0, 0, 0.2) 26px);
 	background-size: 100% 60px;
@@ -34,16 +50,4 @@ body {
 		background-position: 0 60px;
 	}
 }
-.slide-fade-enter-active {
-  transition: all 0.3s ease-out;
-}
-
-.slide-fade-leave-active {
-  transition: all 0.8s cubic-bezier(1, 0.5, 0.8, 1);
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
-}
+</style>

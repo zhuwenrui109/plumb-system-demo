@@ -139,6 +139,11 @@ async function handleAuto() {
 	height: 100%;
 	background: linear-gradient(to bottom, #1c1918, #28201c, #4d4c4b 70%) no-repeat;
 	cursor: pointer;
+	transition: .3s all ease-in;
+}
+
+.control-wrap.control-wrap-active .control-content .triangle.left:hover {
+	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.left .arr {
@@ -157,6 +162,10 @@ async function handleAuto() {
 	height: 100%;
 	background: linear-gradient(to bottom, #1c1918, #28201c, #4d4c4b 70%) no-repeat;
 	cursor: pointer;
+}
+
+.control-wrap.control-wrap-active .control-content .triangle.right:hover {
+	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.right .arr {
@@ -192,6 +201,10 @@ async function handleAuto() {
 	opacity: 0.4;
 }
 
+.control-wrap.control-wrap-active .control-content .triangle.top:hover {
+	background: linear-gradient(to bottom, #301D09, #553A21 70%) no-repeat;
+}
+
 .control-wrap .control-content .triangle.bottom {
 	position: absolute;
 	left: 50%;
@@ -203,6 +216,10 @@ async function handleAuto() {
 	clip-path: polygon(50% 0, 0 100%, 100% 100%);
 	cursor: pointer;
 	z-index: 10;
+}
+
+.control-wrap.control-wrap-active .control-content .triangle.bottom:hover {
+	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.bottom .arr {

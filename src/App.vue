@@ -26,6 +26,7 @@ if (localStorage.getItem("token")) {
 	loadStandList();
 	alarm.connect();
 	fault.connect();
+	loadUserInfo();
 }
 
 watch(
@@ -47,8 +48,13 @@ watch(
 provide("getData", {
 	alarm,
 	fault,
-	loadStandList
-})
+	loadStandList,
+	loadUserInfo
+});
+async function loadUserInfo() {
+	const res = await API_HOME.getUserInfo();
+	store.dispatch("handleUser", res);
+}
 
 async function loadStandList() {
 	const res = await API_HOME.getStandList();
@@ -84,6 +90,12 @@ async function loadStandList() {
 	height: 100%;
 	background: url("./assets/images/bg.jpg") no-repeat center top;
 	background-size: cover;
+}
+
+@media screen and (min-height: 1000px) {
+	.app-wrap {
+		background: url("./assets/images/bg.jpg") no-repeat center top, url("./assets/images/home-bg.png") no-repeat left bottom;
+	}
 }
 
 .app-wrap .app-bg {

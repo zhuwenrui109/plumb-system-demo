@@ -51,7 +51,7 @@ function handleLogout() {
 			localStorage.getItem("autoToken") && localStorage.removeItem("autoToken");
 			router.push({
 				name: "login"
-			})
+			});
 		},
 		() => {
 			isHome.value && store.state.pluginDom();
@@ -75,15 +75,9 @@ function handleLogout() {
 		/>
 		<div
 			class="logout-wrap"
-			v-if="route.name != 'login'"
-			@click="handleLogout"
+			v-if="route.name != 'login' && store.state.user.name"
 		>
-			<img
-				src="../assets/images/icon-logout.png"
-				alt=""
-				class="icon"
-			/>
-			<span>退出登录</span>
+			{{ store.state.user.name }}，欢迎回来！
 		</div>
 		<div class="line"></div>
 		<div class="line right"></div>
@@ -123,15 +117,6 @@ function handleLogout() {
 	justify-content: flex-start;
 	column-gap: 5px;
 	cursor: pointer;
-}
-
-.wrap .logout-wrap .icon {
-	display: block;
-	width: 34px;
-}
-
-.wrap .logout-wrap span {
-	display: block;
 	font-size: 12px;
 }
 

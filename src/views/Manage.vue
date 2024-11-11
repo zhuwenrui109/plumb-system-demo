@@ -25,6 +25,7 @@ const props = defineProps({
 	}
 });
 
+const formName = ref("新增设备");
 const isPopShow = ref(false);
 const page = ref(1);
 const dataList = ref([]);
@@ -58,18 +59,21 @@ watch(
 
 watch(isPopShow, newVal => {
 	if (!newVal) {
-		form.value = {
-			device_id: "",
-			sensor_ip: "",
-			sensor_port: "",
-			monitor_ip: "",
-			monitor_port: "80",
-			region_id: "",
-			station_id: "",
-			threshold_first: "",
-			threshold_second: "",
-			status: "0"
-		};
+		setTimeout(() => {
+			form.value = {
+				device_id: "",
+				sensor_ip: "",
+				sensor_port: "",
+				monitor_ip: "",
+				monitor_port: "80",
+				region_id: "",
+				station_id: "",
+				threshold_first: "",
+				threshold_second: "",
+				status: "0"
+			};
+			formName.value = "新增设备";
+		}, 300);
 	}
 });
 
@@ -142,19 +146,24 @@ async function handleSubmit() {
 		}
 	}
 	if (form.value.threshold_first >= form.value.threshold_second) {
-		toastPlguin("一级报警值需要小于二级报警值")
+		toastPlguin("一级报警值需要小于二级报警值");
 		return;
 	}
 	const res = await API_MANAGE.editManage(form.value);
 	if (res.code == 200) {
 		loadData();
 		refreshStandList();
+		if (!form.value.device_id) {
+			toastPlguin("添加成功");
+		} else {
+			toastPlguin("修改成功");
+		}
 		isPopShow.value = false;
-		toastPlguin("添加成功");
 	}
 }
 
 async function handleEdit(id) {
+	formName.value = "编辑设备";
 	const res = await API_MANAGE.getDetail(id);
 	console.log("res :>> ", res);
 	if (res.code == 200) {
@@ -216,7 +225,7 @@ function handleDelete(id) {
 				<div class="td english alarm">{{ item.threshold_first }}</div>
 				<div class="td english alarm">{{ item.threshold_second }}</div>
 				<div
-					class="td connect success"
+					class="td connect"
 					:class="{ success: item.connection_status == 1 }"
 				>
 					<span class="dir"></span>
@@ -224,7 +233,7 @@ function handleDelete(id) {
 						src="../assets/images/icon-unconnect.png"
 						alt=""
 					/>
-					<span>已连接</span>
+					<span>{{ item.connection_status == 1 ? "已连接" : "无法连接" }}</span>
 				</div>
 				<div class="td state">
 					<GlobalSwitch
@@ -255,7 +264,7 @@ function handleDelete(id) {
 			@change-page="loadData"
 		></GlobalPagination>
 		<FormPop
-			name="新增设备"
+			:name="formName"
 			v-model="isPopShow"
 		>
 			<div class="form-wrap">

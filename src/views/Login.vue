@@ -7,12 +7,12 @@ import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 
-const { alarm, fault, loadStandList, loadWindowCount } = inject("getData");
+const { alarm, fault, loadStandList, loadUserInfo } = inject("getData");
 
 const store = useStore();
 
 const isAutoLogin = ref(false);
-// 账号：18804030703；密码：123456；
+// 账号: 18804030703; 密码: 123456;
 const username = ref("");
 const password = ref("");
 const router = useRouter();
@@ -38,7 +38,6 @@ onUnmounted(() => {
 watch(
 	() => alarm.message.value,
 	newVal => {
-		console.log("alarm :>> ", newVal);
 		store.dispatch("handleAlarmList", newVal);
 	}
 );
@@ -46,7 +45,6 @@ watch(
 watch(
 	() => alarm.message.value,
 	newVal => {
-		console.log("fault :>> ", newVal);
 		store.dispatch("handleFaultList", newVal);
 	}
 );
@@ -110,13 +108,15 @@ async function handleLogin(e) {
 		localStorage.setItem("token", token);
 		localStorage.setItem("tokenTime", 9999999999999999);
 		localStorage.setItem("userRole", user_role);
+		loadUserInfo();
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		alarm.connect();
 		fault.connect();
 		loadStandList();
 		router.push(prev);
 	} catch (err) {
-		console.log("err :>> ", err);
+		console.log('err :>> ', err);
+		toastPlguin(err.error)
 	}
 }
 

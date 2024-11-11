@@ -3,7 +3,7 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
@@ -13,15 +13,17 @@ import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import useWebSocket from "@/utils/useWebSocket";
 import { API_HOME } from "@/api";
-import toastPlguin from "@/utils/toast";
 import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
+import homeToastPlguin from "@/utils/homeToast";
 
 const router = useRouter();
 const store = useStore();
 
 const { WebVideoCtrl } = window;
+const roll = ref(null);
+const rollTimer = ref(null);
 const pluginDom = ref(null);
 const pluginSpeed = ref(10);
 const g_iWndIndex = ref(0);
@@ -43,6 +45,10 @@ const faultList = computed(() => store.state.faultList);
 
 onMounted(() => {
 	// setTimeout(testPluginError, 1000 * 10);
+});
+
+onUnmounted(() => {
+	destoryRoll();
 });
 
 watch(isPopShow, newVal => {
@@ -75,10 +81,49 @@ watch(
 	() => concentration.message.value,
 	newVal => {
 		deepList.value = [...newVal];
+		initRoll();
 		// audio.value.play();
 		// audio.value.muted = true;
 	}
 );
+
+function initRoll() {
+	destoryRoll();
+	//定时器触发周期
+	rollTimer.value = setInterval(marqueeTest, 75);
+}
+
+function marqueeTest() {
+	let test1 = roll.value;
+	//判断组件是否渲染完成
+	if (test1.offsetHeight == 0) {
+		test1 = roll.value;
+	} else {
+		//如果列表数量过少不进行滚动
+		if (test1.childNodes.length < 5) {
+			destoryRoll();
+			return;
+		}
+		//组件进行滚动
+		test1.scrollTop += 1;
+		//判断滚动条是否滚动到底部
+		if (test1.scrollTop == test1.scrollHeight - test1.clientHeight) {
+			//获取组件第一个节点
+			let a = test1.childNodes[0];
+			//删除节点
+			test1.removeChild(a);
+			//将该节点拼接到组件最后
+			test1.append(a);
+		}
+	}
+}
+
+function destoryRoll() {
+	if (rollTimer.value) {
+		clearInterval(rollTimer.value);
+		rollTimer.value = null;
+	}
+}
 
 /**
  * 测试浓度超标警报录制视频
@@ -186,8 +231,8 @@ async function toggleWiper(action) {
 	const res = await API_HOME.handleWiper({
 		device_id: deviceList.value[g_iWndIndex.value].device.device_id,
 		action
-	})
-	console.log('res :>> ', res);
+	});
+	console.log("res :>> ", res);
 }
 
 /**
@@ -195,7 +240,7 @@ async function toggleWiper(action) {
  */
 async function handleAlarmMuted() {
 	if (!alarmCheckList.value.length) {
-		toastPlguin("请检查是否选择");
+		message("请检查是否选择");
 		return;
 	}
 	const alarm_ids = [...alarmCheckList.value];
@@ -205,27 +250,28 @@ async function handleAlarmMuted() {
 		});
 		if (res.code == 200) {
 			alarmCheckList.value = [];
-			toastPlguin("已消音");
+			homeToastPlguin("已消音");
 		} else {
-			toastPlguin("消音失败");
+			homeToastPlguin("消音失败");
 		}
 	} catch (err) {
-		toastPlguin("消音失败");
+		homeToastPlguin("消音失败");
 	}
 }
 
 function showCheckForm() {
 	if (!alarmCheckList.value.length) {
-		toastPlguin("请检查是否选择");
+		homeToastPlguin("提交失败");
 		return;
 	}
+	form.value.confirm_user = store.state.user.name;
 	isPopShow.value = true;
 }
 
 async function submitCheckList() {
 	const { confirm_user, remark } = form.value;
 	if (!confirm_user && !remark) {
-		toastPlguin("请检查确认人和备注");
+		homeToastPlguin("请检查确认人和备注");
 		return;
 	}
 	try {
@@ -236,12 +282,12 @@ async function submitCheckList() {
 		});
 		if (code == 200) {
 			isPopShow.value = false;
-			toastPlguin("确认报警成功");
+			homeToastPlguin("确认报警成功");
 		} else {
-			toastPlguin("提交失败");
+			homeToastPlguin("提交失败");
 		}
 	} catch (err) {
-		toastPlguin("提交失败");
+		homeToastPlguin("提交失败");
 	}
 }
 </script>
@@ -335,13 +381,19 @@ async function submitCheckList() {
 						<GlobalBlackContent>
 							<div class="control-item">
 								<span class="name">雨刷开/关</span>
-								<span class="icon" @click="toggleWiper(0)">
+								<span
+									class="icon"
+									@click="toggleWiper(0)"
+								>
 									<img
 										src="../assets/images/icon-wipers-on.png"
 										alt=""
 									/>
 								</span>
-								<span class="icon" @click="toggleWiper(1)">
+								<span
+									class="icon"
+									@click="toggleWiper(1)"
+								>
 									<img
 										src="../assets/images/icon-wipers-off.png"
 										alt=""
@@ -372,10 +424,12 @@ async function submitCheckList() {
 				></global-title>
 				<home-global-content
 					class="density-wrap"
-					:isNeedScroll="true"
-					:isAutoScroll="true"
+					:isNeedScroll="false"
 				>
-					<div class="density-list">
+					<div
+						class="density-list"
+						ref="roll"
+					>
 						<div
 							class="density-item"
 							v-for="item in deepList"
@@ -450,7 +504,11 @@ async function submitCheckList() {
 					name="实时故障"
 					english="fault"
 				></global-title>
-				<home-global-content class="fault-wrap">
+				<home-global-content
+					class="fault-wrap"
+					:is-need-scroll="true"
+					:is-need-scroll-bar="true"
+				>
 					<div class="fault-list">
 						<global-tips-item
 							:isSelect="false"
@@ -667,7 +725,13 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item .density-wrap .density-list {
+	height: 100%;
+	overflow-y: scroll;
 	padding: 10px 0;
+}
+
+.bottom-wrap .home-item .density-wrap .density-list::-webkit-scrollbar {
+	display: none;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item {
@@ -682,10 +746,6 @@ async function submitCheckList() {
 	background: #363636;
 	border-radius: 4px;
 	margin-bottom: 8px;
-}
-
-.bottom-wrap .home-item .density-wrap .density-list .density-item:last-child {
-	margin-bottom: 0;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .area-name {

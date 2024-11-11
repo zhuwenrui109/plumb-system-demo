@@ -2,12 +2,16 @@
 import { API_HOME } from "@/api";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
+import FormPop from "./FormPop.vue";
 
 const store = useStore();
 const props = defineProps(["deepList"]);
 const g_iWndIndex = defineModel("iWndIndex");
 const g_iWndowType = defineModel("iWndowType"); // 分割数量
 const g_iWndowPage = defineModel("iWndowPage"); // 页数
+
+
+const isPopShow = ref(false);
 
 const { WebVideoCtrl } = window;
 const config = {
@@ -83,6 +87,7 @@ function initPlugin() {
 					loginPlugin();
 				},
 				() => {
+					// 初始化失败
 					alert("插件初始化失败，请确认是否已安装插件；如果未安装，请双击开发包目录里的HCWebSDKPlugin.exe安装！");
 				}
 			);
@@ -398,11 +403,7 @@ function refresh() {
 				<img src="../assets/images/plugin-video-bg.png" alt="">
 			</div>
 		</div>
-		<!-- <img
-			src="../assets/images/plugin-bg.png"
-			alt=""
-			class="plugin-bg"
-		/> -->
+		<FormPop v-model="isPopShow" name="温馨提示"></FormPop>
 	</div>
 </template>
 

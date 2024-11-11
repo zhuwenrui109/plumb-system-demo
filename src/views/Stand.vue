@@ -93,7 +93,6 @@ async function refreshStand() {
 
 async function handleSort(type, id) {
 	const res = type == 0 ? await API_STAND.standSort(id) : await API_STAND.areaSort(id);
-	console.log("res :>> ", res);
 	loadData();
 	refreshStand();
 }
@@ -174,13 +173,13 @@ async function handleEdit(id, regionId = "") {
 	let res = null;
 	if (regionId) {
 		popConfig.value.type = "region";
-		popConfig.value.name = "新增工艺区";
+		popConfig.value.name = "编辑工艺区";
 		popConfig.value.title = "工艺区名称";
 		popConfig.value.placeholder = "请输入工艺区名称";
 		res = await API_STAND.getRegionDetail(regionId);
 	} else {
 		popConfig.value.type = "stand";
-		popConfig.value.name = "新增场站";
+		popConfig.value.name = "编辑场站";
 		popConfig.value.title = "场站名称";
 		popConfig.value.placeholder = "请输入场站名称";
 		res = await API_STAND.getStandDetail(id);

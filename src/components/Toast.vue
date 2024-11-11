@@ -5,13 +5,11 @@ const props = defineProps({
 </script>
 
 <template>
-	<Transition name="fade">
-		<div class="toast-wrap">
-			<div class="content">
-				{{ message }}
-			</div>
+	<div class="toast-wrap">
+		<div class="content">
+			{{ message }}
 		</div>
-	</Transition>
+	</div>
 </template>
 
 <style scoped>
@@ -29,7 +27,7 @@ const props = defineProps({
 
 .toast-wrap .content {
 	/* width: 240px; */
-  /* height: 52px; */
+	/* height: 52px; */
 	box-sizing: border-box;
 	padding: 10px 20px;
 	background: repeating-linear-gradient(116deg, transparent, transparent 10px, rgba(0, 0, 0, 0.2) 15px, rgba(0, 0, 0, 0.2) 26px);
@@ -39,9 +37,9 @@ const props = defineProps({
 	background-color: rgba(98, 22, 12, 1);
 	box-shadow: inset 0 0 9px 4px rgba(252, 69, 44, 0.8);
 	border: 1px solid rgba(255, 160, 102, 0.8);
-  border-radius: 4px;
+	border-radius: 4px;
 	font-size: 14px;
-  /* line-height: 50px; */
+	/* line-height: 50px; */
 	text-align: center;
 }
 
