@@ -1,14 +1,30 @@
 <script setup>
 import { API_HOME } from '@/api';
-import toastPlguin from '@/utils/toast';
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed, ref, watch } from 'vue';
 
-const pageindex = defineModel("page")
-const deviceIndex = defineModel("device");
-const store = useStore();
+const id = defineModel();
 
-const deviceList = computed(() => store.getters.getDeviceList);
+const currentStatus = ref(false);
+
+const currentBtnUrl = computed(() => {
+	if (currentStatus.value) {
+		return getImgUrl("control-auto-stop.png");
+	}
+	return getImgUrl("control-auto-active.png");
+})
+
+watch(id, newVal => {
+	if (newVal) {
+		loadStatus();
+	}
+})
+
+async function loadStatus() {
+	const { data } = await API_HOME.getAutoStatus({
+		device_id: id.value
+	})
+	currentStatus.value = data.status;
+}
 
 /**
  * 控制云台方向
@@ -16,24 +32,24 @@ const deviceList = computed(() => store.getters.getDeviceList);
  */
 async function handleControl(key) {
 	const res = await API_HOME.handleDirection({
-		device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id,
+		device_id: id.value,
 		value: key
 	})
-	console.log('res :>> ', res);
 }
 
 async function handleAuto() {
-	const res = await API_HOME.getAutoStatus({
-		device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id
-	})
-	if (!res.data.status) {
+	if (!currentStatus.value) {
 		handleControl(9);
 	} else {
 		const res = await API_HOME.closeAuto({
-			device_id: deviceList.value[pageindex.value][deviceIndex.value].device.device_id
+			device_id: id.value
 		})
-		console.log('res :>> ', res);
 	}
+	currentStatus.value = !currentStatus.value;
+}
+
+function getImgUrl(title) {
+	return new URL(`../assets/images/${title}`, import.meta.url).href;
 }
 </script>
 
@@ -95,7 +111,7 @@ async function handleAuto() {
 				class="auto-btn"
 			/>
 			<img
-				src="../assets/images/control-auto-active.png"
+				:src="currentBtnUrl"
 				alt=""
 				class="auto-btn active"
 				@click="handleAuto"
@@ -114,10 +130,13 @@ async function handleAuto() {
 	background: #000;
 	border-radius: 50%;
 	border: 1px solid transparent;
+	opacity: .6;
+	transition: .2s all ease-in;
 }
 
 .control-wrap.control-wrap-active {
 	border-color: #ffe3c6;
+	opacity: 1;
 	/* transition: .2s all ease-in; */
 }
 
@@ -143,7 +162,7 @@ async function handleAuto() {
 }
 
 .control-wrap.control-wrap-active .control-content .triangle.left:hover {
-	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
+	background: linear-gradient(to bottom, #2c1a08, #2c1a08, #59432d 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.left .arr {
@@ -165,7 +184,7 @@ async function handleAuto() {
 }
 
 .control-wrap.control-wrap-active .control-content .triangle.right:hover {
-	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
+	background: linear-gradient(to bottom, #2c1a08, #2c1a08, #59432d 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.right .arr {
@@ -191,6 +210,10 @@ async function handleAuto() {
 	z-index: 10;
 }
 
+.control-wrap.control-wrap-active .control-content .triangle.top:hover {
+	background: linear-gradient(to bottom, #59432d 60%, #2c1a08) no-repeat;
+}
+
 .control-wrap .control-content .triangle.top .arr {
 	position: absolute;
 	left: 50%;
@@ -199,10 +222,6 @@ async function handleAuto() {
 	display: block;
 	width: 8px;
 	opacity: 0.4;
-}
-
-.control-wrap.control-wrap-active .control-content .triangle.top:hover {
-	background: linear-gradient(to bottom, #301D09, #553A21 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.bottom {
@@ -219,7 +238,7 @@ async function handleAuto() {
 }
 
 .control-wrap.control-wrap-active .control-content .triangle.bottom:hover {
-	background: linear-gradient(to bottom, #301D09, #301D09, #553A21 70%) no-repeat;
+	background: linear-gradient(to bottom, #2c1a08, #2c1a08, #59432d 70%) no-repeat;
 }
 
 .control-wrap .control-content .triangle.bottom .arr {

@@ -1,5 +1,6 @@
 <script setup>
-import { computed, ref } from "vue";
+import { API_HOME } from "@/api";
+import { computed, ref, watch } from "vue";
 import { useStore } from "vuex";
 
 const store = useStore();
@@ -16,39 +17,43 @@ const props = defineProps({
 const currentStandId = defineModel("standId");
 const currentAreaId = defineModel("areaId");
 
-const standList = computed(() => {
-	const arr = [
-		{
-			name: "选择站点",
-			station_id: "",
-			regions: [
-				{
-					name: "选择工艺区",
-					region_id: ""
-				}
-			]
-		}
-	];
+const standList = ref([
+	{
+		name: "选择站点",
+		station_id: ""
+	}
+]);
+const areaList = ref([
+	{
+		name: "选择工艺区",
+		region_id: ""
+	}
+]);
 
-	return [...arr, ...store.state.standList];
+watch(currentStandId, newVal => {
+	if (!newVal) {
+		areaList.value.splice(1, areaList.value.length);
+	} else {
+		loadAreaList(currentStandId.value);
+	}
 });
 
-const areaList = computed(() => standList.value.find(item => item.station_id == currentStandId.value));
+loadStandList();
+
+async function loadStandList() {
+	const res = await API_HOME.getAllStand();
+	console.log("res.data :>> ", res.data);
+	standList.value.push(...res.data);
+}
+
+async function loadAreaList(id) {
+	const { data } = await API_HOME.getAllArea(id);
+	console.log("data :>> ", data);
+	areaList.value.splice(1, areaList.value.length);
+	areaList.value.push(...data);
+}
 
 function handleSelectStand() {
-	if (!areaList.value.regions[0]) {
-		areaList.value.regions.push({
-			name: "暂无工艺区",
-			region_id: ""
-		});
-	}
-	if (areaList.value.regions[0].region_id) {
-		areaList.value.regions.unshift({
-			name: "选择工艺区",
-			region_id: ""
-		});
-	}
-	// currentAreaId.value = areaList.value.regions[0].region_id;
 	currentAreaId.value = "";
 }
 </script>
@@ -56,7 +61,10 @@ function handleSelectStand() {
 <template>
 	<div class="global-select-wrap">
 		<div class="global-select-content">
-			<div class="name" v-if="needName">
+			<div
+				class="name"
+				v-if="needName"
+			>
 				所属场站
 			</div>
 			<div
@@ -73,7 +81,6 @@ function handleSelectStand() {
 						v-for="item in standList"
 						:key="item.station_id"
 						:value="item.station_id"
-						v-show="item.regions"
 					>
 						{{ item.name }}
 					</option>
@@ -81,7 +88,10 @@ function handleSelectStand() {
 			</div>
 		</div>
 		<div class="global-select-content">
-			<div class="name" v-if="needName">
+			<div
+				class="name"
+				v-if="needName"
+			>
 				所属工艺区
 			</div>
 			<div
@@ -92,10 +102,9 @@ function handleSelectStand() {
 					class="global-select"
 					:class="{ disabled: currentAreaId == '' }"
 					v-model="currentAreaId"
-					@change="handleSelectArea"
 				>
 					<option
-						v-for="item in areaList.regions"
+						v-for="item in areaList"
 						:key="item.region_id"
 						:value="item.region_id"
 					>
@@ -154,7 +163,11 @@ function handleSelectStand() {
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	padding-left: 20px;
+	padding-right: 40px;
 	background: none;
+	/* white-space: nowrap; */
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .global-select-wrap .global-select.disabled {

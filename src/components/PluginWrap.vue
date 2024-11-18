@@ -3,371 +3,223 @@ import { API_HOME } from "@/api";
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 import FormPop from "./FormPop.vue";
+import {
+	changeTxtWndNum,
+	destory,
+	getChannelInfo,
+	getDevicePort,
+	getInfo,
+	getTextOverlay,
+	init,
+	login,
+	logout,
+	startRealPlay,
+	stopRealPlay
+} from "@/utils/pluginController";
+import CheckToast from "./CheckToast.vue";
 
 const store = useStore();
 const props = defineProps(["deepList"]);
-const g_iWndIndex = defineModel("iWndIndex");
-const g_iWndowType = defineModel("iWndowType"); // 分割数量
-const g_iWndowPage = defineModel("iWndowPage"); // 页数
 
-
+const isCheckShow = ref(false);
+const timer = ref(null);
 const isPopShow = ref(false);
 
-const { WebVideoCtrl } = window;
-const config = {
-	iPrototocol: 1, // http协议，1表示http协议 2表示https协议
-	szUsername: "admin", // 用户名称
-	szPassword: "abcd1234" // 用户密码
-};
-let iDevicePort = null;
-let iRtspPort = null;
-let iChannelID = null;
-let interval = null;
+const windowType = defineModel("iWndowType");
 
-const userType = computed(() => store.state.windowCount);
-const deviceList = computed(() => {
-	return store.getters.getDeviceList;
-});
+const deviceList = computed(() => store.getters.getDeviceList);
+const g_iWndIndex = computed(() => store.state.iWndIndex);
+const g_iWndowType = computed(() => store.state.windowCount);
+const g_iWndowPage = computed(() => store.state.iWndowPage);
 
-watch(g_iWndowType, newVal => {
-	console.log("newVal :>> ", newVal);
-	changeWndNum(newVal);
+watch(windowType, (newVal, oldVal) => {
+	if (!oldVal) {
+		initPlugin();
+		return;
+	}
+	destoryPlugin(initPlugin);
 });
 
 loadWindowCount();
 
 onMounted(() => {
-	// initPlugin();
-	store.dispatch("handlePluginDom", initPlugin);
-});
-
-defineExpose({
-	initPlugin
+	store.dispatch("handleInitPlugin", initPlugin);
+	store.dispatch("handleDestoryPlugin", destoryPlugin);
 });
 
 async function loadWindowCount() {
 	const res = await API_HOME.getWindowCount();
 	await store.dispatch("handleWindowCount", res.data.value);
-	initPlugin();
+	if (res.data.value == "1*2") {
+		windowType.value = 2;
+		return;
+	}
+	windowType.value = res.data.value;
+	// await nextTick();
+	// initPlugin();
 }
 
 onUnmounted(() => {
-	WebVideoCtrl.I_DestroyPlugin();
-	if (interval) {
-		clearInterval(interval);
-		interval = null;
-	}
+	destoryPlugin();
 });
 
 /**
  * 监控控件初始化
  */
-function initPlugin() {
-	g_iWndowType.value = userType.value;
-	WebVideoCtrl.I_InitPlugin({
-		bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
-		iWndowType: Number(userType.value),
-		cbSelWnd: function (xmlDoc) {
-			console.log("xmlDoc :>> ", xmlDoc);
-			g_iWndIndex.value = parseInt($(xmlDoc).find("SelectWnd").eq(0).text(), 10);
-		},
-		cbDoubleClickWnd(iWndIndex) {
-			g_iWndIndex.value = iWndIndex;
-			if (g_iWndowType.value > 1) {
-				g_iWndowType.value = 1;
-				changeWndNum(1);
-			} else {
-				g_iWndowType.value = 4;
-				changeWndNum(4);
-			}
-		},
-		cbInitPluginComplete() {
-			WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(
-				() => {
-					loginPlugin();
-				},
-				() => {
-					// 初始化失败
-					alert("插件初始化失败，请确认是否已安装插件；如果未安装，请双击开发包目录里的HCWebSDKPlugin.exe安装！");
-				}
-			);
-		}
-	});
-}
-
-/**
- * 登录
- */
-async function loginPlugin() {
-	if (!deviceList.value.length) {
-		return;
-	}
-	const list = [...deviceList.value[g_iWndowPage.value]];
-	list.forEach((item, index) => {
-		if (!item.device) {
-			return;
-		}
-		const { monitor_ip, monitor_port } = item.device;
-		WebVideoCtrl.I_Login(monitor_ip, 1, monitor_port, config.szUsername, config.szPassword, {
-			timeout: 5000,
-			success() {
-				console.log("成功");
-				setTimeout(function () {
-					setTimeout(function () {
-						getChannelInfo(monitor_ip, monitor_port, index);
-					}, 1000);
-					getDevicePort(monitor_ip, monitor_port);
-				}, 10);
+async function initPlugin() {
+	try {
+		await init({
+			bWndFull: false, //是否支持单窗口双击全屏，默认支持 true:支持 false:不支持
+			iWndowType: parseInt(windowType.value, 10),
+			cbSelWnd: function (xmlDoc) {
+				store.commit("setIWndIndex", parseInt($(xmlDoc).find("SelectWnd").eq(0).text(), 10));
 			},
-			error(oError) {
-				if (oError.errorCode == 2001) {
-					setTimeout(function () {
-						setTimeout(function () {
-							getChannelInfo(monitor_ip, monitor_port);
-						}, 1000);
-						getDevicePort(monitor_ip, monitor_port);
-					}, 10);
+			cbDoubleClickWnd: async function (iWndIndex) {
+				if (g_iWndowType.value == 1) {
+					return;
 				}
-				console.log("err :>> ", oError.errorCode);
-				console.error("登录失败");
+				store.commit("setIWndIndex", iWndIndex);
+				if (windowType.value > 1 || windowType.value == "1*2") {
+					windowType.value = 1;
+				} else {
+					windowType.value = g_iWndowType.value == "1*2" ? 2 : g_iWndowType.value;
+				}
+			},
+			cbEvent: function (iEventType, iParam1, iParam2) {
+				console.log("----- 插件事件 ------");
+				console.log("iEventType :>> ", iEventType);
+				console.log("iParam1 :>> ", iParam1);
+				console.log("iParam2 :>> ", iParam2);
 			}
 		});
-	});
-}
-
-// 获取端口
-function getDevicePort(ip, port) {
-	const szDeviceIdentify = `${ip}_${port}`;
-	if (null == szDeviceIdentify) {
-		return;
-	}
-
-	const oPort = WebVideoCtrl.I_GetDevicePort(szDeviceIdentify).then(
-		oPort => {
-			iDevicePort = oPort.iDevicePort;
-			iRtspPort = oPort.iRtspPort;
-			console.log("iDevicePort :>> ", iDevicePort);
-			console.log("获取端口成功! :>> ", szDeviceIdentify);
-		},
-		oError => {
-			const szInfo = "获取端口失败！";
-			console.log("获取端口失败！ :>> ", szDeviceIdentify + szInfo, oError.errorCode, oError.errorMsg);
-		}
-	);
-}
-
-// 获取通道
-function getChannelInfo(ip, port, index) {
-	const szDeviceIdentify = `${ip}_${port}`;
-	if (null == szDeviceIdentify) {
-		return;
-	}
-
-	// 模拟通道
-	WebVideoCtrl.I_GetAnalogChannelInfo(szDeviceIdentify, {
-		success: function (xmlDoc) {
-			console.log("xmlDoc :>> ", xmlDoc);
-			var oChannels = $(xmlDoc).find("VideoInputChannel");
-
-			$.each(oChannels, function (i) {
-				var id = $(this).find("id").eq(0).text(),
-					name = $(this).find("name").eq(0).text();
-				iChannelID = id;
-				if ("" == name) {
-					name = "Camera " + (i < 9 ? "0" + (i + 1) : i + 1);
-				}
+		if (windowType.value > 1 || windowType.value == "1*2") {
+			// if (windowType.value == "1*2") {
+			// 	await changeTxtWndNum(windowType.value);
+			// }
+			const loginArr = [];
+			deviceList.value[g_iWndowPage.value].forEach((item, index) => {
+				const { monitor_ip, monitor_port, szDeviceIdentify } = item.device;
+				loginArr.push(login(monitor_ip, monitor_port));
+				// await login(monitor_ip, monitor_port);
+				// const { iRtspPort } = await getDevicePort(szDeviceIdentify);
+				// await getChannelInfo(szDeviceIdentify);
+				// await startRealPlay(szDeviceIdentify, {
+				// 	iWndIndex: index,
+				// 	iPort: iRtspPort
+				// });
 			});
-			clickStartRealPlay(szDeviceIdentify, index);
-		},
-		error: function (oError) {
-			console.log(
-				'szDeviceIdentify + " 获取模拟通道失败！", oError.errorCode, oError.errorMsg :>> ',
-				szDeviceIdentify + " 获取模拟通道失败！",
-				oError.errorCode,
-				oError.errorMsg
-			);
+			Promise.all(loginArr)
+				.then(szDeviceIdentifies => {
+					szDeviceIdentifies.forEach(async (szDeviceIdentify, index) => {
+						const { iRtspPort } = await getDevicePort(szDeviceIdentify);
+						await getChannelInfo(szDeviceIdentify);
+						await startRealPlay(szDeviceIdentify, {
+							iWndIndex: index,
+							iPort: iRtspPort
+						});
+					});
+				})
+				.catch(err => {
+					console.log('err :>> ', err);
+					// 重复登录
+					if (err == 2001) {
+						destoryPlugin(initPlugin);
+					}
+				});
+		} else {
+			const { monitor_ip, monitor_port, szDeviceIdentify } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
+			await login(monitor_ip, monitor_port);
+			const { iRtspPort } = await getDevicePort(szDeviceIdentify);
+			await getChannelInfo(szDeviceIdentify);
+			await startRealPlay(szDeviceIdentify, {
+				iWndIndex: 0,
+				iPort: iRtspPort
+			});
+			setTextOverlay();
+			timer.value = setInterval(setTextOverlay, 1000 * 10);
 		}
+	} catch (err) {
+		console.log("err :>> ", err);
+		// 初始化失败
+		if (err == 3000) {
+			isCheckShow.value = true;
+		}
+	}
+}
+
+function destoryPlugin(callback) {
+	const arr = [];
+	deviceList.value[g_iWndowPage.value].forEach(async (item, index) => {
+		const info = getInfo(index);
+		if (info) {
+			stopRealPlay();
+			arr.push(logout(info.szDeviceIdentify));
+		}
+	});
+	Promise.all(arr).then(() => {
+		destory();
+		if (timer.value) {
+			clearInterval(timer.value);
+			timer.value = null;
+		}
+		callback && callback();
 	});
 }
 
-/**
- * 切换分割数
- * @param iType 分割数量
- */
-async function changeWndNum(iType) {
-	await nextTick();
-	// if (iType == 1) {
-	// 	enableDraw();
-	// } else {
-	// 	delAllSnapPolygon();
-	// }
-	if ("1*2" == iType) {
-		WebVideoCtrl.I_ArrangeWindow(iType).then(
-			() => {
-				console.log("窗口分割成功！");
-			},
-			oError => {
-				console.log("窗口分割失败！");
-			}
-		);
-	} else {
-		WebVideoCtrl.I_ChangeWndNum(parseInt(iType, 10)).then(
-			() => {
-				console.log("窗口分割成功！");
-			},
-			oError => {
-				console.log("窗口分割失败！");
-			}
-		);
-	}
-}
-
-/**
- * 开始预览
- * @param iWndIndex 在哪一个窗口预览
- */
-function clickStartRealPlay(szDeviceIdentify, iWndIndex) {
-	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
-
-	if (null == szDeviceIdentify) {
-		return;
-	}
-	const startRealPlay = function () {
-		console.log("szDeviceIdentify :>> ", szDeviceIdentify);
-		WebVideoCtrl.I_StartRealPlay(szDeviceIdentify, {
-			iStreamType: 1,
-			iChannelID: iChannelID,
-			bZeroChannel: false,
-			iPort: iRtspPort,
-			iWndIndex,
-			success: function () {
-				console.log("开始预览成功！ :>> ", szDeviceIdentify);
-				if (g_iWndowType.value == "1*2") {
-					changeWndNum(g_iWndowType.value);
-				}
-				if (userType.value == 1) {
-					interval = setInterval(() => {
-						console.log("interval");
-						setTextOverlay(szDeviceIdentify, iChannelID);
-					}, 1000 * 10);
-				}
-			},
-			error: function (oError) {
-				console.log("开始预览失败！ :>> ", szDeviceIdentify, oError.errorCode, oError.errorMsg);
-			}
+function handleChangePage(type) {
+	if (!type && g_iWndowPage.value > 1) {
+		store.commit("setIWndPage", g_iWndowPage.value + 1);
+		destoryPlugin(() => {
+			initPlugin();
 		});
-	};
-
-	if (oWndInfo != null) {
-		// 已经在播放了，先停止
-		WebVideoCtrl.I_Stop({
-			success: function () {
-				startRealPlay();
-			}
+	}
+	if (type && g_iWndowPage.value < deviceList.value.length - 1) {
+		store.commit("setIWndPage", g_iWndowPage.value - 1);
+		destoryPlugin(() => {
+			initPlugin();
 		});
-	} else {
-		startRealPlay();
 	}
 }
 
 /**
  * 设置osg信息
  */
-function setTextOverlay(szDeviceIdentify) {
+async function setTextOverlay() {
 	if (!deviceList.value) {
 		return;
 	}
-	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(0);
+	if (!oWndInfo) {
+		return;
+	}
+	console.log('oWndInfo :>> ', oWndInfo);
 	const szUrl = "ISAPI/System/Video/inputs/channels/" + oWndInfo.iChannelID + "/overlays";
-	const deviceInfo = getDeviceInfo();
-	WebVideoCtrl.I_GetTextOverlay(szUrl, oWndInfo.szDeviceIdentify, {
-		success: function (data) {
-			$(data).find("TextOverlay").eq(0).find("displayText").eq(0).text(`${deviceInfo.station.name}-${deviceInfo.region.name}`);
-			$(data).find("TextOverlay").eq(0).find("positionX").eq(0).text("20");
-			$(data).find("TextOverlay").eq(0).find("positionY").eq(0).text("20");
-			$(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
-			$(data).find("TextOverlay").eq(1).find("displayText").eq(0).text(`浓度:${deviceInfo.gas}ppm.m`);
-			$(data).find("TextOverlay").eq(1).find("positionX").eq(0).text("220");
-			$(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
-			$(data).find("TextOverlay").eq(2).find("displayText").eq(0).text(`光强:${deviceInfo.light}`);
-			$(data).find("TextOverlay").eq(2).find("positionX").eq(0).text("380");
-			$(data).find("TextOverlay").eq(2).find("positionY").eq(0).text("5");
-			var xmldoc = toXMLStr(data);
-			var newOptions = {
-				type: "PUT",
-				data: xmldoc,
-				success: function () {
-					console.log("绘制osd信息成功");
-				},
-				error: function (oError) {
-					console.log("设置osd信息失败！");
-				}
-			};
-
-			WebVideoCtrl.I_SendHTTPRequest(szDeviceIdentify, szUrl, newOptions);
-		},
-		error: function (oError) {
-			showOPInfo(szDeviceIdentify + " 设置osd信息失败！", oError.errorCode, oError.errorMsg);
-		}
-	});
-}
-
-function toXMLStr(oXmlDoc) {
-	var szXmlDoc = "";
-
-	try {
-		var oSerializer = new XMLSerializer();
-		szXmlDoc = oSerializer.serializeToString(oXmlDoc);
-	} catch (e) {
-		try {
-			szXmlDoc = oXmlDoc.xml;
-		} catch (e) {
-			return "";
-		}
-	}
-	if (szXmlDoc.indexOf("<?xml") == -1) {
-		szXmlDoc = "<?xml version='1.0' encoding='utf-8'?>" + szXmlDoc;
-	}
-
-	return szXmlDoc;
+	const deviceInfo = getDeviceInfo(oWndInfo.szDeviceIdentify);
+	await getTextOverlay(szUrl, oWndInfo.szDeviceIdentify, deviceInfo);
 }
 
 /**
- * 获取设备实时信息以及时间
+ * 获取设备实时信息
  */
-function getDeviceInfo() {
-	const { device_id } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
+function getDeviceInfo(szDeviceIdentify) {
+	const { device_id } = deviceList.value[g_iWndowPage.value].find(item => item.device.szDeviceIdentify == szDeviceIdentify).device;
 	const info = props.deepList.find(item => item.device_id == device_id);
 	return info;
 }
 
-/**
- * 退出登录
- */
-function logout() {
-	// var szDeviceIdentify = $("#ip").val();
-
-	if (null == szDeviceIdentify) {
-		return;
-	}
-
-	WebVideoCtrl.I_Logout(szDeviceIdentify).then(
-		() => {
-			console.log("退出成功！");
-		},
-		() => {
-			console.log("退出失败！");
-		}
-	);
+function closePlugin() {
+	windowType.value = g_iWndowType.value == "1*2" ? 2 : g_iWndowType.value;
+	destoryPlugin(() => {
+		initPlugin();
+	});
 }
 
 /**
  * 刷新
  */
 function refresh() {
-	deviceList.value[g_iWndowPage.value].forEach((item, index) => {
-		const { monitor_ip, monitor_port } = item.device;
-		clickStartRealPlay(`${monitor_ip}_${monitor_port}`, index);
+	destoryPlugin(() => {
+		initPlugin();
 	});
 }
 </script>
@@ -376,7 +228,7 @@ function refresh() {
 	<div class="plugin-wrap">
 		<div
 			class="plugin-refresh"
-			@mousedown="refresh"
+			@click="refresh"
 		>
 			<img
 				src="../assets/images/icon-refresh.png"
@@ -384,26 +236,51 @@ function refresh() {
 			/>
 			<span>刷新</span>
 		</div>
+		<Transition name="fade">
+			<div
+				class="plugin-close"
+				v-show="(g_iWndowType > 1 || g_iWndowType == '1*2') && windowType == 1"
+				@click="closePlugin"
+			>
+				<img
+					src="../assets/images/icon-home-close.png"
+					alt=""
+				/>
+				<span>关闭</span>
+			</div>
+		</Transition>
 		<div class="arr-wrap">
 			<img
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr"
 				v-show="g_iWndowType == 4 && deviceList.length > 1"
+				@click="handleChangePage"
 			/>
 			<img
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr right"
 				v-show="g_iWndowType == 4 && deviceList.length > 1"
+				@click="handleChangePage"
 			/>
 		</div>
 		<div class="plugin-content">
 			<div id="divPlugin">
-				<img src="../assets/images/plugin-video-bg.png" alt="">
+				<img
+					src="../assets/images/plugin-video-bg.png"
+					alt=""
+				/>
 			</div>
 		</div>
-		<FormPop v-model="isPopShow" name="温馨提示"></FormPop>
+		<FormPop
+			v-model="isPopShow"
+			name="温馨提示"
+		></FormPop>
+		<CheckToast
+			name="温馨提示"
+			v-model="isCheckShow"
+		></CheckToast>
 	</div>
 </template>
 
@@ -430,9 +307,36 @@ function refresh() {
 	cursor: pointer;
 }
 
+.plugin-wrap .plugin-close {
+	position: absolute;
+	top: 50px;
+	right: 26px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	column-gap: 10px;
+	cursor: pointer;
+}
+
+.plugin-wrap .plugin-close img {
+	display: block;
+	width: 24px;
+}
+
+.plugin-wrap .plugin-close span {
+	display: block;
+	font-size: 16px;
+	line-height: 24px;
+}
+
 .plugin-wrap .plugin-refresh:hover {
-	opacity: .7;
-	transition: .1s all linear;
+	opacity: 0.7;
+	transition: 0.1s all linear;
+}
+
+.plugin-wrap .plugin-close:hover {
+	opacity: 0.7;
+	transition: 0.1s all linear;
 }
 
 .plugin-wrap .plugin-refresh img {

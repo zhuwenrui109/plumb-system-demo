@@ -9,5 +9,12 @@ export const batchDelData = data => {
 };
 
 export const exprotData = (data, params) => {
-  return request.get(`api/exportHistoryAlarms?selected_id=${data}`, params)
+  let txt = "";
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      txt += `${key}=${data[key]}&`      
+    }
+  }
+  console.log('txt :>> ', txt);
+  return request.get(`api/exportHistoryAlarms?${txt}`, params)
 };

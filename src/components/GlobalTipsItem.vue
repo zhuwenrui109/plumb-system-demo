@@ -43,7 +43,7 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 				alt=""
 				class="icon"
 				v-if="isSelect"
-				@mousedown="emit('goDetail')"
+				@mousedown="emit('goDetail', id)"
 			/>
 		</div>
 		<slot></slot>
@@ -112,7 +112,9 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 }
 
 .tips-wrap .top-wrap .title-wrap {
-	margin-right: auto;
+	width: 0;
+	padding-right: 20px;
+	flex: 1;
 }
 
 .tips-wrap .top-wrap .title-wrap .title {
@@ -121,6 +123,9 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 	color: #fff;
 	font-weight: bold;
 	margin-bottom: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .tips-wrap .top-wrap .title-wrap .time {

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 import BScroll from "@better-scroll/core";
 import MouseWheel from "@better-scroll/mouse-wheel";
 import ObserveDom from "@better-scroll/observe-dom";
@@ -31,6 +31,8 @@ const wrap = ref(null);
 const scrollBar = ref(null);
 let scroll = null;
 let timer = null;
+
+defineExpose({ refreshScroll });
 
 onMounted(() => {
 	if (props.isNeedScroll) {
@@ -71,7 +73,8 @@ function initScroll() {
 /**
  * 刷新列表
  */
-function refreshScroll() {
+async function refreshScroll() {
+	await nextTick();
 	scroll.refresh();
 }
 

@@ -75,3 +75,33 @@ export const closeAuto = data => request.post("api/cruiseClose", data);
  * @returns 
  */
 export const getUserInfo = () => request.get("api/auth/currentUser");
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const getAllStand = () => request.get("api/getAllStations");
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const getAllArea = id => request.get(`api/getAllRegions/${id}`);
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const startContrl = data => request.post(`api/contrl`, data);
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const getSdkFile = () => request.get(`sdk/HCWebSDKPlugin.exe`, { responseType: 'blob' });
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const getAudio = () => request.get(`resource/alarm.mp3`, { responseType: 'blob' });

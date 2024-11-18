@@ -42,7 +42,7 @@ function timeInit() {
 }
 
 function handleLogout() {
-	WebVideoCtrl.I_DestroyPlugin();
+	isHome.value && store.state.destoryPlugin();
 	dialogPlguin({
 		message: "是否确认退出登录"
 	}).then(
@@ -54,7 +54,7 @@ function handleLogout() {
 			});
 		},
 		() => {
-			isHome.value && store.state.pluginDom();
+			isHome.value && store.state.initPlugin();
 		}
 	);
 }
@@ -78,6 +78,17 @@ function handleLogout() {
 			v-if="route.name != 'login' && store.state.user.name"
 		>
 			{{ store.state.user.name }}，欢迎回来！
+			<div
+				class="logout-btn"
+				@click="handleLogout"
+			>
+				<img
+					src="../assets/images/icon-logout.png"
+					alt=""
+					class="icon"
+				/>
+				<span>退出登录</span>
+			</div>
 		</div>
 		<div class="line"></div>
 		<div class="line right"></div>
@@ -115,8 +126,31 @@ function handleLogout() {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
-	column-gap: 5px;
+	column-gap: 10px;
 	cursor: pointer;
+	font-size: 12px;
+}
+
+.wrap .logout-wrap .logout-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	column-gap: 5px;
+	opacity: .7;
+	transition: .1s all linear;
+}
+
+.wrap .logout-wrap .logout-btn:hover {
+	opacity: 1;
+}
+
+.wrap .logout-wrap .logout-btn .icon {
+	display: block;
+	width: 22px;
+}
+
+.wrap .logout-wrap .logout-btn span {
+	display: block;
 	font-size: 12px;
 }
 

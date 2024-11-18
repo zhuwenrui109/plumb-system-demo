@@ -30,11 +30,10 @@ const props = defineProps({
 	border-radius: 4px;
 	column-gap: 10px;
 	cursor: pointer;
-	transition: 0.2s all linear;
 }
 
 .btn-wrap:hover {
-	opacity: 0.6;
+	background: linear-gradient(0deg, rgba(216, 216, 216, 0.3), rgba(84, 84, 84, 0.3));
 }
 
 .btn-wrap .txt {

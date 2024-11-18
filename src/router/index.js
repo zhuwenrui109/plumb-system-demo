@@ -10,8 +10,8 @@ import User from '@/views/User.vue';
 import System from '@/views/System.vue';
 import HistoryFault from '@/views/HistoryFault.vue';
 import { clearToken, tokenExpressInTime } from '@/utils/tool';
-import toastPlguin from '@/utils/toast';
 import Test from '@/views/Test.vue';
+import homeToastPlguin from '@/utils/homeToast';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -121,13 +121,14 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const role = localStorage.getItem("userRole");
-  if ((localStorage.getItem('token') && !tokenExpressInTime()) || to.path === '/login') {
+  const role = localStorage.getItem("userRole") || sessionStorage.getItem("userRole");
+  const token = localStorage.getItem('token') || sessionStorage.getItem("token");
+  if ((token && !tokenExpressInTime()) || to.path === '/login') {
     if (!to.meta.needRole) {
       next();
     } else {
       if (role == 2) {
-        toastPlguin("权限不足,请联系管理员");
+        homeToastPlguin("权限不足,请联系管理员");
         console.log('form :>> ', from);
         next(from.path);
       } else {

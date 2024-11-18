@@ -1,24 +1,25 @@
 import { createVNode, render } from 'vue';
-import HomeToast from '@/components/HomeToast.vue';
+import AudioToast from '@/components/AudioToast.vue';
 const divDom = document.createElement('div');
+divDom.setAttribute('class', 'u-dialog-modal-container');
 divDom.style.opacity = 0;
 divDom.style.transition = ".3s all linear";
-divDom.setAttribute('class', 'home-toast-modal-container');
 document.body.appendChild(divDom);
 
-const homeToastPlguin = message => {
+const audioToastPlguin = message => {
   divDom.style.opacity = 1;
   return new Promise((resolve) => {
-    setTimeout(() => {
+    // 确认
+    const checkButton = () => {
       divDom.style.opacity = 0;
       setTimeout(() => {
         render(null, divDom);
-        resolve();
       }, 350);
-    }, 1000 + 300);
-    const vNode = createVNode(HomeToast, { message });
+      resolve()
+    }
+    const vNode = createVNode(AudioToast, { ...message, checkButton });
     render(vNode, divDom)
   })
 }
 
-export default homeToastPlguin;
+export default audioToastPlguin;

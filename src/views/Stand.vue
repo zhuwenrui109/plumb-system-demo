@@ -130,8 +130,10 @@ function showAreaPop(id) {
 }
 
 async function handleSubmit() {
-	if (!form.value.station_id || !form.value.region_id) {
-		toastPlguin("请检查场站与工艺区是否填写");
+	if (!form.value.name) {
+		let text = "";
+		text = popConfig.value.type == "stand" ? "场站" : "工艺区"
+		toastPlguin(`请检查${text}名称`);
 		return;
 	}
 	if (popConfig.value.type == "stand") {
@@ -139,10 +141,14 @@ async function handleSubmit() {
 	} else {
 		await API_STAND.editRegion(form.value);
 	}
+	if (form.value.region_id || (form.value.station_id && popConfig.value.type != "region")) {
+		toastPlguin("修改成功");
+	} else {
+		toastPlguin("添加成功");
+	}
 	isPopShow.value = false;
 	loadData();
 	refreshStand();
-	toastPlguin("添加成功");
 }
 
 async function toggleRegionStatus(stationIndex, regionIndex) {

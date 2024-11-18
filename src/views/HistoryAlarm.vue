@@ -59,10 +59,10 @@ async function loadData() {
 		start_date,
 		end_date
 	});
-	if (!res.data.data.length) {
-		toastPlguin("暂无内容...");
-		return;
-	}
+	// if (!res.data.data.length) {
+	// 	toastPlguin("暂无内容...");
+	// 	return;
+	// }
 	dataList.splice(0, dataList.length);
 	dataList.push(...res.data.data);
 	pageConfig.value.total = res.data.total;
@@ -72,9 +72,31 @@ async function loadData() {
 /**
  * 搜索
  */
-function search() {
+async function search() {
 	page.value = 1;
-	loadData();
+	let start_date = "";
+	let end_date = "";
+	if (startDate.value) {
+		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
+	}
+	if (startDate.value) {
+		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
+	}
+	const res = await API_ALARM.getList({
+		page: page.value,
+		station_id: standId.value,
+		region_id: areaId.value,
+		keyword: keyword.value,
+		start_date,
+		end_date
+	});
+	if (!res.data.data.length) {
+		toastPlguin("暂无内容...");
+	}
+	dataList.splice(0, dataList.length);
+	dataList.push(...res.data.data);
+	pageConfig.value.total = res.data.total;
+	pageConfig.value.pageSize = res.data.per_page;
 }
 
 /**
@@ -94,11 +116,31 @@ async function clearForm() {
  * 导出
  */
 async function exportData() {
+	let start_date = "";
+	let end_date = "";
+	if (startDate.value) {
+		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
+	}
+	if (startDate.value) {
+		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
+	}
+	// station_id: standId.value,
+	// 	region_id: areaId.value,
+	// 	keyword: keyword.value,
+	// 	start_date,
+	// 	end_date
 	// if (checkList.value.length == 0) {
 	// 	return;
 	// }
 	// const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
-	const res = await API_ALARM.exprotData("0", { responseType: "blob" });
+	const res = await API_ALARM.exprotData({
+		selected_id: "0",
+		station_id: standId.value,
+		region_id: areaId.value,
+		keyword: keyword.value,
+		start_date,
+		end_date
+	}, { responseType: "blob" });
 	const url = window.URL.createObjectURL(res);
 	const link = document.createElement("a");
 	const date = new Date();
@@ -328,14 +370,14 @@ function toggleTools() {
 
 <style scoped>
 .history-wrap {
-	width: 9.84375rem;
+	width: 1890px;
 	height: 100%;
 	margin: 0 auto;
-	padding: 0.0625rem 0;
+	padding: 13px 0;
 }
 
 .history-wrap .history-content {
-	width: 9.69792rem;
+	width: 1860px;
 	height: 100%;
 	margin: 0 auto;
 }
@@ -426,7 +468,7 @@ function toggleTools() {
 .history-wrap .history-content .main {
 	width: 1830px;
 	margin: 0 auto;
-	padding-top: 12px;
+	padding: 12px 0;
 }
 
 .global-table-wrap {
@@ -435,7 +477,7 @@ function toggleTools() {
 
 .global-table-wrap .table {
 	width: 100%;
-	height: 640px;
+	height: 650px;
 	margin-bottom: 10px;
 }
 
@@ -463,6 +505,9 @@ function toggleTools() {
 	font-size: 15px;
 	line-height: 1;
 	padding-left: 30px;
+	text-wrap: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .global-table-wrap .table .tr .td.english {

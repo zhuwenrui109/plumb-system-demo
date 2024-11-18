@@ -113,7 +113,6 @@ function changeRouter(name) {
 }
 
 function handleLogout() {
-	WebVideoCtrl.I_DestroyPlugin();
 	dialogPlguin({
 		message: "是否确认退出登录"
 	}).then(
@@ -126,9 +125,7 @@ function handleLogout() {
 				});
 			}, 400);
 		},
-		() => {
-			isHome.value && store.state.pluginDom();
-		}
+		() => {}
 	);
 }
 
@@ -172,7 +169,7 @@ function getImgUrl(title) {
 							></GlobalDatePicker>
 							<GlobalInput
 								v-model="standKeyword"
-								placeholder="输入站点"
+								placeholder="输入站点/工艺区"
 								v-if="currentPath.includes('stand')"
 							></GlobalInput>
 							<GlobalInput
@@ -304,6 +301,8 @@ function getImgUrl(title) {
 .setting-wrap .setting-content .setting-border {
 	width: 1862px;
 	height: 100%;
+	box-sizing: border-box;
+	padding-bottom: 12px;
 }
 
 .setting-wrap .setting-content .setting-border .setting-right {

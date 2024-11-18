@@ -2,18 +2,31 @@ import { createStore } from 'vuex'
 
 const store = createStore({
   state: {
+    iWndIndex: 0,
+    iWndowPage: 0,
     standList: [],
     windowCount: 0,
     alarmList: [],
     faultList: [],
-    pluginDom: null,
     user: {
       username: "",
       role: "",
       token: ""
-    }
+    },
+    initPlugin: () => {},
+    destoryPlugin: () => {},
+    pauseAudio: () => {}
   },
   mutations: {
+    setPauseAudio(state, data) {
+      state.pauseAudio = data;
+    },
+    setIWndPage(state, data) {
+      state.iWndowPage = data;
+    },
+    setIWndIndex(state, data) {
+      state.iWndIndex = data;
+    },
     setUser(state, data) {
       state.user = data;
     },
@@ -29,11 +42,23 @@ const store = createStore({
     setWindowCount(state, data) {
       state.windowCount = data;
     },
-    setPluginDom(state, data) {
-      state.pluginDom = data;
+    setInitPlugin(state, data) {
+      state.initPlugin = data;
+    },
+    setDestoryPlugin(state, data) {
+      state.destoryPlugin = data;
     }
   },
   actions: {
+    handlePauseAudio(context, data) {
+      context.commit("setPauseAudio", data)
+    },
+    handleIWndPage(context, data) {
+      context.commit("setIWndPage", data)
+    },
+    handleIWndIndex(context, data) {
+      context.commit("setIWndIndex", data)
+    },
     handleUser(context, data) {
       context.commit("setUser", data)
     },
@@ -49,8 +74,11 @@ const store = createStore({
     handleWindowCount(context, data) {
       context.commit("setWindowCount", data)
     },
-    handlePluginDom(context, data) {
-      context.commit("setPluginDom", data)
+    handleInitPlugin(context, data) {
+      context.commit("setInitPlugin", data)
+    },
+    handleDestoryPlugin(context, data) {
+      context.commit("setDestoryPlugin", data)
     }
   },
   getters: {
@@ -64,10 +92,12 @@ const store = createStore({
         station.regions.forEach((region, rIndex) => {
           // 防止测试数据没有设备
           if (Object.keys(region.device).length > 0) {
+            const { device } = region;
+            device["szDeviceIdentify"] = `${device.monitor_ip}_${device.monitor_port}`;
             deviceList.push({
               sIndex,
               rIndex,
-              device: region.device
+              device
             })
           }
         });
@@ -79,6 +109,8 @@ const store = createStore({
         console.log("while");
         if (state.windowCount == "1*2") {
           j += 2;
+        } else if (state.windowCount == 1) {
+          j += 4 * 4;
         } else {
           j += state.windowCount * state.windowCount;
         }

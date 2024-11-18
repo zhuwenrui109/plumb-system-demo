@@ -1,7 +1,11 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { DatePicker, ConfigProvider } from "ant-design-vue";
-import * as echarts from "echarts";
+import * as echarts from "echarts/core";
+import { LineChart } from "echarts/charts";
+import { TitleComponent, TooltipComponent, GridComponent, DatasetComponent, TransformComponent } from "echarts/components";
+import { LabelLayout, UniversalTransition } from "echarts/features";
+import { CanvasRenderer } from "echarts/renderers";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
@@ -17,6 +21,17 @@ import { API_FAULT } from "@/api";
 import { useStore } from "vuex";
 
 dayjs.locale("zh-cn");
+echarts.use([
+	TitleComponent,
+	TooltipComponent,
+	GridComponent,
+	DatasetComponent,
+	TransformComponent,
+	LineChart,
+	LabelLayout,
+	UniversalTransition,
+	CanvasRenderer
+]);
 
 const store = useStore();
 
@@ -155,7 +170,7 @@ let myChart = null;
 const pageConfig = ref({
 	total: 1,
 	pageSize: 4
-})
+});
 
 const standList = computed(() => store.state.standList);
 
@@ -252,7 +267,7 @@ async function loadData() {
 		range,
 		step
 	});
-	console.log('data :>> ', data);
+	console.log("data :>> ", data);
 	pageConfig.value.total = data.length;
 	let j = 0,
 		o = j;
@@ -433,22 +448,28 @@ function destoryCharts() {
 					</div>
 				</div>
 			</GlobalContent>
-			<GlobalPagination v-model="page" :total="pageConfig.total" :page-size="pageConfig.pageSize"></GlobalPagination>
+			<GlobalPagination
+				v-model="page"
+				:total="pageConfig.total"
+				:page-size="pageConfig.pageSize"
+			></GlobalPagination>
 		</GlobalContent>
 	</HomeGlobalContent>
 </template>
 
 <style scoped>
 .fault-wrap {
-	width: 9.84375rem;
+	width: 1890px;
 	height: 100%;
 	margin: 0 auto;
-	padding: 0.0625rem 0;
+	padding: 13px 0;
 }
 
 .fault-wrap .fault-content {
-	width: 9.69792rem;
+	width: 1860px;
 	height: 100%;
+	box-sizing: border-box;
+	padding-bottom: 12px;
 	margin: 0 auto;
 }
 
