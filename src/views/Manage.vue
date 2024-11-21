@@ -1,6 +1,5 @@
 <script setup>
 import { API_HOME, API_MANAGE } from "@/api";
-import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
@@ -8,9 +7,11 @@ import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import dialogPlguin from "@/utils/dialog";
 import toastPlguin from "@/utils/toast";
-import { onMounted, ref, watch } from "vue";
+import { defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
+
+const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"))
 
 const route = useRoute();
 const store = useStore();

@@ -1,30 +1,23 @@
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
-import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
-import GlobalInput from "@/components/GlobalInput.vue";
-import GlobalDatePicker from "@/components/GlobalDatePicker.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
-import { API_ALARM } from "@/api";
-import dayjs from "dayjs";
+import GlobalInput from "@/components/GlobalInput.vue";
+import { API_HOME } from "@/api";
 import toastPlguin from "@/utils/toast";
-import dialogPlguin from "@/utils/dialog";
 import { useStore } from "vuex";
-import VideoPop from "@/components/VideoPop.vue";
+import FormPop from "@/components/FormPop.vue";
 
 const store = useStore();
 
 const isPopShow = ref(false);
-const currentVideoUrl = ref("");
-const currentStandArea = ref(0);
 const standId = ref("");
 const areaId = ref("");
 const startDate = ref("");
 const endDate = ref("");
-const isToolsShow = ref(false);
 const checkList = ref([]);
 const dataList = reactive([]);
 const page = ref(1);
@@ -33,144 +26,35 @@ const pageConfig = ref({
 	pageSize: 10
 });
 const keyword = ref("");
-const currentRemarkId = ref("");
-
-onMounted(() => {
-	loadData();
+const form = ref({
+	confirm_user: "",
+	remark: ""
 });
 
-const userRole = computed(() => store.state.user.role);
+const alarmList = computed(() => store.state.alarmList);
+
+watch(isPopShow, newVal => {
+	if (!newVal) {
+		setTimeout(() => {
+			form.value = {
+				confirm_user: "",
+				remark: ""
+			};
+		}, 300);
+	}
+});
 
 watch(page, () => {
 	checkList.value = [];
 });
 
-async function loadData() {
-	let start_date = "";
-	let end_date = "";
-	if (startDate.value) {
-		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
-	}
-	if (startDate.value) {
-		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
-	}
-	const res = await API_ALARM.getList({
-		page: page.value,
-		station_id: standId.value,
-		region_id: areaId.value,
-		keyword: keyword.value,
-		start_date,
-		end_date
-	});
-	// if (!res.data.data.length) {
-	// 	toastPlguin("暂无内容...");
-	// 	return;
-	// }
-	dataList.splice(0, dataList.length);
-	dataList.push(...res.data.data);
-	pageConfig.value.total = res.data.total;
-	pageConfig.value.pageSize = res.data.per_page;
-}
-
-/**
- * 搜索
- */
-async function search() {
-	page.value = 1;
-	let start_date = "";
-	let end_date = "";
-	if (startDate.value) {
-		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
-	}
-	if (startDate.value) {
-		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
-	}
-	const res = await API_ALARM.getList({
-		page: page.value,
-		station_id: standId.value,
-		region_id: areaId.value,
-		keyword: keyword.value,
-		start_date,
-		end_date
-	});
-	if (!res.data.data.length) {
-		toastPlguin("暂无内容...");
-	}
-	dataList.splice(0, dataList.length);
-	dataList.push(...res.data.data);
-	pageConfig.value.total = res.data.total;
-	pageConfig.value.pageSize = res.data.per_page;
-}
-
-/**
- * 清空
- */
-async function clearForm() {
-	standId.value = "";
-	areaId.value = "";
-	keyword.value = "";
-	startDate.value = "";
-	endDate.value = "";
-	await nextTick();
-	search();
-}
-
-/**
- * 导出
- */
-async function exportData() {
-	let start_date = "";
-	let end_date = "";
-	if (startDate.value) {
-		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
-	}
-	if (startDate.value) {
-		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
-	}
-	// station_id: standId.value,
-	// 	region_id: areaId.value,
-	// 	keyword: keyword.value,
-	// 	start_date,
-	// 	end_date
-	// if (checkList.value.length == 0) {
-	// 	return;
-	// }
-	// const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
-	const res = await API_ALARM.exprotData({
-		selected_id: "0",
-		station_id: standId.value,
-		region_id: areaId.value,
-		keyword: keyword.value,
-		start_date,
-		end_date
-	}, { responseType: "blob" });
-	const url = window.URL.createObjectURL(res);
-	const link = document.createElement("a");
-	const date = new Date();
-	link.href = url;
-	link.setAttribute("download", "历史报警" + date.getTime());
-	link.click();
-}
-
-/**
- * 批量删除
- */
-function batchDelete() {
-	if (checkList.value.length == 0) {
+function showForm() {
+	if (!checkList.value.length) {
+		toastPlguin("请选择报警信息")
 		return;
 	}
-	dialogPlguin({
-		message: "是否确认删除所选内容"
-	}).then(async () => {
-		const res = await API_ALARM.batchDelData({
-			alarm_id: checkList.value
-		});
-		console.log("res :>> ", res);
-		if (res.code == 200) {
-			checkList.value = [];
-			loadData();
-		}
-	});
+	form.value.confirm_user = store.state.user.name;
+	isPopShow.value = true;
 }
 
 /**
@@ -193,92 +77,46 @@ function handleSelectAll() {
 		checkList.value.splice(0, checkList.value.length);
 		return;
 	}
-	checkList.value = dataList.map(item => item.alarm_id);
+	checkList.value = alarmList.value.map(item => item.alarm_id);
 }
 
-function toggleTools() {
-	isToolsShow.value = !isToolsShow.value;
-}
-
-function showVideoPop(url) {
-	currentVideoUrl.value = url;
-	isPopShow.value = true;
+async function submitCheckList() {
+	const { confirm_user, remark } = form.value;
+	if (!confirm_user && !remark) {
+		toastPlguin("请检查确认人和备注");
+		return;
+	}
+	try {
+		const { code } = await API_HOME.submitCheckAlarm({
+			alarm_ids: checkList.value,
+			confirm_user,
+			remark
+		});
+		if (code == 200) {
+			isPopShow.value = false;
+			checkList.value.splice(0, checkList.value.length)
+			toastPlguin("确认报警成功");
+		} else {
+			toastPlguin("提交失败");
+		}
+	} catch (err) {
+		toastPlguin("提交失败");
+	}
 }
 </script>
 
 <template>
 	<HomeGlobalContent class="history-wrap">
 		<GlobalContent class="history-content">
-			<SettingTopHandller title="历史报警">
-				<template #left>
-					<div
-						class="history-handle"
-						:class="{ active: isToolsShow }"
-						@click="toggleTools"
-					>
-						<div class="btn">
-							<span>批量操作</span>
-							<img
-								src="../assets/images/icon-select-arr.png"
-								alt=""
-							/>
-						</div>
-						<Transition name="fade">
-							<div
-								class="handle-list"
-								v-show="isToolsShow"
-							>
-								<div
-									class="handle-item"
-									@click="batchDelete"
-									v-show="userRole == 1"
-								>
-									<img
-										src="../assets/images/icon-delete.png"
-										alt=""
-									/>
-									<span>删除选中</span>
-								</div>
-								<div
-									class="handle-item chance"
-									@click="exportData"
-								>
-									<img
-										src="../assets/images/icon-export.png"
-										alt=""
-									/>
-									<span>全部导出</span>
-								</div>
-								<div class="mask"></div>
-							</div>
-						</Transition>
-					</div>
-				</template>
+			<SettingTopHandller title="实时报警">
 				<template #right>
 					<div class="history-right">
-						<GlobalLinkageSelect
-							v-model:standId="standId"
-							v-model:areaId="areaId"
-						></GlobalLinkageSelect>
-						<GlobalInput
-							placeholder="确认人员姓名"
-							v-model="keyword"
-						></GlobalInput>
-						<GlobalDatePicker
-							v-model="startDate"
-							:name="'报警开始日期'"
-						></GlobalDatePicker>
-						<GlobalDatePicker
-							v-model="endDate"
-							:start-date="startDate"
-							:name="'报警结束日期'"
-						></GlobalDatePicker>
-						<SettingButtonBorder @click="search"> 搜索 </SettingButtonBorder>
+						<SettingButtonBorder @click="showForm"> 确认选中报警 </SettingButtonBorder>
 						<SettingButtonBorder
 							type="clear"
 							@click="clearForm"
 						>
-							清空
+							确认所有报警
 						</SettingButtonBorder>
 					</div>
 				</template>
@@ -300,17 +138,14 @@ function showVideoPop(url) {
 							<div class="td id">设备ID</div>
 							<div class="td">所属场站</div>
 							<div class="td">所属工艺区</div>
-							<div class="td">报警浓度</div>
-							<div class="td">报警级别</div>
 							<div class="td date">报警时间</div>
-							<div class="td">确认人员</div>
-							<div class="td date">确认时间</div>
-							<div class="td tips">备注</div>
+							<div class="td">报警级别</div>
+							<div class="td">报警浓度</div>
 							<div class="td video">报警视频</div>
 						</div>
 						<div
 							class="tr"
-							v-for="item in dataList"
+							v-for="item in alarmList"
 							:key="item.alarm_id"
 						>
 							<div
@@ -333,30 +168,13 @@ function showVideoPop(url) {
 							</div>
 							<div class="td">{{ item.station.name }}</div>
 							<div class="td">{{ item.region.name }}</div>
-							<div class="td english color">{{ item.density + "pmm.m" }}</div>
+							<div class="td english date">{{ item.created_at }}</div>
 							<div class="td color">
 								<span class="english">{{ item.level }}</span
 								>级
 							</div>
-							<div class="td english date">{{ item.created_at }}</div>
-							<div class="td">{{ item.confirm_user }}</div>
-							<div class="td english date">{{ item.confirmed_at }}</div>
-							<div
-								class="td tips"
-								@mouseenter="currentRemarkId = item.alarm_id"
-								@mouseleave="currentRemarkId = ''"
-							>
-								<span>{{ item.remark }}</span>
-								<Transition>
-									<div
-										class="tips-more"
-										v-show="item.remark != 'null' && item.remark.length > 16 && currentRemarkId == item.alarm_id"
-									>
-										{{ item.remark }}
-									</div>
-								</Transition>
-							</div>
-							<div class="td video" @click="showVideoPop(item.video)">
+							<div class="td english color">{{ item.density + "pmm.m" }}</div>
+							<div class="td video">
 								<img
 									src="../assets/images/icon-video.png"
 									alt=""
@@ -372,8 +190,40 @@ function showVideoPop(url) {
 					></GlobalPagination>
 				</div>
 			</div>
-			<VideoPop v-model="isPopShow" :video-url="currentVideoUrl"></VideoPop>
 		</GlobalContent>
+		<FormPop
+			v-model="isPopShow"
+			name="确认报警"
+		>
+			<div class="form-wrap">
+				<div class="form-item">
+					<div class="name">确认人</div>
+					<GlobalInput
+						class="form-input"
+						placeholder="请输入"
+						v-model="form.confirm_user"
+					></GlobalInput>
+				</div>
+				<div class="form-item">
+					<div class="name">备注</div>
+					<div class="txt-area-box">
+						<textarea
+							placeholder="请输入"
+							rows="5"
+							v-model="form.remark"
+						></textarea>
+					</div>
+				</div>
+				<div class="form-item btn">
+					<SettingButtonBorder
+						class="btn"
+						@click="submitCheckList"
+					>
+						确认提交
+					</SettingButtonBorder>
+				</div>
+			</div>
+		</FormPop>
 	</HomeGlobalContent>
 </template>
 
@@ -509,7 +359,7 @@ function showVideoPop(url) {
 }
 
 .global-table-wrap .table .tr .td {
-	width: calc((100% - 230px - 230px - 330px - 16px) / 7);
+	width: calc(100% / 7);
 	box-sizing: border-box;
 	font-size: 15px;
 	line-height: 1;
@@ -599,5 +449,56 @@ function showVideoPop(url) {
 .global-table-wrap .table .tr .td.video img {
 	display: block;
 	width: 21px;
+	cursor: pointer;
+}
+
+.form-wrap {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 24px 21px 35px;
+}
+
+.form-wrap .form-item {
+	width: 100%;
+	margin-bottom: 16px;
+}
+
+.form-wrap .form-item:last-child {
+	margin-bottom: 0;
+}
+
+.form-wrap .form-item .name {
+	font-size: 14px;
+	margin-bottom: 8px;
+}
+
+.form-wrap .form-item .form-input {
+	width: 100%;
+}
+
+.form-wrap .form-item .txt-area-box {
+	height: 115px;
+	box-sizing: border-box;
+	padding: 10px 22px;
+	background: rgba(39, 39, 39, 0.36);
+	border: 2px solid rgba(221, 221, 221, 0.17);
+	border-radius: 2px;
+	flex: 1;
+}
+
+.form-wrap .form-item .txt-area-box textarea {
+	display: block;
+	width: 100%;
+	height: 100%;
+	font-size: 14px;
+	border: none;
+	outline: none;
+	resize: none;
+	background: none;
+}
+
+.form-wrap .form-item .btn {
+	width: 208px;
+	margin: 0 auto;
 }
 </style>

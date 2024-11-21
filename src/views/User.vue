@@ -1,14 +1,15 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { defineAsyncComponent, onMounted, ref, watch } from "vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import { API_USER } from "@/api";
-import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalSelect from "@/components/GlobalSelect.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import toastPlguin from "@/utils/toast";
 import dialogPlguin from "@/utils/dialog";
+
+const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"));
 
 const props = defineProps({
 	username: String
@@ -164,7 +165,7 @@ async function handleSubmit() {
 		toastPlguin(text + "成功");
 		loadData();
 	} else {
-		toastPlguin(text + "失败");
+		toastPlguin(res.msg);
 	}
 }
 </script>

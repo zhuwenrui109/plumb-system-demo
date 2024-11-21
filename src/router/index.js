@@ -1,16 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/views/Home.vue'
-import Login from '@/views/Login.vue';
-import HistoryAlarm from '@/views/HistoryAlarm.vue';
-import Setting from '@/views/Setting.vue';
-import Manage from '@/views/Manage.vue';
-import Connect from '@/views/Connect.vue';
-import Stand from '@/views/Stand.vue';
-import User from '@/views/User.vue';
-import System from '@/views/System.vue';
-import HistoryFault from '@/views/HistoryFault.vue';
 import { clearToken, tokenExpressInTime } from '@/utils/tool';
-import Test from '@/views/Test.vue';
 import homeToastPlguin from '@/utils/homeToast';
 
 const router = createRouter({
@@ -23,25 +12,16 @@ const router = createRouter({
     {
       path: '/home',
       name: 'home',
-      component: Home,
+      component: () => import("@/views/Home.vue"),
       meta: {
         title: "首页",
         needRole: false
       }
     },
     {
-      path: '/test',
-      name: 'test',
-      component: Test,
-      meta: {
-        title: "测试",
-        needRole: false
-      }
-    },
-    {
       path: '/login',
       name: 'login',
-      component: Login,
+      component: () => import("@/views/Login.vue"),
       meta: {
         title: "登录",
         needRole: false
@@ -50,16 +30,25 @@ const router = createRouter({
     {
       path: '/alarm',
       name: 'alarm',
-      component: HistoryAlarm,
+      component: () => import("@/views/HistoryAlarm.vue"),
       meta: {
         title: "历史报警",
         needRole: false
       }
     },
     {
+      path: '/realAlarm',
+      name: 'realAlarm',
+      component: () => import("@/views/RealAlarm.vue"),
+      meta: {
+        title: "实时报警",
+        needRole: false
+      }
+    },
+    {
       path: '/fault',
       name: 'fault',
-      component: HistoryFault,
+      component: () => import("@/views/HistoryFault.vue"),
       meta: {
         title: "历史故障",
         needRole: false
@@ -67,12 +56,12 @@ const router = createRouter({
     },
     {
       path: '/setting',
-      component: Setting,
+      component: () => import("@/views/Setting.vue"),
       children: [
         {
           path: "",
           name: "setting",
-          component: Manage,
+          component: () => import("@/views/Manage.vue"),
           meta: {
             title: "设备管理",
             needRole: true
@@ -82,7 +71,7 @@ const router = createRouter({
         {
           path: "connect",
           name: "connect",
-          component: Connect,
+          component: () => import("@/views/Connect.vue"),
           meta: {
             title: "设备连接",
             needRole: true
@@ -91,7 +80,7 @@ const router = createRouter({
         {
           path: "stand",
           name: "stand",
-          component: Stand,
+          component: () => import("@/views/Stand.vue"),
           meta: {
             title: "场站管理",
             needRole: true
@@ -100,7 +89,7 @@ const router = createRouter({
         {
           path: "user",
           name: "user",
-          component: User,
+          component: () => import("@/views/User.vue"),
           meta: {
             title: "账号管理",
             needRole: true
@@ -109,7 +98,7 @@ const router = createRouter({
         {
           path: "system",
           name: "system",
-          component: System,
+          component: () => import("@/views/System.vue"),
           meta: {
             title: "系统设置",
             needRole: true

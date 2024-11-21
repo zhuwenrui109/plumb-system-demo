@@ -3,7 +3,7 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
@@ -49,20 +49,23 @@ const deviceList = computed(() => store.getters.getDeviceList);
 const alarmList = computed(() => store.state.alarmList);
 const faultList = computed(() => store.state.faultList);
 
-const socket = new WebSocket("ws://192.168.1.24:8080");
 let socketTimer = null;
+let socketStatus = 0;
+const socket = new WebSocket("ws://192.168.1.51:8080");
+
+socket.onopen = () => {
+	socketStatus = 1;
+};
 
 socket.onmessage = msgEvent => {
 	const { data } = msgEvent;
 	const msg = JSON.parse(data);
 
 	console.log("msg :>> ", msg);
-	if (msg.status == 1) {
-		isBusy.value = true;
-	} else {
-		isBusy.value = false;
+	if (!msg.status) {
 		clearInterval(socketTimer);
 		socketTimer = null;
+		isBusy.value = true;
 	}
 };
 
@@ -122,7 +125,7 @@ function initRoll() {
 	console.log("定时器触发周期");
 	destoryRoll();
 	//定时器触发周期
-	rollTimer.value = setInterval(marqueeTest, 1000 * 6);
+	rollTimer.value = setInterval(marqueeTest, 1000 * 1);
 }
 
 async function marqueeTest() {
@@ -192,19 +195,10 @@ async function changeSpeed(value) {
 }
 
 function goPlugin(id) {
-	deviceList.value.forEach((pageList, pageIndex) => {
-		pageList.forEach((item, index) => {
-			if (item.device.device_id == id) {
-				store.commit("setIWndIndex", index);
-				store.commit("setIWndPage", pageIndex);
-			}
-		});
+	const { href } = router.resolve({
+		name: "realAlarm"
 	});
-	if (g_iWndowType.value > 1 || g_iWndowType.value == "1*2") {
-		g_iWndowType.value = 1;
-	} else {
-		store.state.destoryPlugin(store.state.initPlugin);
-	}
+	window.open(href, "_blank");
 }
 
 /**
@@ -227,7 +221,6 @@ function capturePicData() {
 
 /**
  * 开始控制
- * 把监控全屏
  */
 async function handlePlugin() {
 	if (g_iWndowType.value != 1) {
@@ -237,30 +230,27 @@ async function handlePlugin() {
 		currentDeviceId.value = "";
 		return;
 	}
-	const { szDeviceIdentify } = getInfo(0);
-	const { device_id } = deviceList.value[g_iWndowPage.value].find(item => item.device.szDeviceIdentify == szDeviceIdentify).device;
-	currentDeviceId.value = device_id;
+	if (!socketStatus) {
+		homeToastPlguin("服务器繁忙");
+		return;
+	}
 	const { code } = await API_HOME.startContrl({
 		device_id: currentDeviceId.value
 	});
-	if (code != 200) {
-		socket.send(
-			JSON.stringify({
-				target: "contrl",
-				user_id: store.state.user.id,
-				device_id: currentDeviceId.value
-			})
-		);
+	const { szDeviceIdentify } = getInfo(0);
+	const { device_id } = deviceList.value[g_iWndowPage.value].find(item => item.device.szDeviceIdentify == szDeviceIdentify).device;
+	currentDeviceId.value = device_id;
+	const socketParams = {
+		target: "contrl",
+		user_id: store.state.user.id,
+		device_id: currentDeviceId.value
+	};
+	socket.send(JSON.stringify(socketParams));
+	console.log('socketTimer :>> ', socketTimer);
+	if (!socketTimer) {
 		socketTimer = setInterval(() => {
-			socket.send(
-				JSON.stringify({
-					target: "contrl",
-					user_id: store.state.user.id,
-					device_id: currentDeviceId.value
-				})
-			);
-		}, 1000 * 10);
-		homeToastPlguin("占用中...");
+			socket.send(JSON.stringify(socketParams));
+		}, 1000);
 	}
 }
 
@@ -317,7 +307,6 @@ function toggleCheckAlarm(id) {
 }
 
 async function openWiper() {
-	console.debug(currentDeviceId.value);
 	if (!currentDeviceId.value || (wiperTimer.value && !action)) {
 		return;
 	}
@@ -330,7 +319,7 @@ async function openWiper() {
 		currentWiperStatus.value = false;
 		wiperTimer.value = null;
 		closeWiper();
-	}, 1000 * 30);
+	}, 1000 * 40);
 }
 
 async function closeWiper() {
@@ -342,7 +331,7 @@ async function closeWiper() {
 		clearTimeout(wiperTimer.value);
 		wiperTimer.value = null;
 	}
-	
+
 	await API_HOME.handleWiper({
 		device_id: currentDeviceId.value,
 		action: 1
@@ -461,11 +450,11 @@ async function submitCheckList() {
 							class="start-control"
 							@click="handlePlugin"
 						>
-							{{ !currentDeviceId ? "开始控制" : isBusy ? "占用中" : "云台控制中" }}
+							{{ !currentDeviceId ? "开始控制" : isBusy ? "占用中..." : "云台控制中" }}
 						</div>
 						<GlobalBlackContent>
 							<div
-								class="control-item"
+								class="control-item zoom"
 								:class="{ active: currentDeviceId }"
 							>
 								<span class="name">视频放大/缩小</span>
@@ -493,13 +482,12 @@ async function submitCheckList() {
 						</GlobalBlackContent>
 						<GlobalBlackContent>
 							<div
-								class="control-item"
+								class="control-item wiper"
 								:class="{ active: currentDeviceId }"
 							>
 								<span class="name">雨刷开/关</span>
 								<span
 									class="icon"
-									:class="{ active: currentWiperStatus }"
 									@click="openWiper"
 								>
 									<img
@@ -509,6 +497,7 @@ async function submitCheckList() {
 								</span>
 								<span
 									class="icon"
+									:class="{ active: !currentWiperStatus }"
 									@click="closeWiper"
 								>
 									<img
@@ -603,6 +592,7 @@ async function submitCheckList() {
 							:id="item.alarm_id"
 							:stand-name="item.station.name"
 							:area-name="item.region.name"
+							:time="item.created_at"
 							:check-list="alarmCheckList"
 							@go-detail="goPlugin"
 							@handle-check="toggleCheckAlarm"
@@ -686,6 +676,7 @@ async function submitCheckList() {
 							v-for="(item, index) in faultList"
 							:key="index"
 							:id="item.device_id"
+							:time="item.created_at"
 							:stand-name="item.station.name"
 							:area-name="item.region.name"
 							class="fault-item"
@@ -819,15 +810,19 @@ async function submitCheckList() {
 	opacity: 0.8;
 }
 
-.top-wrap .home-item .control-direction .control-item .icon.active {
-	background-image: linear-gradient(to bottom, rgba(71, 71, 71, 0.8), rgba(54, 49, 47, 0.8), rgba(38, 37, 35, 0.8)),
-		linear-gradient(to top, #505050, #aeadad);
+.top-wrap .home-item .control-direction .control-item.active {
+	cursor: pointer;
 }
 
-.top-wrap .home-item .control-direction .control-item.active .icon:hover {
-	background-image: linear-gradient(to bottom, rgba(71, 71, 71, 0.8), rgba(54, 49, 47, 0.8), rgba(38, 37, 35, 0.8)),
+.top-wrap .home-item .control-direction .control-item.zoom.active .icon:hover {
+	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
 		linear-gradient(to top, #505050, #aeadad);
 	cursor: pointer;
+}
+
+.top-wrap .home-item .control-direction .control-item.wiper .icon.active {
+	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
+		linear-gradient(to top, #505050, #aeadad);
 }
 
 .top-wrap .home-item .control-direction .control-item .icon img {
@@ -865,7 +860,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item .density-wrap {
-	height: 200px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 0 20px 0 15px;
 }
@@ -904,7 +899,7 @@ async function submitCheckList() {
 	flex-shrink: 0;
 	white-space: nowrap;
 	overflow: hidden;
-	text-overflow: ellipsis
+	text-overflow: ellipsis;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .density-num {
@@ -929,7 +924,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap {
-	height: 200px;
+	height: 180px;
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-list {
@@ -1015,7 +1010,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap {
-	height: 200px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 0 15px;
 }

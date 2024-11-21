@@ -6,7 +6,6 @@ import { useRoute } from "vue-router";
 import { API_HOME } from "./api";
 import { useStore } from "vuex";
 import useWebSocket from "./utils/useWebSocket";
-import audioToastPlguin from "./utils/audioToast";
 
 const route = useRoute();
 const store = useStore();
@@ -43,8 +42,8 @@ onMounted(() => {
 watch(
 	() => alarm.message.value,
 	(newVal, oldVal) => {
-		store.dispatch("handleAlarmList", newVal);
 		if (newVal.length > (oldVal && oldVal.length)) {
+			store.dispatch("handleAlarmList", newVal);
 			startAudio();
 		}
 	}

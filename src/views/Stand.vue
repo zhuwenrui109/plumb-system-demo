@@ -1,18 +1,20 @@
 <script setup>
 import { API_STAND, API_HOME } from "@/api";
-import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import dialogPlguin from "@/utils/dialog";
 import toastPlguin from "@/utils/toast";
-import { onMounted, ref, watch } from "vue";
+import { defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useStore } from "vuex";
+
+const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"));
 
 const store = useStore();
 const props = defineProps({
-	standKeyword: String
+	standKeyword: String,
+	regionKeyword: String
 });
 
 const popConfig = ref({
@@ -59,7 +61,8 @@ watch(isPopShow, newVal => {
 async function loadData() {
 	const res = await API_STAND.getList({
 		page: page.value,
-		keyword: props.standKeyword
+		station_keyword: props.standKeyword,
+		region_keyword: props.regionKeyword
 	});
 	if (!res.data.data.length) {
 		toastPlguin("暂无内容...");
@@ -72,9 +75,11 @@ async function loadData() {
 }
 
 async function search() {
+	console.log("props.regionKeyword :>> ", props.regionKeyword);
 	const res = await API_STAND.getList({
 		page: page.value,
-		keyword: props.standKeyword
+		station_keyword: props.standKeyword,
+		region_keyword: props.regionKeyword
 	});
 	if (!res.data.data.length) {
 		toastPlguin("暂无内容...");
@@ -132,7 +137,7 @@ function showAreaPop(id) {
 async function handleSubmit() {
 	if (!form.value.name) {
 		let text = "";
-		text = popConfig.value.type == "stand" ? "场站" : "工艺区"
+		text = popConfig.value.type == "stand" ? "场站" : "工艺区";
 		toastPlguin(`请检查${text}名称`);
 		return;
 	}

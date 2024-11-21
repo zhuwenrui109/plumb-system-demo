@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { DatePicker, ConfigProvider } from "ant-design-vue";
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
@@ -636,6 +636,8 @@ input[type="number"] {
 	line-height: 1;
 	padding-left: 23px;
 	text-wrap: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis
 }
 
 .table-list .table .tr .td.date {
