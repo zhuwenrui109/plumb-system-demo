@@ -31,7 +31,7 @@ const g_iWndowType = ref(4);
 const g_iWndowPage = ref(0);
 const deepList = ref([]);
 const alarmCheckList = ref([]);
-const isPopShow = ref(false);
+const isPopShow = ref(true);
 const form = ref({
 	confirm_user: "",
 	remark: ""
@@ -915,7 +915,7 @@ async function submitCheckList() {
 }
 
 .form-wrap .form-item .txt-area-box {
-	height: 115px;
+	height: 50px;
 	box-sizing: border-box;
 	padding: 10px 22px;
 	background: rgba(39, 39, 39, 0.36);

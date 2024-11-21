@@ -53,6 +53,10 @@ const isShow = defineModel();
 }
 
 .form-pop-wrap .form-pop-main {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	bottom: 10px;
 	width: 509px;
 	box-sizing: border-box;
 	background: #242424;
