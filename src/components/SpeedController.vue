@@ -6,20 +6,20 @@ const props = defineProps({
 		type: Boolean,
 		default: true
 	}
-})
+});
 const speed = defineModel("speed");
 
 const timer = ref(null);
 
-const lineWidth = computed(() => Math.round(speed.value / 30 * 100) + "%");
+const lineWidth = computed(() => Math.round((speed.value / 30) * 100) + "%");
 
-onMounted(() => {})
+onMounted(() => {});
 
 onUnmounted(() => {
 	if (timer.value) {
 		clearInterval(timer.value);
 	}
-})
+});
 
 function handleMousedown(key) {
 	timer.value = setInterval(() => {
@@ -39,7 +39,7 @@ function handleSpeed(key) {
 	console.log("handleSpeed");
 	switch (key) {
 		case 0:
-      if (speed.value <= 1) return;
+			if (speed.value <= 1) return;
 			speed.value--;
 			break;
 
@@ -65,26 +65,48 @@ function handleSpeed(key) {
 			<div class="num english">30</div>
 		</div>
 		<div class="btn-wrap">
-			<img
+			<div
+				class="btn left"
+				@mousedown="handleMousedown(0)"
+				@mouseup="handleMouseup"
+				@click="handleSpeed(0)"
+			>
+				<img
+					src="../assets/images/icon-select-arr.png"
+					alt=""
+				/>
+			</div>
+			<!-- <img
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn"
 				@mousedown="handleMousedown(0)"
 				@mouseup="handleMouseup"
-			/>
+			/> -->
 			<!-- 速度条 -->
 			<div class="line-wrap">
 				<div class="line">
 					<div :style="{ width: lineWidth }"></div>
 				</div>
 			</div>
-			<img
+			<div
+				class="btn right"
+				@mousedown="handleMousedown(1)"
+				@mouseup="handleMouseup"
+				@click="handleSpeed(1)"
+			>
+				<img
+					src="../assets/images/icon-select-arr.png"
+					alt=""
+				/>
+			</div>
+			<!-- <img
 				src="../assets/images/icon-speed-arr.png"
 				alt=""
 				class="btn right"
 				@mousedown="handleMousedown(1)"
 				@mouseup="handleMouseup"
-			/>
+			/> -->
 		</div>
 	</div>
 </template>
@@ -100,8 +122,8 @@ function handleSpeed(key) {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-  width: 232px;
-  margin: 0 auto 8px;
+	width: 232px;
+	margin: 0 auto 8px;
 }
 
 .speed-controller-wrap .top-wrap .num {
@@ -114,18 +136,39 @@ function handleSpeed(key) {
 }
 
 .speed-controller-wrap .btn-wrap .btn {
-	display: block;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 22px;
+	height: 30px;
+	box-sizing: border-box;
+	background-color: rgba(40, 40, 40, .8);
+	border: 1px solid rgba(108, 108, 108, .8);
+	box-shadow: inset 0 0 7px 3px rgba(92, 92, 92, .79);
+	border-radius: 2px;
 	flex-shrink: 0;
+}
+
+.speed-controller-wrap.active .btn-wrap .btn:hover {
+	box-shadow: inset 0 0 7px 3px #82725f;
 	cursor: pointer;
 }
 
-.speed-controller-wrap .btn-wrap .btn.right {
-	transform: rotate(180deg);
+.speed-controller-wrap .btn-wrap .btn img {
+	display: block;
+	width: 6px;
+}
+
+.speed-controller-wrap .btn-wrap .btn.left img {
+	transform: rotate(90deg);
+}
+
+.speed-controller-wrap .btn-wrap .btn.right img {
+	transform: rotate(-90deg);
 }
 
 .speed-controller-wrap .btn-wrap .line-wrap {
-  width: 232px;
+	width: 232px;
 	background: url("../assets/images/speed-controller-bg.png") no-repeat;
 	background-size: cover;
 	padding: 8px 0;
@@ -149,6 +192,6 @@ function handleSpeed(key) {
 	height: 100%;
 	background: #be163d;
 	opacity: 1;
-  transition: .1s all linear;
+	transition: 0.1s all linear;
 }
 </style>

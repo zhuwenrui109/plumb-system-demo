@@ -13,8 +13,6 @@ BScroll.use(ObserveDom);
 BScroll.use(ScrollBar);
 
 const store = useStore();
-const page = defineModel("page");
-const index = defineModel("index");
 const type = defineModel("type");
 const props = defineProps({
 	list: {
@@ -34,16 +32,25 @@ const props = defineProps({
 	}
 });
 
+const currentStandIndex = ref(-1);
 const areaNavScroll = ref(null);
 const scrollBar = ref(null);
 let scroll = null;
 
 const deviceList = computed(() => store.getters.getDeviceList);
-const currentNavIndex = computed(() => {
-	if (!deviceList.value.length) {
-		return -1;
+const g_iWndIndex = computed(() => store.state.iWndIndex);
+const g_iWndPage = computed(() => store.state.iWndowPage);
+const currentNav = computed(() => {
+	const obj = {
+		sIndex: -1,
+		rIndex: -1
+	};
+	if (!deviceList.value.length || type.value > 1 || type.value == "1*2") {
+		return obj;
 	}
-	return deviceList.value[page.value][index.value].sIndex;
+	obj.sIndex = deviceList.value[g_iWndPage.value][g_iWndIndex.value].sIndex;
+	obj.rIndex = deviceList.value[g_iWndPage.value][g_iWndIndex.value].rIndex;
+	return obj;
 });
 
 onMounted(() => {
@@ -89,29 +96,31 @@ function destroyScroll() {
 	scroll.destroy();
 }
 
-function handleCheckArea(sIndex, rIndex) {
-	const current = deviceList.value[page.value].findIndex(item => item.sIndex == sIndex && item.rIndex == rIndex);
-	if (current >= 0) {
-		index.value = current;
-		type.value = 1;
+function handleCheckArea(area) {
+	if (currentNav.value.rIndex == area.rIndex) {
+		return;
 	}
+	deviceList.value.forEach((pageList, pageIndex) => {
+		pageList.forEach((item, index) => {
+			if (item.device.device_id == area.device.device_id) {
+				store.commit("setIWndPage", pageIndex);
+				store.commit("setIWndIndex", index);
+				if (type.value > 1 || type.value == "1*2") {
+					type.value = 1;
+				} else {
+					store.state.destoryPlugin(store.state.initPlugin);
+				}
+				return;
+			}
+		});
+	});
 }
 
 function toggleSite(sIndex) {
-	if (!props.list.length) {
+	if (!props.list[sIndex].regions.length) {
 		return;
 	}
-	// currentNavIndex.value = currentNavIndex.value == index ? -1 : index;
-	deviceList.value.forEach((item, pageIndex) => {
-		const current = item.findIndex(item => item.sIndex == sIndex);
-		if (current >= 0) {
-			index.value = current;
-			page.value = pageIndex;
-			refreshScroll();
-			return;
-		}
-	});
-	// const current = deviceList.value;
+	currentStandIndex.value = currentStandIndex.value == sIndex ? -1 : sIndex;
 }
 </script>
 
@@ -124,7 +133,7 @@ function toggleSite(sIndex) {
 			<div class="area-nav-content">
 				<div
 					class="area-nav-first"
-					:class="{ active: currentNavIndex >= 0 && currentNavIndex == siteIndex }"
+					:class="{ active: currentStandIndex == siteIndex || (currentNav.sIndex >= 0 && currentNav.sIndex == siteIndex) }"
 					v-for="(site, siteIndex) in list"
 					:key="site.station_id"
 					@click="toggleSite(siteIndex)"
@@ -150,13 +159,14 @@ function toggleSite(sIndex) {
 					</div>
 					<div
 						class="area-nav-secound"
-						v-show="currentNavIndex >= 0 && currentNavIndex == siteIndex && site.regions.length"
+						v-show="(currentStandIndex == siteIndex || (currentNav.sIndex >= 0 && currentNav.sIndex == siteIndex)) && site.regions.length"
 					>
 						<div
 							class="area-nav-secound-item"
 							v-for="(area, areaIndex) in site.regions"
 							:key="area.station_id"
-							@click.stop="handleCheckArea(siteIndex, areaIndex)"
+							:class="{ active: currentNav.sIndex == siteIndex && currentNav.rIndex == areaIndex }"
+							@click.stop="handleCheckArea(area)"
 						>
 							<div class="area-name">
 								{{ area.name }}
@@ -232,9 +242,15 @@ function toggleSite(sIndex) {
 }
 
 .area-nav .area-nav-first .area-nav-first-top .name {
+	width: 0;
 	font-size: 16px;
 	line-height: 18px;
 	margin-right: auto;
+	flex: 1;
+	padding-right: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .area-nav .area-nav-first .area-nav-first-top .count {
@@ -271,8 +287,8 @@ function toggleSite(sIndex) {
 .area-nav .area-nav-first .area-nav-secound {
 	position: relative;
 	box-sizing: border-box;
-	padding-top: 2px;
-	padding-bottom: 30px;
+	padding-top: 10px;
+	padding-bottom: 25px;
 	margin-bottom: 14px;
 }
 
@@ -292,14 +308,20 @@ function toggleSite(sIndex) {
 	align-items: center;
 	justify-content: space-between;
 	box-sizing: border-box;
-	padding: 14px;
-	padding-left: 64px;
-	padding-right: 40px;
+	padding: 7px 64px;
 	cursor: pointer;
+	margin-bottom: 14px;
+}
+
+.area-nav .area-nav-first .area-nav-secound .area-nav-secound-item.active {
+	background: rgba(101, 69, 37, 0.8);
+	border: 1px solid #000;
+	box-shadow: inset 0 0 10px 5px rgba(255, 207, 150, 0.6);
+	border-radius: 2px;
 }
 
 .area-nav .area-nav-first .area-nav-secound .area-nav-secound-item:last-child {
-	padding-bottom: 0;
+	margin-bottom: 0;
 }
 
 .area-nav .area-nav-first .area-nav-secound .area-nav-secound-item .area-name {
@@ -307,6 +329,13 @@ function toggleSite(sIndex) {
 	line-height: 1;
 	color: #a6a6a6;
 	transition: 0.3s all linear;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.area-nav .area-nav-first .area-nav-secound .area-nav-secound-item.active .area-name {
+	color: #fff;
 }
 
 .area-nav .area-nav-first .area-nav-secound .area-nav-secound-item .area-count {

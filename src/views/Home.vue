@@ -3,7 +3,7 @@ import GlobalTitle from "@/components/GlobalTitle.vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalTipsItem from "@/components/GlobalTipsItem.vue";
 import Control from "@/components/Control.vue";
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import DevicesList from "@/components/DevicesList.vue";
 import GlobalBlackContent from "@/components/GlobalBlackContent.vue";
 import SpeedController from "@/components/SpeedController.vue";
@@ -13,21 +13,27 @@ import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import useWebSocket from "@/utils/useWebSocket";
 import { API_HOME } from "@/api";
-import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import homeToastPlguin from "@/utils/homeToast";
+import { getInfo } from "@/utils/pluginController";
+import { checkFaultType } from "@/utils/tool";
 
 const router = useRouter();
 const store = useStore();
 
 const { WebVideoCtrl } = window;
+const currentWiperStatus = ref(false);
+const wiperTimer = ref(null);
+const alarmScroll = ref(null);
+const isBusy = ref(false);
+const currentDeviceId = ref("");
 const roll = ref(null);
 const rollTimer = ref(null);
 const pluginDom = ref(null);
 const pluginSpeed = ref(10);
 const g_iWndIndex = ref(0);
-const g_iWndowType = ref(4);
+const g_iWndowType = ref(0);
 const g_iWndowPage = ref(0);
 const deepList = ref([]);
 const alarmCheckList = ref([]);
@@ -39,24 +45,54 @@ const form = ref({
 const audio = ref(null);
 
 const standList = computed(() => store.state.standList);
-const deviceList = computed(() => store.getters.getDeviceList[g_iWndowPage.value]);
+const deviceList = computed(() => store.getters.getDeviceList);
 const alarmList = computed(() => store.state.alarmList);
 const faultList = computed(() => store.state.faultList);
 
+let socketTimer = null;
+let socketStatus = 0;
+const socket = new WebSocket("ws://192.168.1.51:8080");
+
+socket.onopen = () => {
+	socketStatus = 1;
+};
+
+socket.onmessage = msgEvent => {
+	const { data } = msgEvent;
+	const msg = JSON.parse(data);
+
+	console.log("msg :>> ", msg);
+	if (!msg.status) {
+		clearInterval(socketTimer);
+		socketTimer = null;
+		isBusy.value = true;
+	}
+};
+
 onMounted(() => {
 	// setTimeout(testPluginError, 1000 * 10);
+	initRoll();
 });
 
 onUnmounted(() => {
 	destoryRoll();
 });
 
-watch(isPopShow, newVal => {
-	if (newVal) {
-		WebVideoCtrl.I_DestroyPlugin();
-	} else {
-		pluginDom.value.initPlugin();
+watch(
+	() => store.state.iWndIndex,
+	() => {
+		currentDeviceId.value = "";
 	}
+);
+
+watch(g_iWndowType, newVal => {
+	if (newVal != 1) {
+		currentDeviceId.value = "";
+	}
+});
+
+watch(isPopShow, () => {
+	alarmScroll.value.refreshScroll();
 });
 
 let timer = null;
@@ -72,7 +108,8 @@ watch(pluginSpeed, newVal => {
 
 // 实时浓度
 const concentration = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "concentration" })
+	heartBeatData: JSON.stringify({ target: "concentration" }),
+	heartBeatInterval: 1000
 });
 
 concentration.connect();
@@ -81,20 +118,20 @@ watch(
 	() => concentration.message.value,
 	newVal => {
 		deepList.value = [...newVal];
-		initRoll();
-		// audio.value.play();
-		// audio.value.muted = true;
 	}
 );
 
 function initRoll() {
+	console.log("定时器触发周期");
 	destoryRoll();
 	//定时器触发周期
-	rollTimer.value = setInterval(marqueeTest, 75);
+	rollTimer.value = setInterval(marqueeTest, 1000 * 1);
 }
 
-function marqueeTest() {
+async function marqueeTest() {
+	await nextTick();
 	let test1 = roll.value;
+	let child = roll.value.children;
 	//判断组件是否渲染完成
 	if (test1.offsetHeight == 0) {
 		test1 = roll.value;
@@ -105,16 +142,23 @@ function marqueeTest() {
 			return;
 		}
 		//组件进行滚动
-		test1.scrollTop += 1;
-		//判断滚动条是否滚动到底部
-		if (test1.scrollTop == test1.scrollHeight - test1.clientHeight) {
-			//获取组件第一个节点
-			let a = test1.childNodes[0];
-			//删除节点
-			test1.removeChild(a);
-			//将该节点拼接到组件最后
-			test1.append(a);
-		}
+		// test1.scrollTop += child[0].offsetHeight;
+		let i = 1;
+		const childMarginTop = getComputedStyle(child[0]).getPropertyValue("margin-top");
+		const childMarginBottom = getComputedStyle(child[0]).getPropertyValue("margin-bottom");
+		const scrollTimer = setInterval(() => {
+			i++;
+			if (i >= child[0].offsetHeight + parseInt(childMarginTop, 10) + parseInt(childMarginBottom, 10)) {
+				//获取组件第一个节点
+				let a = test1.childNodes[0];
+				//删除节点
+				test1.removeChild(a);
+				//将该节点拼接到组件最后
+				test1.append(a);
+				clearInterval(scrollTimer);
+			}
+			test1.scrollTop += 1;
+		}, 50);
 	}
 }
 
@@ -141,15 +185,20 @@ function testPluginError() {
 }
 
 async function changeSpeed(value) {
+	if (!currentDeviceId.value) {
+		return;
+	}
 	const res = await API_HOME.handleSpeed({
-		device_id: deviceList.value[g_iWndIndex.value].device.device_id,
+		device_id: currentDeviceId.value,
 		value
 	});
 }
 
-function goPlugin() {
-	console.log("gogogogo");
-	g_iWndowType.value = 1;
+function goPlugin(id) {
+	const { href } = router.resolve({
+		name: "realAlarm"
+	});
+	window.open(href, "_blank");
 }
 
 /**
@@ -172,10 +221,37 @@ function capturePicData() {
 
 /**
  * 开始控制
- * 把监控全屏
  */
-function handlePlugin() {
-	g_iWndowType.value = g_iWndowType.value > 1 ? 1 : 4;
+async function handlePlugin() {
+	if (g_iWndowType.value != 1) {
+		return;
+	}
+	if (currentDeviceId.value) {
+		currentDeviceId.value = "";
+		return;
+	}
+	if (!socketStatus) {
+		homeToastPlguin("服务器繁忙");
+		return;
+	}
+	const { code } = await API_HOME.startContrl({
+		device_id: currentDeviceId.value
+	});
+	const { szDeviceIdentify } = getInfo(0);
+	const { device_id } = deviceList.value[g_iWndowPage.value].find(item => item.device.szDeviceIdentify == szDeviceIdentify).device;
+	currentDeviceId.value = device_id;
+	const socketParams = {
+		target: "contrl",
+		user_id: store.state.user.id,
+		device_id: currentDeviceId.value
+	};
+	socket.send(JSON.stringify(socketParams));
+	console.log('socketTimer :>> ', socketTimer);
+	if (!socketTimer) {
+		socketTimer = setInterval(() => {
+			socket.send(JSON.stringify(socketParams));
+		}, 1000);
+	}
 }
 
 /**
@@ -183,10 +259,13 @@ function handlePlugin() {
  * @param type 放大/缩小
  */
 function handlePluginZoom(type) {
-	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	if (!currentDeviceId.value) {
+		return;
+	}
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(0);
 	if (g_iWndowType.value == 1 && oWndInfo) {
 		WebVideoCtrl.I_PTZControl(type, false, {
-			iWndIndex: g_iWndIndex.value,
+			iWndIndex: 0,
 			success: function (xmlDoc) {
 				console.log("xmlDoc :>> ", xmlDoc);
 				console.log("调焦成功 :>> ", oWndInfo.szDeviceIdentify);
@@ -203,10 +282,10 @@ function handlePluginZoom(type) {
  * @param type 10:放大; 11:缩小
  */
 function handleStopPluginZoom(type) {
-	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(g_iWndIndex.value);
+	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(0);
 	if (g_iWndowType.value == 1 && oWndInfo) {
 		WebVideoCtrl.I_PTZControl(type, true, {
-			iWndIndex: g_iWndIndex.value,
+			iWndIndex: 0,
 			iPTZSpeed: pluginSpeed.value,
 			success: function (xmlDoc) {
 				console.log("xmlDoc :>> ", xmlDoc);
@@ -227,12 +306,36 @@ function toggleCheckAlarm(id) {
 	}
 }
 
-async function toggleWiper(action) {
-	const res = await API_HOME.handleWiper({
-		device_id: deviceList.value[g_iWndIndex.value].device.device_id,
-		action
+async function openWiper() {
+	if (!currentDeviceId.value || (wiperTimer.value && !action)) {
+		return;
+	}
+	currentWiperStatus.value = true;
+	await API_HOME.handleWiper({
+		device_id: currentDeviceId.value,
+		action: 0
 	});
-	console.log("res :>> ", res);
+	wiperTimer.value = setTimeout(() => {
+		currentWiperStatus.value = false;
+		wiperTimer.value = null;
+		closeWiper();
+	}, 1000 * 40);
+}
+
+async function closeWiper() {
+	if (!currentDeviceId.value) {
+		return;
+	}
+	if (wiperTimer.value) {
+		currentWiperStatus.value = false;
+		clearTimeout(wiperTimer.value);
+		wiperTimer.value = null;
+	}
+
+	await API_HOME.handleWiper({
+		device_id: currentDeviceId.value,
+		action: 1
+	});
 }
 
 /**
@@ -240,7 +343,7 @@ async function toggleWiper(action) {
  */
 async function handleAlarmMuted() {
 	if (!alarmCheckList.value.length) {
-		message("请检查是否选择");
+		homeToastPlguin("请选择报警信息");
 		return;
 	}
 	const alarm_ids = [...alarmCheckList.value];
@@ -250,6 +353,7 @@ async function handleAlarmMuted() {
 		});
 		if (res.code == 200) {
 			alarmCheckList.value = [];
+			store.state.pauseAudio();
 			homeToastPlguin("已消音");
 		} else {
 			homeToastPlguin("消音失败");
@@ -261,7 +365,7 @@ async function handleAlarmMuted() {
 
 function showCheckForm() {
 	if (!alarmCheckList.value.length) {
-		homeToastPlguin("提交失败");
+		homeToastPlguin("请选择报警信息");
 		return;
 	}
 	form.value.confirm_user = store.state.user.name;
@@ -305,8 +409,6 @@ async function submitCheckList() {
 				<home-global-content class="devices-content">
 					<devices-list
 						:list="standList"
-						v-model:page="g_iWndowPage"
-						v-model:index="g_iWndIndex"
 						v-model:type="g_iWndowType"
 					></devices-list>
 				</home-global-content>
@@ -316,9 +418,7 @@ async function submitCheckList() {
 				<PluginWrap
 					ref="pluginDom"
 					:deepList="deepList"
-					v-model:iWndIndex="g_iWndIndex"
 					v-model:iWndowType="g_iWndowType"
-					v-model:iWndowPage="g_iWndowPage"
 				></PluginWrap>
 			</div>
 			<!-- 云台控制 -->
@@ -340,21 +440,23 @@ async function submitCheckList() {
 				<home-global-content>
 					<div
 						class="control-direction"
-						:class="{ active: g_iWndowType == 1 }"
+						:class="{ active: currentDeviceId && !isBusy, ready: g_iWndowType == 1 && !currentDeviceId }"
 					>
 						<control
-							:class="{ 'control-wrap-active': g_iWndowType == 1 }"
-							v-model:device="g_iWndIndex"
-							v-model:page="g_iWndowPage"
+							:class="{ 'control-wrap-active': currentDeviceId && !isBusy, 'control-wrap-disabled': g_iWndowType > 1 }"
+							v-model="currentDeviceId"
 						></control>
 						<div
 							class="start-control"
-							@mousedown="handlePlugin"
+							@click="handlePlugin"
 						>
-							{{ g_iWndowType > 1 ? "开始控制" : "云台控制中" }}
+							{{ !currentDeviceId ? "开始控制" : isBusy ? "占用中..." : "云台控制中" }}
 						</div>
 						<GlobalBlackContent>
-							<div class="control-item">
+							<div
+								class="control-item zoom"
+								:class="{ active: currentDeviceId }"
+							>
 								<span class="name">视频放大/缩小</span>
 								<span
 									class="icon"
@@ -379,11 +481,14 @@ async function submitCheckList() {
 							</div>
 						</GlobalBlackContent>
 						<GlobalBlackContent>
-							<div class="control-item">
+							<div
+								class="control-item wiper"
+								:class="{ active: currentDeviceId }"
+							>
 								<span class="name">雨刷开/关</span>
 								<span
 									class="icon"
-									@click="toggleWiper(0)"
+									@click="openWiper"
 								>
 									<img
 										src="../assets/images/icon-wipers-on.png"
@@ -392,7 +497,8 @@ async function submitCheckList() {
 								</span>
 								<span
 									class="icon"
-									@click="toggleWiper(1)"
+									:class="{ active: !currentWiperStatus }"
+									@click="closeWiper"
 								>
 									<img
 										src="../assets/images/icon-wipers-off.png"
@@ -405,8 +511,9 @@ async function submitCheckList() {
 							<div class="control-speed-item">
 								<div class="name">速度调整</div>
 								<SpeedController
+									:class="{ active: currentDeviceId }"
 									v-model:speed="pluginSpeed"
-									:disabled="g_iWndowType > 1"
+									:disabled="!currentDeviceId"
 								></SpeedController>
 							</div>
 						</GlobalBlackContent>
@@ -471,16 +578,21 @@ async function submitCheckList() {
 					class="alarm-wrap"
 					:isNeedScroll="true"
 					:isNeedScrollBar="true"
+					ref="alarmScroll"
 				>
-					<div class="alarm-list">
+					<div
+						class="alarm-list"
+						v-show="!isPopShow"
+					>
 						<global-tips-item
 							:isSelect="true"
 							class="alarm-item"
-							v-for="(item, index) in alarmList"
-							:key="index"
-							:id="item.device_id"
+							v-for="item in alarmList"
+							:key="item.alarm_id"
+							:id="item.alarm_id"
 							:stand-name="item.station.name"
 							:area-name="item.region.name"
+							:time="item.created_at"
 							:check-list="alarmCheckList"
 							@go-detail="goPlugin"
 							@handle-check="toggleCheckAlarm"
@@ -495,6 +607,55 @@ async function submitCheckList() {
 								<div class="english">{{ item.density }}PPM.M</div>
 							</div>
 						</global-tips-item>
+					</div>
+					<div
+						class="alarm-check-form"
+						v-show="isPopShow"
+					>
+						<div class="title-wrap">
+							<span>确认报警</span>
+							<img
+								src="../assets/images/icon-video-close.png"
+								alt=""
+								@click="isPopShow = false"
+							/>
+						</div>
+						<div class="form-wrap">
+							<div class="form-item">
+								<div class="name">确认人</div>
+								<GlobalInput
+									class="form-input"
+									placeholder="请输入"
+									v-model="form.confirm_user"
+								></GlobalInput>
+							</div>
+							<div class="form-item">
+								<div class="name">备注</div>
+								<div class="txt-area-box">
+									<textarea
+										placeholder="请输入"
+										rows="5"
+										v-model="form.remark"
+									></textarea>
+								</div>
+							</div>
+							<div class="form-item">
+								<div class="name"></div>
+								<SettingButtonBorder
+									class="btn"
+									@click="submitCheckList"
+								>
+									确认提交
+								</SettingButtonBorder>
+								<SettingButtonBorder
+									class="btn"
+									type="clear"
+									@click="isPopShow = false"
+								>
+									取消
+								</SettingButtonBorder>
+							</div>
+						</div>
 					</div>
 				</home-global-content>
 			</div>
@@ -515,6 +676,7 @@ async function submitCheckList() {
 							v-for="(item, index) in faultList"
 							:key="index"
 							:id="item.device_id"
+							:time="item.created_at"
 							:stand-name="item.station.name"
 							:area-name="item.region.name"
 							class="fault-item"
@@ -526,7 +688,7 @@ async function submitCheckList() {
 										alt=""
 										class="icon"
 									/>
-									<div class="title">云台通讯故障</div>
+									<div class="title">{{ checkFaultType(item.type) + "故障" }}</div>
 								</div>
 								<!-- <div class="content">处理方法：拆掉，组装</div> -->
 							</div>
@@ -535,51 +697,7 @@ async function submitCheckList() {
 				</home-global-content>
 			</div>
 		</div>
-		<!-- <audio
-			preload="auto"
-			loop
-			autoplay
-			ref="audio"
-		>
-			<source
-				src="../assets/audio/alarm.mp3"
-				type="audio/mpeg"
-			/>
-		</audio> -->
 	</div>
-	<FormPop
-		name="确认报警"
-		v-model="isPopShow"
-	>
-		<div class="form-wrap">
-			<div class="form-item">
-				<div class="name">确认人</div>
-				<GlobalInput
-					class="form-input"
-					placeholder="请输入"
-					v-model="form.confirm_user"
-				></GlobalInput>
-			</div>
-			<div class="form-item">
-				<div class="name">备注</div>
-				<div class="txt-area-box">
-					<textarea
-						placeholder="请输入"
-						rows="5"
-						v-model="form.remark"
-					></textarea>
-				</div>
-			</div>
-			<div class="form-item">
-				<SettingButtonBorder
-					class="btn"
-					@click="submitCheckList"
-				>
-					确认提交
-				</SettingButtonBorder>
-			</div>
-		</div>
-	</FormPop>
 </template>
 
 <style scoped>
@@ -640,18 +758,27 @@ async function submitCheckList() {
 	line-height: 28px;
 	text-align: center;
 	/* background: #654525; */
-	background: rgba(101, 69, 37, 0.8);
-	border: 1px solid #000;
-	box-shadow: inset 0 0 10px 5px rgba(255, 207, 150, 0.6);
+	color: #888889;
+	border: 1px solid #505050;
+	background: linear-gradient(to top, rgba(166, 166, 166, 0.3), rgba(86, 86, 86, 0.3));
 	border-radius: 2px;
-	cursor: pointer;
 	margin-bottom: 12px;
 }
 
 .top-wrap .home-item .control-direction.active .start-control {
-	border: 1px solid #aeadad;
+	color: #fff;
+	border-color: #aeadad;
 	background: linear-gradient(to top, rgba(166, 166, 166, 0.3), rgba(86, 86, 86, 0.3));
 	box-shadow: inset 0 0 9px 3px rgba(255, 255, 255, 0.19);
+	cursor: pointer;
+}
+
+.top-wrap .home-item .control-direction.ready .start-control {
+	color: #fff;
+	background: rgba(101, 69, 37, 0.8);
+	border-color: #000;
+	box-shadow: inset 0 0 10px 5px rgba(255, 207, 150, 0.6);
+	cursor: pointer;
 }
 
 .top-wrap .home-item .control-direction .control-item {
@@ -681,7 +808,21 @@ async function submitCheckList() {
 	border-radius: 2px;
 	overflow: hidden;
 	opacity: 0.8;
+}
+
+.top-wrap .home-item .control-direction .control-item.active {
 	cursor: pointer;
+}
+
+.top-wrap .home-item .control-direction .control-item.zoom.active .icon:hover {
+	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
+		linear-gradient(to top, #505050, #aeadad);
+	cursor: pointer;
+}
+
+.top-wrap .home-item .control-direction .control-item.wiper .icon.active {
+	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
+		linear-gradient(to top, #505050, #aeadad);
 }
 
 .top-wrap .home-item .control-direction .control-item .icon img {
@@ -719,7 +860,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item .density-wrap {
-	height: 200px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 0 20px 0 15px;
 }
@@ -727,7 +868,7 @@ async function submitCheckList() {
 .bottom-wrap .home-item .density-wrap .density-list {
 	height: 100%;
 	overflow-y: scroll;
-	padding: 10px 0;
+	/* padding: 10px 0; */
 }
 
 .bottom-wrap .home-item .density-wrap .density-list::-webkit-scrollbar {
@@ -745,15 +886,20 @@ async function submitCheckList() {
 	border: 1px solid rgba(119, 111, 99, 0.8);
 	background: #363636;
 	border-radius: 4px;
-	margin-bottom: 8px;
+	margin: 8px 0;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .area-name {
 	width: 45%;
+	box-sizing: border-box;
+	padding-right: 10px;
 	font-size: 14px;
 	color: #fff;
 	opacity: 0.6;
 	flex-shrink: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .density-num {
@@ -778,9 +924,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap {
-	height: 200px;
-	padding-right: 15px;
-	padding-left: 8px;
+	height: 180px;
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-list {
@@ -790,11 +934,40 @@ async function submitCheckList() {
 	flex-wrap: wrap;
 	gap: 8px 4px;
 	padding: 8px 0;
+	padding-right: 15px;
+	padding-left: 8px;
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-list .alarm-item {
 	width: 342px;
 	box-sizing: border-box;
+}
+
+.bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-check-form {
+	background: rgba(39, 39, 39, 1);
+}
+
+.bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-check-form .title-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 14px;
+	line-height: 36px;
+	font-weight: bold;
+	background: url("../assets/images/form-pop-title-bg.png") no-repeat;
+	background-size: 100% 100%;
+	padding-left: 36px;
+	padding-right: 20px;
+}
+
+.bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-check-form .title-wrap span {
+	display: block;
+}
+
+.bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-check-form .title-wrap img {
+	display: block;
+	width: 30px;
+	cursor: pointer;
 }
 
 .bottom-wrap .home-item .alarm-btn-list {
@@ -837,7 +1010,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap {
-	height: 200px;
+	height: 180px;
 	box-sizing: border-box;
 	padding: 0 15px;
 }
@@ -854,9 +1027,6 @@ async function submitCheckList() {
 
 .bottom-wrap .home-item.fault-item .fault-wrap .fault-list .fault-item {
 	width: 320px;
-}
-
-.bottom-wrap .home-item.fault-item .fault-wrap .fault-list .fault-item .fault {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap .fault-list .fault-item .fault .top {
@@ -893,12 +1063,16 @@ async function submitCheckList() {
 .form-wrap {
 	width: 100%;
 	box-sizing: border-box;
-	padding: 24px 40px 35px;
+	padding: 12px 40px 10px;
 }
 
 .form-wrap .form-item {
+	display: flex;
+	align-items: baseline;
+	justify-content: flex-start;
+	column-gap: 6px;
 	width: 100%;
-	margin-bottom: 24px;
+	margin-bottom: 8px;
 }
 
 .form-wrap .form-item:last-child {
@@ -906,21 +1080,23 @@ async function submitCheckList() {
 }
 
 .form-wrap .form-item .name {
+	width: 44px;
 	font-size: 14px;
-	margin-bottom: 8px;
+	flex-shrink: 0;
 }
 
 .form-wrap .form-item .form-input {
-	width: 100%;
+	flex: 1;
 }
 
 .form-wrap .form-item .txt-area-box {
-	height: 50px;
+	height: 54px;
 	box-sizing: border-box;
 	padding: 10px 22px;
 	background: rgba(39, 39, 39, 0.36);
 	border: 2px solid rgba(221, 221, 221, 0.17);
 	border-radius: 2px;
+	flex: 1;
 }
 
 .form-wrap .form-item .txt-area-box textarea {
@@ -935,8 +1111,7 @@ async function submitCheckList() {
 }
 
 .form-wrap .form-item .btn {
-	width: 208px;
-	margin: 0 auto;
+	width: 125px;
 }
 
 @keyframes ani {

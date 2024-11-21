@@ -35,20 +35,6 @@ onUnmounted(() => {
 	timer = null;
 });
 
-watch(
-	() => alarm.message.value,
-	newVal => {
-		store.dispatch("handleAlarmList", newVal);
-	}
-);
-
-watch(
-	() => alarm.message.value,
-	newVal => {
-		store.dispatch("handleFaultList", newVal);
-	}
-);
-
 function timeInit() {
 	const tm = new Date();
 	const y = tm.getFullYear();
@@ -71,7 +57,7 @@ function checkLoginStatus() {
 	// 没有登录，自动登录
 	const autoToken = JSON.parse(localStorage.getItem("autoToken"));
 	if (autoToken) {
-		toastPlguin("登录中...")
+		toastPlguin("登录中...");
 		username.value = autoToken.username;
 		password.value = autoToken.password;
 		setTimeout(handleLogin, 1000);
@@ -87,7 +73,7 @@ function checkLoginStatus() {
  */
 async function handleLogin(e) {
 	if (!username || !password) {
-		toastPlguin("请检查账号密码是否正确")
+		toastPlguin("请检查账号密码是否正确");
 	}
 	try {
 		const { token_type, access_token, expires_in, user_role } = await API_HOME.login({
@@ -103,11 +89,16 @@ async function handleLogin(e) {
 					password: password.value
 				})
 			);
+			const token = token_type + " " + access_token;
+			localStorage.setItem("token", token);
+			localStorage.setItem("tokenTime", 99999999999999999999);
+			localStorage.setItem("userRole", user_role);
+		} else {
+			const token = token_type + " " + access_token;
+			sessionStorage.setItem("token", token);
+			sessionStorage.setItem("tokenTime", 99999999999999999999);
+			sessionStorage.setItem("userRole", user_role);
 		}
-		const token = token_type + " " + access_token;
-		localStorage.setItem("token", token);
-		localStorage.setItem("tokenTime", 9999999999999999);
-		localStorage.setItem("userRole", user_role);
 		loadUserInfo();
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		alarm.connect();
@@ -115,8 +106,8 @@ async function handleLogin(e) {
 		loadStandList();
 		router.push(prev);
 	} catch (err) {
-		console.log('err :>> ', err);
-		toastPlguin(err.error)
+		console.log("err :>> ", err);
+		toastPlguin(err.error);
 	}
 }
 

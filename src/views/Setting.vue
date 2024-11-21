@@ -22,6 +22,7 @@ const startDate = ref("");
 const endDate = ref("");
 const currentState = ref("");
 const standKeyword = ref("");
+const regionKeyword = ref("");
 const standId = ref("");
 const areaId = ref("");
 const stateList = ref([
@@ -98,6 +99,7 @@ async function clearForm() {
 	endDate.value = "";
 	currentState.value = "";
 	standKeyword.value = "";
+	regionKeyword.value = "";
 	standId.value = "";
 	areaId.value = "";
 	await nextTick();
@@ -113,7 +115,6 @@ function changeRouter(name) {
 }
 
 function handleLogout() {
-	WebVideoCtrl.I_DestroyPlugin();
 	dialogPlguin({
 		message: "是否确认退出登录"
 	}).then(
@@ -126,9 +127,7 @@ function handleLogout() {
 				});
 			}, 400);
 		},
-		() => {
-			isHome.value && store.state.pluginDom();
-		}
+		() => {}
 	);
 }
 
@@ -153,12 +152,6 @@ function getImgUrl(title) {
 								v-model:areaId="areaId"
 								v-if="currentPath.includes('setting') || currentPath.includes('connect')"
 							></GlobalLinkageSelect>
-							<!-- <GlobalSelect
-								v-model="currentState"
-								:list="stateList"
-								name="name"
-								v-if="currentPath.includes('connect')"
-							></GlobalSelect> -->
 							<GlobalDatePicker
 								v-model="startDate"
 								:name="'选择开始日期'"
@@ -173,6 +166,11 @@ function getImgUrl(title) {
 							<GlobalInput
 								v-model="standKeyword"
 								placeholder="输入站点"
+								v-if="currentPath.includes('stand')"
+							></GlobalInput>
+							<GlobalInput
+								v-model="regionKeyword"
+								placeholder="输入工艺区"
 								v-if="currentPath.includes('stand')"
 							></GlobalInput>
 							<GlobalInput
@@ -272,6 +270,7 @@ function getImgUrl(title) {
 								:endDate="endDate"
 								:currentState="currentState"
 								:standKeyword="standKeyword"
+								:regionKeyword="regionKeyword"
 								:standId="standId"
 								:areaId="areaId"
 							>
@@ -304,6 +303,8 @@ function getImgUrl(title) {
 .setting-wrap .setting-content .setting-border {
 	width: 1862px;
 	height: 100%;
+	box-sizing: border-box;
+	padding-bottom: 12px;
 }
 
 .setting-wrap .setting-content .setting-border .setting-right {

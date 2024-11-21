@@ -1,7 +1,7 @@
 <script setup>
 import Header from "@/components/Header.vue";
 import RouteTab from "@/components/RouteTab.vue";
-import { computed, provide, watch } from "vue";
+import { computed, onMounted, provide, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { API_HOME } from "./api";
 import { useStore } from "vuex";
@@ -12,33 +12,45 @@ const store = useStore();
 
 const isLoginRouter = computed(() => route.name == "login");
 
-// 实时报警
+const audio = ref(null);
+
+// 实时报警 心跳间隔一秒
 const alarm = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "alarm" })
+	heartBeatData: JSON.stringify({ target: "alarm" }),
+	heartBeatInterval: 1000
 });
 
-// 实时报警
+// 实时故障 心跳间隔一秒
 const fault = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "fault" })
+	heartBeatData: JSON.stringify({ target: "fault" }),
+	heartBeatInterval: 1000
 });
 
-if (localStorage.getItem("token")) {
+loadAudio();
+
+if (localStorage.getItem("token") || sessionStorage.getItem("token")) {
 	loadStandList();
 	alarm.connect();
 	fault.connect();
 	loadUserInfo();
 }
 
+onMounted(() => {
+	store.commit("setPauseAudio", pauseAudio);
+});
+
 watch(
 	() => alarm.message.value,
-	newVal => {
-		// console.log("alarm :>> ", newVal);
-		store.dispatch("handleAlarmList", newVal);
+	(newVal, oldVal) => {
+		if (newVal.length > (oldVal && oldVal.length)) {
+			store.dispatch("handleAlarmList", newVal);
+			startAudio();
+		}
 	}
 );
 
 watch(
-	() => alarm.message.value,
+	() => fault.message.value,
 	newVal => {
 		// console.log("fault :>> ", newVal);
 		store.dispatch("handleFaultList", newVal);
@@ -51,14 +63,47 @@ provide("getData", {
 	loadStandList,
 	loadUserInfo
 });
+
+function startAudio() {
+	if (audio.value.paused) {
+		audio.value.play().catch(() => {
+			const test = document.createElement("div");
+			test.addEventListener("click", () => {
+				audio.value.play();
+				test.remove();
+			})
+			test.click();
+			// audioToastPlguin({ message: "设备浓度超标" }).then(() => {
+			// 	audio.value.play();
+			// });
+		});
+	}
+}
+
+function pauseAudio() {
+	if (!audio.value.paused) {
+		audio.value.pause();
+	}
+}
+
+async function loadAudio() {
+	const res = await API_HOME.getAudio();
+	const audioBlob = new Blob([res]);
+	const audioUrlObject = URL.createObjectURL(audioBlob);
+	if (audio.value) {
+		audio.value.src = audioUrlObject;
+		audio.value.load();
+	}
+}
+
 async function loadUserInfo() {
 	const res = await API_HOME.getUserInfo();
 	store.dispatch("handleUser", res);
 }
 
 async function loadStandList() {
-	const res = await API_HOME.getStandList();
-	await store.dispatch("handleStandList", res.data);
+	const { data } = await API_HOME.getStandList();
+	await store.dispatch("handleStandList", data);
 }
 </script>
 
@@ -71,9 +116,17 @@ async function loadStandList() {
 		<route-tab v-if="!isLoginRouter"></route-tab>
 
 		<!-- 内容区域 -->
-		<div class="app-main">
+		<div
+			class="app-main"
+			:class="{ login: isLoginRouter }"
+		>
 			<router-view></router-view>
 		</div>
+		<audio
+			preload="auto"
+			loop
+			ref="audio"
+		></audio>
 	</div>
 </template>
 
@@ -105,7 +158,12 @@ async function loadStandList() {
 
 .app-wrap .app-main {
 	width: 100%;
+	box-sizing: border-box;
 	padding-bottom: 12px;
+}
+
+.app-wrap .app-main.login {
+	padding-bottom: 0;
 	flex: 1;
 }
 

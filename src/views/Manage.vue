@@ -1,6 +1,5 @@
 <script setup>
 import { API_HOME, API_MANAGE } from "@/api";
-import FormPop from "@/components/FormPop.vue";
 import GlobalInput from "@/components/GlobalInput.vue";
 import GlobalLinkageSelect from "@/components/GlobalLinkageSelect.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
@@ -8,9 +7,11 @@ import GlobalSwitch from "@/components/GlobalSwitch.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import dialogPlguin from "@/utils/dialog";
 import toastPlguin from "@/utils/toast";
-import { onMounted, ref, watch } from "vue";
+import { defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
+
+const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"))
 
 const route = useRoute();
 const store = useStore();
@@ -43,7 +44,7 @@ const form = ref({
 	station_id: "",
 	threshold_first: "",
 	threshold_second: "",
-	status: "0"
+	status: "1"
 });
 
 onMounted(() => {
@@ -70,7 +71,7 @@ watch(isPopShow, newVal => {
 				station_id: "",
 				threshold_first: "",
 				threshold_second: "",
-				status: "0"
+				status: "1"
 			};
 			formName.value = "新增设备";
 		}, 300);
@@ -140,7 +141,7 @@ async function handleSubmit() {
 		if (Object.prototype.hasOwnProperty.call(form.value, key)) {
 			const item = form.value[key];
 			if (key != "device_id" && item == "") {
-				toastPlguin("请检查全部信息是否填写");
+				toastPlguin("请填写设备完整信息");
 				return;
 			}
 		}
@@ -159,6 +160,8 @@ async function handleSubmit() {
 			toastPlguin("修改成功");
 		}
 		isPopShow.value = false;
+	} else if (res.code == 400) {
+		toastPlguin(res.msg);
 	}
 }
 
@@ -375,6 +378,8 @@ function handleDelete(id) {
 	line-height: 1;
 	padding-left: 40px;
 	text-wrap: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .global-table-wrap .table .tr .td.english {

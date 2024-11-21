@@ -12,18 +12,26 @@ const props = defineProps({
 	checkList: Array
 });
 const emit = defineEmits(["goDetail", "handleCheck"]);
+
+function handleClick() {
+	if (!props.isSelect) {
+		return;
+	}
+	emit('goDetail', props.id);
+}
 </script>
 
 <template>
 	<div
 		class="tips-wrap"
 		:class="{ select: isSelect }"
+		@click="handleClick"
 	>
 		<div class="top-wrap">
 			<div
 				class="check"
 				v-if="isSelect"
-				@click="emit('handleCheck', id)"
+				@click.stop="emit('handleCheck', id)"
 			>
 				<Transition name="fade">
 					<img
@@ -36,14 +44,14 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 			<div class="num english">{{ id }}</div>
 			<div class="title-wrap">
 				<div class="title">{{ standName }}-{{ areaName }}</div>
-				<div class="time english">2014-10-13 13:00:00</div>
+				<div class="time english">{{ time }}</div>
 			</div>
 			<img
 				src="../assets/images/icon-camera.png"
 				alt=""
 				class="icon"
 				v-if="isSelect"
-				@mousedown="emit('goDetail')"
+				
 			/>
 		</div>
 		<slot></slot>
@@ -60,6 +68,7 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 
 .tips-wrap.select {
 	padding: 12px 10px;
+	cursor: pointer;
 }
 
 .tips-wrap .top-wrap {
@@ -112,7 +121,9 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 }
 
 .tips-wrap .top-wrap .title-wrap {
-	margin-right: auto;
+	width: 0;
+	padding-right: 20px;
+	flex: 1;
 }
 
 .tips-wrap .top-wrap .title-wrap .title {
@@ -121,6 +132,9 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 	color: #fff;
 	font-weight: bold;
 	margin-bottom: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .tips-wrap .top-wrap .title-wrap .time {
@@ -132,6 +146,5 @@ const emit = defineEmits(["goDetail", "handleCheck"]);
 .tips-wrap .top-wrap .icon {
 	display: block;
 	width: 24px;
-	cursor: pointer;
 }
 </style>

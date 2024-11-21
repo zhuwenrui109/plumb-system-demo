@@ -1,3 +1,25 @@
+export const checkFaultType = (type) => {
+  let txt = "";
+  switch (type) {
+    case 1:
+      txt = "传感器"
+      break;
+  
+    case 2:
+      txt = "云台"
+      break;
+  
+    case 3:
+      txt = "摄像头"
+      break;
+  
+    default:
+      break;
+  }
+  return txt;
+};
+
+
 /**
  * 清空token
  */
@@ -12,11 +34,10 @@ export const clearToken = () => {
  * @returns Boolean
  */
 export const tokenExpressInTime = () => {
-  let date = new Date()
-  let tokenTime = localStorage.getItem('tokenTime')
-  // 当前时间减去获取本地过期时间的值是否大于0   大于0为过期返回true 否则返回false
-  // console.log('date.getTime() :>> ', date.getTime());
-  // console.log('Number(tokenTime) :>> ', Number(tokenTime));
+  const date = new Date()
+  const tokenTime = localStorage.getItem('tokenTime') || sessionStorage.getItem("tokenTime");
+  console.log('tokenTime :>> ', tokenTime);
+  // 大于0: token过期返回true 否则返回false
   return (date.getTime() - Number(tokenTime)) > 0 ? true : false
 }
 

@@ -28,10 +28,15 @@ const props = defineProps({
 	border: 2px solid rgba(255, 217, 168, 0.5);
 	border-radius: 2px;
 	cursor: pointer;
+	transition: .2s all linear;
 }
 
 .setting-button-border-wrap.clear {
 	background: linear-gradient(to bottom, #271f1a 50%, #6e645e) no-repeat;
 	border: 2px solid rgba(188, 188, 188, 0.5);
+}
+
+.setting-button-border-wrap:hover {
+	opacity: .8;
 }
 </style>

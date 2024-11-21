@@ -38,7 +38,7 @@ export default defineConfig({
     cors: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.1.24:8008/',
+        target: 'http://192.168.1.51:8008/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, "")
       }
@@ -52,7 +52,7 @@ export default defineConfig({
         assetFileNames: '[ext]/[name]-[hash].[ext]',
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+            return 'vendor';
           }
         }
       }

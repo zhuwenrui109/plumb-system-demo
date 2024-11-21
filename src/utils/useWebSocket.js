@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 const DEFAULT_OPTIONS = {
-  url: 'ws://192.168.1.24:8080', // websocket url
+  url: 'ws://192.168.1.51:8080', // websocket url
   heartBeatData: '', // 你的心跳数据
   heartBeatInterval: 1000 * 10, // 心跳间隔，单位ms
   reconnectInterval: 1000 * 5, // 断线重连间隔，单位ms
