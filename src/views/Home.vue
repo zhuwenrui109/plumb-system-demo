@@ -41,7 +41,7 @@ const g_iWndowType = ref(0);
 const g_iWndowPage = ref(0);
 const deepList = ref([]);
 const alarmCheckList = ref([]);
-const isPopShow = ref(false);
+const isPopShow = ref(true);
 const form = ref({
 	confirm_user: "",
 	remark: ""

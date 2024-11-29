@@ -160,7 +160,7 @@ async function loadStandList() {
 
 @media screen and (min-height: 1000px) {
 	.app-wrap {
-		background: url("./assets/images/bg.jpg") no-repeat center top, url("./assets/images/home-bg.png") no-repeat left bottom;
+		background: url("./assets/images/bg.jpg") no-repeat center top cover, url("./assets/images/home-bg.png") no-repeat left bottom;
 	}
 }
 
