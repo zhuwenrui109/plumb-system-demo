@@ -4,8 +4,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 import FormPop from "./FormPop.vue";
 import {
-	changeTxtWndNum,
 	destory,
+	ERROR_CODE_LOGIN_REPEATLOGIN,
 	getChannelInfo,
 	getDevicePort,
 	getInfo,
@@ -17,6 +17,7 @@ import {
 	stopRealPlay
 } from "@/utils/pluginController";
 import CheckToast from "./CheckToast.vue";
+import homeToastPlguin from "@/utils/homeToast";
 
 const store = useStore();
 const props = defineProps(["deepList"]);
@@ -31,6 +32,20 @@ const deviceList = computed(() => store.getters.getDeviceList);
 const g_iWndIndex = computed(() => store.state.iWndIndex);
 const g_iWndowType = computed(() => store.state.windowCount);
 const g_iWndowPage = computed(() => store.state.iWndowPage);
+
+const isLeftArrshow = computed(() => {
+	if (((g_iWndowType.value == "1*2" && windowType.value != 1) || g_iWndowType.value == windowType.value) && g_iWndowPage.value > 0 && deviceList.value.length > 1) {
+		return true;
+	}
+	return false;
+});
+
+const isRightArrshow = computed(() => {
+	if (((g_iWndowType.value == "1*2" && windowType.value != 1) || g_iWndowType.value == windowType.value) && g_iWndowPage.value < deviceList.value.length - 1 && deviceList.value.length > 1) {
+		return true;
+	}
+	return false;
+});
 
 watch(windowType, (newVal, oldVal) => {
 	if (!oldVal) {
@@ -47,6 +62,10 @@ onMounted(() => {
 	store.dispatch("handleDestoryPlugin", destoryPlugin);
 });
 
+defineExpose({
+	setTextOverlay
+});
+
 async function loadWindowCount() {
 	const res = await API_HOME.getWindowCount();
 	await store.dispatch("handleWindowCount", res.data.value);
@@ -55,11 +74,10 @@ async function loadWindowCount() {
 		return;
 	}
 	windowType.value = res.data.value;
-	// await nextTick();
-	// initPlugin();
 }
 
 onUnmounted(() => {
+	store.dispatch("handleIWndIndex", 0);
 	destoryPlugin();
 });
 
@@ -93,50 +111,68 @@ async function initPlugin() {
 			}
 		});
 		if (windowType.value > 1 || windowType.value == "1*2") {
-			// if (windowType.value == "1*2") {
-			// 	await changeTxtWndNum(windowType.value);
-			// }
 			const loginArr = [];
-			deviceList.value[g_iWndowPage.value].forEach((item, index) => {
+			console.log("g_iWndowPage.value :>> ", g_iWndowPage.value);
+			deviceList.value[g_iWndowPage.value].forEach((item, index, self) => {
 				const { monitor_ip, monitor_port, szDeviceIdentify } = item.device;
-				loginArr.push(login(monitor_ip, monitor_port));
-				// await login(monitor_ip, monitor_port);
-				// const { iRtspPort } = await getDevicePort(szDeviceIdentify);
-				// await getChannelInfo(szDeviceIdentify);
-				// await startRealPlay(szDeviceIdentify, {
-				// 	iWndIndex: index,
-				// 	iPort: iRtspPort
-				// });
+				const isDuplicate = self.slice(0, index).some(prev => prev.device.monitor_ip === monitor_ip && prev.device.monitor_port === monitor_port);
+
+				if (!isDuplicate) {
+					loginArr.push(login(monitor_ip, monitor_port));
+				}
 			});
-			Promise.all(loginArr)
-				.then(szDeviceIdentifies => {
-					szDeviceIdentifies.forEach(async (szDeviceIdentify, index) => {
-						const { iRtspPort } = await getDevicePort(szDeviceIdentify);
-						await getChannelInfo(szDeviceIdentify);
-						await startRealPlay(szDeviceIdentify, {
-							iWndIndex: index,
-							iPort: iRtspPort
-						});
+			Promise.allSettled(loginArr).then(async results => {
+				console.log("results :>> ", results);
+				deviceList.value[g_iWndowPage.value].forEach(async (item, index) => {
+					const { szDeviceIdentify } = item.device;
+					// const { iRtspPort } = await getDevicePort(szDeviceIdentify);
+					// await getChannelInfo(szDeviceIdentify);
+					await startRealPlay(szDeviceIdentify, {
+						iWndIndex: index
 					});
-				})
-				.catch(err => {
-					console.log('err :>> ', err);
-					// 重复登录
-					if (err == 2001) {
-						destoryPlugin(initPlugin);
-					}
 				});
+				return;
+				for (let i = 0; i < results.length; i++) {
+					const item = results[i];
+					if (item.status == "rejected") {
+						if (item.reason.errorCode == ERROR_CODE_LOGIN_REPEATLOGIN) {
+							// destoryPlugin(initPlugin);
+							const { iRtspPort } = await getDevicePort(`${item.reason.szIP}_${item.reason.szPort}`);
+							await getChannelInfo(`${item.reason.szIP}_${item.reason.szPort}`);
+							await startRealPlay(`${item.reason.szIP}_${item.reason.szPort}`, {
+								iWndIndex: i,
+								iPort: iRtspPort
+							});
+							continue;
+						}
+						if (item.reason.errorCode == 16) {
+							homeToastPlguin(`${item.reason.szIP}_${item.reason.szPort} 连接失败`);
+							continue;
+						}
+					}
+					const { iRtspPort } = await getDevicePort(item.value);
+					await getChannelInfo(item.value);
+					await startRealPlay(item.value, {
+						iWndIndex: i,
+						iPort: iRtspPort
+					});
+				}
+			});
 		} else {
 			const { monitor_ip, monitor_port, szDeviceIdentify } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
-			await login(monitor_ip, monitor_port);
-			const { iRtspPort } = await getDevicePort(szDeviceIdentify);
-			await getChannelInfo(szDeviceIdentify);
-			await startRealPlay(szDeviceIdentify, {
-				iWndIndex: 0,
-				iPort: iRtspPort
-			});
-			setTextOverlay();
-			timer.value = setInterval(setTextOverlay, 1000 * 10);
+			try {
+				await login(monitor_ip, monitor_port);
+				const { iRtspPort } = await getDevicePort(szDeviceIdentify);
+				await getChannelInfo(szDeviceIdentify);
+				await startRealPlay(szDeviceIdentify, {
+					iWndIndex: 0,
+					iPort: iRtspPort
+				});
+			} catch (err) {
+				if (err.errorCode == ERROR_CODE_LOGIN_REPEATLOGIN) {
+					destoryPlugin(initPlugin);
+				}
+			}
 		}
 	} catch (err) {
 		console.log("err :>> ", err);
@@ -147,35 +183,46 @@ async function initPlugin() {
 	}
 }
 
-function destoryPlugin(callback) {
+async function destoryPlugin(callback) {
 	const arr = [];
-	deviceList.value[g_iWndowPage.value].forEach(async (item, index) => {
+	deviceList.value[g_iWndowPage.value].forEach((item, index, self) => {
+		const { monitor_ip, monitor_port } = item.device;
+		const isDuplicate = self.slice(0, index).some(prev => prev.device.monitor_ip === monitor_ip && prev.device.monitor_port === monitor_port);
+
 		const info = getInfo(index);
-		if (info) {
-			stopRealPlay();
+		if (info && !isDuplicate) {
+			console.log('info.szDeviceIdentify :>> ', info.szDeviceIdentify);
 			arr.push(logout(info.szDeviceIdentify));
 		}
 	});
-	Promise.all(arr).then(() => {
-		destory();
-		if (timer.value) {
-			clearInterval(timer.value);
-			timer.value = null;
-		}
-		callback && callback();
-	});
+	Promise.all(arr)
+		.then(async res => {
+			await stopRealPlay();
+			destory();
+			if (timer.value) {
+				clearInterval(timer.value);
+				timer.value = null;
+			}
+			callback && callback();
+		})
+		.catch(err => {
+			console.log("destoryPlugin");
+			console.log("err :>> ", err);
+		});
 }
 
 function handleChangePage(type) {
-	if (!type && g_iWndowPage.value > 1) {
-		store.commit("setIWndPage", g_iWndowPage.value + 1);
+	if (!type && g_iWndowPage.value > 0) {
 		destoryPlugin(() => {
+			store.commit("setIWndPage", g_iWndowPage.value - 1);
+			store.commit("setIWndIndex", 0);
 			initPlugin();
 		});
 	}
-	if (type && g_iWndowPage.value < deviceList.value.length - 1) {
-		store.commit("setIWndPage", g_iWndowPage.value - 1);
+	if (type && g_iWndowPage.value < deviceList.value.length) {
 		destoryPlugin(() => {
+			store.commit("setIWndPage", g_iWndowPage.value + 1);
+			store.commit("setIWndIndex", 0);
 			initPlugin();
 		});
 	}
@@ -189,10 +236,10 @@ async function setTextOverlay() {
 		return;
 	}
 	const oWndInfo = WebVideoCtrl.I_GetWindowStatus(0);
+	console.log('oWndInfo :>> ', oWndInfo);
 	if (!oWndInfo) {
 		return;
 	}
-	console.log('oWndInfo :>> ', oWndInfo);
 	const szUrl = "ISAPI/System/Video/inputs/channels/" + oWndInfo.iChannelID + "/overlays";
 	const deviceInfo = getDeviceInfo(oWndInfo.szDeviceIdentify);
 	await getTextOverlay(szUrl, oWndInfo.szDeviceIdentify, deviceInfo);
@@ -210,6 +257,7 @@ function getDeviceInfo(szDeviceIdentify) {
 function closePlugin() {
 	windowType.value = g_iWndowType.value == "1*2" ? 2 : g_iWndowType.value;
 	destoryPlugin(() => {
+		store.commit("setIWndPage", 0);
 		initPlugin();
 	});
 }
@@ -254,15 +302,15 @@ function refresh() {
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr"
-				v-show="g_iWndowType == 4 && deviceList.length > 1"
-				@click="handleChangePage"
+				v-show="isLeftArrshow"
+				@click="handleChangePage(0)"
 			/>
 			<img
 				src="../assets/images/icon-plugin-arr.png"
 				alt=""
 				class="arr right"
-				v-show="g_iWndowType == 4 && deviceList.length > 1"
-				@click="handleChangePage"
+				v-show="isRightArrshow"
+				@click="handleChangePage(1)"
 			/>
 		</div>
 		<div class="plugin-content">
@@ -365,9 +413,16 @@ function refresh() {
 }
 
 .plugin-wrap .arr-wrap .arr {
+	position: absolute;
+	left: 70px;
 	display: block;
 	width: 40px;
 	cursor: pointer;
+}
+
+.plugin-wrap .arr-wrap .arr.right {
+	left: auto;
+	right: 66px;
 }
 
 .plugin-wrap .arr-wrap .arr.right {

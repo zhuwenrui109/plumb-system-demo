@@ -11,7 +11,7 @@ import { defineAsyncComponent, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useStore } from "vuex";
 
-const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"))
+const FormPop = defineAsyncComponent(() => import("@/components/FormPop.vue"));
 
 const route = useRoute();
 const store = useStore();
@@ -26,6 +26,7 @@ const props = defineProps({
 	}
 });
 
+const loading = ref(false);
 const formName = ref("新增设备");
 const isPopShow = ref(false);
 const page = ref(1);
@@ -140,7 +141,7 @@ async function handleSubmit() {
 	for (const key in form.value) {
 		if (Object.prototype.hasOwnProperty.call(form.value, key)) {
 			const item = form.value[key];
-			if (key != "device_id" && item == "") {
+			if (key != "device_id" && key != "status" && item == "") {
 				toastPlguin("请填写设备完整信息");
 				return;
 			}
@@ -150,7 +151,13 @@ async function handleSubmit() {
 		toastPlguin("一级报警值需要小于二级报警值");
 		return;
 	}
+	if (loading.value) {
+		return;
+	}
+	loading.value = true;
+	console.log("发送请求");
 	const res = await API_MANAGE.editManage(form.value);
+	loading.value = false;
 	if (res.code == 200) {
 		loadData();
 		refreshStandList();
@@ -333,9 +340,18 @@ function handleDelete(id) {
 				<div class="form-item chance">
 					<SettingButtonBorder
 						class="btn"
+						:class="{ loading: loading }"
 						@click="handleSubmit"
 					>
-						确认提交
+						<span>{{ !loading ? "确认提交" : "设备连接检测中" }}</span>
+						<Transition name="fade">
+							<img
+								src="../assets/images/icon-loading.png"
+								alt=""
+								class="icon-loading"
+								v-show="loading"
+							/>
+						</Transition>
 					</SettingButtonBorder>
 				</div>
 			</div>
@@ -512,6 +528,17 @@ function handleDelete(id) {
 	pointer-events: none;
 }
 
+.form-wrap .form-item .icon-loading {
+	position: absolute;
+	right: 25px;
+	top: 50%;
+	transform: translateY(-55%);
+	display: block;
+	width: 1em;
+	height: 1em;
+	animation: spin 3s linear infinite;
+}
+
 .form-wrap .select-wrap {
 	width: 100%;
 	justify-content: space-between;
@@ -519,8 +546,28 @@ function handleDelete(id) {
 }
 
 .form-wrap .btn {
+	position: relative;
 	width: 208px;
 	margin: 0 auto;
 	text-align: center;
+}
+
+.form-wrap .btn.loading {
+	color: #888889;
+	border-color: #505050;
+	background: linear-gradient(to top, rgba(166, 166, 166, 0.3), rgba(86, 86, 86, 0.3));
+}
+
+.form-wrap .btn.loading:hover {
+	opacity: 1;
+}
+
+@keyframes spin {
+	0% {
+		transform: translateY(-55%) rotate(0deg);
+	}
+	100% {
+		transform: translateY(-55%) rotate(360deg);
+	}
 }
 </style>

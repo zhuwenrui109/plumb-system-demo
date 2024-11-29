@@ -138,8 +138,8 @@ async function toggleStatus(index) {
 }
 
 async function handleSubmit() {
-	let text = "添加";
 	const data = { ...form.value };
+	const text = data.id ? "修改" : "添加";
 	for (const key in data) {
 		if (Object.prototype.hasOwnProperty.call(data, key)) {
 			const item = data[key];
@@ -154,9 +154,8 @@ async function handleSubmit() {
 		return;
 	}
 	delete data.checkpassword;
-	if (data.id && !data.password) {
+	if (!data.password) {
 		delete data.password;
-		text = "修改";
 	}
 	const res = await API_USER.addUser(data);
 	console.log("res :>> ", res);

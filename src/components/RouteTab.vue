@@ -66,7 +66,7 @@ function goList(name) {
 	position: relative;
 	width: 712px;
 	height: 40px;
-	margin: 0.08333rem auto 0;
+	margin: 16px auto 0;
 }
 
 .tab-wrap .tab-content {
@@ -131,5 +131,20 @@ function goList(name) {
 .tab-wrap .bg {
 	display: block;
 	width: 100%;
+}
+
+@media screen and (max-height: 920px) {
+
+	.tab-wrap {
+		width: auto;
+		height: 35px;
+		margin-top: 12px;
+	}
+
+	.tab-wrap .bg {
+		width: auto;
+		height: 100%;
+	}
+	
 }
 </style>

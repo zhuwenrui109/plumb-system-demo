@@ -2,21 +2,21 @@ const { WebVideoCtrl } = window;
 
 //错误码        
 //通用错误
-const ERROR_CODE_UNKNOWN = 1000; //未知错误
-const ERROR_CODE_NETWORKERROR = 1001; //网络错误
-const ERROR_CODE_PARAMERROR = 1002; //缺少插件元素
+export const ERROR_CODE_UNKNOWN = 1000; //未知错误
+export const ERROR_CODE_NETWORKERROR = 1001; //网络错误
+export const ERROR_CODE_PARAMERROR = 1002; //缺少插件元素
 
 //登录模块
-const ERROR_CODE_LOGIN_NOLOGIN = 2000; // 未登录
-const ERROR_CODE_LOGIN_REPEATLOGIN = 2001; //设备已登录，重复登录
-const ERROR_CODE_LOGIN_NOSUPPORT = 2002; //当前设备不支持Digest登录
+export const ERROR_CODE_LOGIN_NOLOGIN = 2000; // 未登录
+export const ERROR_CODE_LOGIN_REPEATLOGIN = 2001; //设备已登录，重复登录
+export const ERROR_CODE_LOGIN_NOSUPPORT = 2002; //当前设备不支持Digest登录
 
 //预览播放
-const ERROR_CODE_PLAY_PLUGININITFAIL = 3000; //插件初始化失败
-const ERROR_CODE_PLAY_NOREPEATPLAY = 3001; //当前窗口已经在预览
-const ERROR_CODE_PLAY_PLAYBACKABNORMAL = 3002; //回放异常
-const ERROR_CODE_PLAY_PLAYBACKSTOP = 3003; //回放停止
-const ERROR_CODE_PLAY_NOFREESPACE = 3004; //录像过程中，硬盘容量不足
+export const ERROR_CODE_PLAY_PLUGININITFAIL = 3000; //插件初始化失败
+export const ERROR_CODE_PLAY_NOREPEATPLAY = 3001; //当前窗口已经在预览
+export const ERROR_CODE_PLAY_PLAYBACKABNORMAL = 3002; //回放异常
+export const ERROR_CODE_PLAY_PLAYBACKSTOP = 3003; //回放停止
+export const ERROR_CODE_PLAY_NOFREESPACE = 3004; //录像过程中，硬盘容量不足
 
 /**
  * 初始化
@@ -27,6 +27,7 @@ export const init = options => {
   return new Promise((resolve, reject) => {
     WebVideoCtrl.I_InitPlugin({
       ...options,
+      bDebugMode: false,
       cbInitPluginComplete: function () {
         WebVideoCtrl.I_InsertOBJECTPlugin("divPlugin").then(() => {
           resolve();
@@ -60,9 +61,9 @@ export const login = (szIP, szPort) => {
         if (ERROR_CODE_LOGIN_REPEATLOGIN === status) {
           console.log(`${szIP}_${szPort}` + " 已登录过！");
           reject(ERROR_CODE_LOGIN_REPEATLOGIN);
+        } else if (oError.status == 16) {
         } else {
-          console.log('oError :>> ', oError);
-          reject(oError);
+          reject({ ...oError, szIP, szPort });
         }
       }
     });
@@ -151,8 +152,8 @@ export const changeTxtWndNum = (iType) => {
   });
 };
 
-export const stopRealPlay = () => {
-  WebVideoCtrl.I_StopAllPlay();
+export const stopRealPlay = async () => {
+  await WebVideoCtrl.I_StopAllPlay();
 };
 
 /**
@@ -184,7 +185,6 @@ export const destory = () => {
 
 export const getTextOverlay = (szUrl, szDeviceIdentify, deviceInfo) => {
   const info = checkDeviceInfo(deviceInfo);
-  console.log('info :>> ', info);
   return new Promise((resolve, reject) => {
     WebVideoCtrl.I_GetTextOverlay(szUrl, szDeviceIdentify, {
       success: function (data) {
@@ -193,13 +193,17 @@ export const getTextOverlay = (szUrl, szDeviceIdentify, deviceInfo) => {
         $(data).find("TextOverlay").eq(0).find("positionY").eq(0).text("20");
         $(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
 
-        $(data).find("TextOverlay").eq(1).find("displayText").eq(0).text(`浓度:${deviceInfo.gas}ppm.m`);
+        $(data).find("TextOverlay").eq(1).find("displayText").eq(0).text(`浓度: `);
         $(data).find("TextOverlay").eq(1).find("positionX").eq(0).text("320");
         $(data).find("TextOverlay").eq(1).find("positionY").eq(0).text("5");
 
-        $(data).find("TextOverlay").eq(2).find("displayText").eq(0).text(`光强:${deviceInfo.light}`);
-        $(data).find("TextOverlay").eq(2).find("positionX").eq(0).text("520");
+        $(data).find("TextOverlay").eq(2).find("displayText").eq(0).text(`${deviceInfo.gas}ppm.m`);
+        $(data).find("TextOverlay").eq(2).find("positionX").eq(0).text("380");
         $(data).find("TextOverlay").eq(2).find("positionY").eq(0).text("5");
+
+        $(data).find("TextOverlay").eq(3).find("displayText").eq(0).text(`光强:${deviceInfo.light}`);
+        $(data).find("TextOverlay").eq(3).find("positionX").eq(0).text("520");
+        $(data).find("TextOverlay").eq(3).find("positionY").eq(0).text("5");
         var xmldoc = toXMLStr(data);
         var newOptions = {
           type: "PUT",

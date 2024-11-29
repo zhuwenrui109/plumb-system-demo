@@ -17,7 +17,7 @@ function handleClick() {
 	if (!props.isSelect) {
 		return;
 	}
-	emit('goDetail', props.id);
+	emit("goDetail", props.id);
 }
 </script>
 
@@ -29,19 +29,25 @@ function handleClick() {
 	>
 		<div class="top-wrap">
 			<div
-				class="check"
-				v-if="isSelect"
+				class="check-wrap"
 				@click.stop="emit('handleCheck', id)"
 			>
-				<Transition name="fade">
-					<img
-						src="../assets/images/icon-hook.png"
-						alt=""
-						v-show="checkList.includes(id)"
-					/>
-				</Transition>
+				<div
+					class="check"
+					v-if="isSelect"
+				>
+					<Transition name="fade">
+						<img
+							src="../assets/images/icon-hook.png"
+							alt=""
+							v-show="checkList.includes(id)"
+						/>
+					</Transition>
+				</div>
+				<div class="num english">
+					{{ id }}
+				</div>
 			</div>
-			<div class="num english">{{ id }}</div>
 			<div class="title-wrap">
 				<div class="title">{{ standName }}-{{ areaName }}</div>
 				<div class="time english">{{ time }}</div>
@@ -51,7 +57,6 @@ function handleClick() {
 				alt=""
 				class="icon"
 				v-if="isSelect"
-				
 			/>
 		</div>
 		<slot></slot>
@@ -60,6 +65,7 @@ function handleClick() {
 
 <style scoped>
 .tips-wrap {
+	box-sizing: border-box;
 	padding: 15px 20px 20px;
 	background: rgba(42, 42, 42, 0.8);
 	box-shadow: inset 0 0 6px 2px rgba(255, 255, 255, 0.4);
@@ -73,7 +79,7 @@ function handleClick() {
 
 .tips-wrap .top-wrap {
 	display: flex;
-	align-items: center;
+	align-items: stretch;
 	justify-content: space-between;
 	margin-bottom: 12px;
 	padding-left: 2px;
@@ -87,18 +93,25 @@ function handleClick() {
 	border: none;
 }
 
-.tips-wrap .top-wrap .check {
+.tips-wrap .top-wrap .check-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	column-gap: 15px;
+	margin-right: 20px;
+}
+
+.tips-wrap .top-wrap .check-wrap .check {
 	position: relative;
 	width: 16px;
 	height: 16px;
 	box-sizing: border-box;
 	border: 1px solid rgba(108, 108, 108, 1);
 	background: rgba(255, 255, 255, 0.17);
-	margin-right: 15px;
 	cursor: pointer;
 }
 
-.tips-wrap .top-wrap .check img {
+.tips-wrap .top-wrap .check-wrap .check img {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -107,12 +120,11 @@ function handleClick() {
 	width: 80%;
 }
 
-.tips-wrap .top-wrap .num {
+.tips-wrap .top-wrap .check-wrap .num {
 	font-size: 16px;
 	line-height: 12px;
 	color: #fff;
 	opacity: 0.6;
-	margin-right: 20px;
 }
 
 .tips-wrap.select .top-wrap .num {
@@ -146,5 +158,6 @@ function handleClick() {
 .tips-wrap .top-wrap .icon {
 	display: block;
 	width: 24px;
+	align-self: center;
 }
 </style>

@@ -9,50 +9,52 @@ dayjs.locale("zh-cn");
 
 const props = defineProps({
 	name: String,
-	startDate: {
-		type: Dayjs,
-		default: ""
+	disabled: {
+		type: Boolean,
+		default: false
 	}
 });
 
-const date = defineModel();
+const time = defineModel();
 const locale = ref(zhCN);
 
 function clearDate() {
-	date.value = "";
-}
-
-function disabledDate(current) {
-	return props.startDate && dayjs(props.startDate, 'YYYY-MM-DD') >= current;
+	time.value = "";
 }
 </script>
 
 <template>
-	<div class="global-date-wrap">
-		<img src="../assets/images/icon-date.png" alt="" class="icon">
+	<div class="global-time-wrap">
 		<config-provider :locale="locale">
 			<DatePicker
-				v-model:value="date"
+				v-model:value="time"
+        picker="time"
 				:placeholder="name"
-				:disabled-date="disabledDate"
 				:allow-clear="false"
 				:bordered="false"
+				:disabled="disabled"
 				class="global-date"
 			></DatePicker>
 		</config-provider>
 		<Transition name="fade">
-			<img src="../assets/images/icon-clear.png" alt="" class="clear" @click="clearDate" v-show="date" />
+			<img
+				src="../assets/images/icon-clear.png"
+				alt=""
+				class="clear"
+				@click="clearDate"
+				v-show="time"
+			/>
 		</Transition>
 	</div>
 </template>
 
 <style scoped>
-.global-date-wrap {
+.global-time-wrap {
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
-	width: 164px;
+	width: 140px;
 	height: 36px;
 	box-sizing: border-box;
 	padding: 0;
@@ -63,31 +65,31 @@ function disabledDate(current) {
 	border-radius: 2px;
 }
 
-.global-date-wrap .ant-picker {
+.global-time-wrap .ant-picker {
 	padding: 0;
 	background: none;
 	border: none;
 }
 
-.global-date-wrap .icon {
+.global-time-wrap .icon {
 	display: block;
 	width: 16px;
 	margin-right: 8px;
 }
 
-.global-date-wrap .clear {
+.global-time-wrap .clear {
 	position: absolute;
 	top: 50%;
 	right: 10px;
 	transform: translateY(-50%);
 	display: block;
 	width: 16px;
-	opacity: .5;
-	transition: .3s all linear;
+	opacity: 0.5;
+	transition: 0.3s all linear;
 	cursor: pointer;
 }
 
-.global-date-wrap .clear:hover {
+.global-time-wrap .clear:hover {
 	opacity: 1;
 }
 </style>

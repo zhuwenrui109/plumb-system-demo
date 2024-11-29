@@ -1,9 +1,16 @@
 <script setup>
 import { API_HOME } from "@/api";
-import { computed, ref, watch } from "vue";
-import { useStore } from "vuex";
+import { onMounted, ref, watch } from "vue";
 
-const store = useStore();
+const DISABLE_STAND = {
+	name: "选择站点",
+	station_id: ""
+};
+const DISABLE_AREA = {
+	name: "选择工艺区",
+	region_id: ""
+};
+
 const props = defineProps({
 	width: {
 		type: Number,
@@ -12,45 +19,58 @@ const props = defineProps({
 	needName: {
 		type: Boolean,
 		default: false
+	},
+	disableInfo: {
+		type: Boolean,
+		default: true
 	}
 });
 const currentStandId = defineModel("standId");
 const currentAreaId = defineModel("areaId");
 
-const standList = ref([
-	{
-		name: "选择站点",
-		station_id: ""
-	}
-]);
-const areaList = ref([
-	{
-		name: "选择工艺区",
-		region_id: ""
-	}
-]);
+const standList = ref([]);
+const areaList = ref([]);
+
+defineExpose({
+	standList,
+	areaList
+});
 
 watch(currentStandId, newVal => {
 	if (!newVal) {
 		areaList.value.splice(1, areaList.value.length);
 	} else {
-		loadAreaList(currentStandId.value);
+		loadAreaList(newVal);
 	}
 });
 
-loadStandList();
+onMounted(() => {
+	loadStandList();
+})
 
 async function loadStandList() {
 	const res = await API_HOME.getAllStand();
-	console.log("res.data :>> ", res.data);
-	standList.value.push(...res.data);
+	if (props.disableInfo) {
+		standList.value = [].concat([DISABLE_STAND, ...res.data]);
+		areaList.value = [].concat([DISABLE_AREA]);
+	} else {
+		standList.value = [].concat(res.data);
+		currentStandId.value = res.data[0].station_id;
+		// areaList.value = [].concat([DISABLE_AREA]);
+		loadAreaList(res.data[0].station_id);
+	}
 }
 
 async function loadAreaList(id) {
 	const { data } = await API_HOME.getAllArea(id);
-	console.log("data :>> ", data);
 	areaList.value.splice(1, areaList.value.length);
-	areaList.value.push(...data);
+	// areaList.value.push(...data);
+	if (props.disableInfo) {
+		areaList.value = [].concat([DISABLE_AREA, ...data]);
+	} else {
+		areaList.value = [].concat(data);
+		currentAreaId.value = data[0].region_id;
+	}
 }
 
 function handleSelectStand() {

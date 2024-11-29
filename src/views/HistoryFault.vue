@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { DatePicker, ConfigProvider } from "ant-design-vue";
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
@@ -35,6 +35,7 @@ echarts.use([
 
 const store = useStore();
 
+const selectRef = ref(null);
 const dataList = ref([]);
 const currentStand = ref({ name: "" });
 const currentArea = ref({ name: "" });
@@ -44,7 +45,7 @@ const timeGap = ref(5);
 const standId = ref("");
 const areaId = ref("");
 const date = ref("");
-const time = ref(dayjs("21:17:55s", "HH:mm:ss"));
+const time = ref(dayjs("00:00:00", "HH:mm:ss"));
 const locale = ref(zhCN);
 const chart = ref(null);
 const chartOptions = ref({
@@ -58,7 +59,12 @@ const chartOptions = ref({
 		}
 	},
 	tooltip: {
-		show: false
+		show: true,
+		trigger: "item",
+		formatter: params => {
+			const { seriesName, value } = params;
+			return `${seriesName}: ${value}PPm.m`;
+		}
 	},
 	grid: {
 		show: true,
@@ -69,11 +75,13 @@ const chartOptions = ref({
 		containLabel: true,
 		backgroundColor: "rgba(45, 45, 45, 0.7)",
 		opacity: 0.4,
-		borderWidth: 0
+		borderWidth: 0,
+		containLabel: true
 	},
 	xAxis: {
 		type: "category",
 		boundaryGap: false,
+		snap: true,
 		axisLine: {
 			show: true,
 			lineStyle: {
@@ -119,7 +127,7 @@ const chartOptions = ref({
 	},
 	series: [
 		{
-			name: "数量",
+			name: "浓度",
 			type: "line",
 			smooth: true,
 			data: [],
@@ -172,27 +180,27 @@ const pageConfig = ref({
 	pageSize: 4
 });
 
-const standList = computed(() => store.state.standList);
+const standList = computed(() => selectRef.value.standList);
+const areaList = computed(() => selectRef.value.areaList);
 
-watch(
-	() => store.state.standList,
-	newVal => {
-		standId.value = newVal[0].station_id;
-		areaId.value = newVal[0].regions[0].region_id;
+let disable = false;
+watch(areaId, (newVal, oldVal) => {
+	console.log("oldVal :>> ", oldVal);
+	if (!disable) {
+		console.log("watch areaId");
 		loadChartsData();
 		loadData();
+		disable = true;
 	}
-);
+	// currentArea.value = areaList.value.find(item => item.region_id == newVal);
+	// console.log('newVal :>> ', newVal);
+});
 
 onMounted(() => {
 	initDefaultDate();
 	echartsInit();
-	if (standList.value.length) {
-		standId.value = standList.value[0].station_id;
-		areaId.value = standList.value[0].regions[0].region_id;
-		loadChartsData();
-		loadData();
-	}
+	// loadChartsData();
+	// loadData();
 });
 
 onUnmounted(() => {
@@ -200,9 +208,9 @@ onUnmounted(() => {
 });
 
 async function loadChartsData() {
+	await nextTick();
 	let range = 0;
 	let step = 0;
-	console.log("currentScopeUnit.value :>> ", currentScopeUnit.value);
 	if (currentScopeUnit.value == 2) {
 		range = timeScope.value;
 	} else {
@@ -213,8 +221,6 @@ async function loadChartsData() {
 	} else {
 		step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	}
-	// const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
-	// const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	const res = await API_FAULT.getCharts({
 		region_id: areaId.value,
 		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
@@ -245,8 +251,10 @@ async function loadChartsData() {
 }
 
 async function loadData() {
+	await nextTick();
+	console.log("areaId.value :>> ", areaId.value);
 	currentStand.value = standList.value.find(item => item.station_id == standId.value);
-	currentArea.value = currentStand.value.regions.find(item => item.region_id == areaId.value);
+	currentArea.value = areaList.value.find(item => item.region_id == areaId.value);
 	let range = 0;
 	let step = 0;
 	if (currentScopeUnit.value == 2) {
@@ -259,8 +267,6 @@ async function loadData() {
 	} else {
 		step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	}
-	// const range = currentScopeUnit.value == 0 ? timeScope.value * 60 * 60 : timeScope.value * 60;
-	// const step = currentGapUnit.value == 0 ? timeGap.value * 60 * 60 : timeGap.value * 60;
 	const { data } = await API_FAULT.getList({
 		region_id: areaId.value,
 		start_time: `${dayjs(date.value).format("YYYY-MM-DD")} ${dayjs(time.value).format("HH:mm:ss")}`,
@@ -269,6 +275,7 @@ async function loadData() {
 	});
 	console.log("data :>> ", data);
 	pageConfig.value.total = data.length;
+	dataList.value.splice(0, dataList.value.length);
 	let j = 0,
 		o = j;
 	// 分页
@@ -285,8 +292,8 @@ function initDefaultDate() {
 	let year = d.getFullYear().toString();
 	let month = d.getMonth() + 1 < 10 ? "0" + (d.getMonth() + 1).toString() : (d.getMonth() + 1).toString();
 	let day = d.getDate() < 10 ? "0" + d.getDate().toString() : d.getDate().toString();
-	// date.value = dayjs(year + "-" + month + "-" + day);
-	date.value = dayjs("2024-11-05");
+	date.value = dayjs(year + "-" + month + "-" + day);
+	// date.value = dayjs("2024-11-05");
 }
 
 function echartsInit() {
@@ -307,13 +314,15 @@ function destoryCharts() {
 	<HomeGlobalContent class="fault-wrap">
 		<GlobalContent class="fault-content">
 			<SettingTopHandller
-				:title="`${currentStand.name}-${currentArea.name}-历史数据`"
+				:title="`${currentStand.name || ''}-${currentArea.name || ''}-历史数据`"
 				class="fault-top"
 			>
 				<template #left>
 					<div class="fault-left">
 						<GlobalLinkageSelect
+							ref="selectRef"
 							:width="128"
+							:disable-info="false"
 							v-model:standId="standId"
 							v-model:areaId="areaId"
 							class="select"
@@ -325,7 +334,6 @@ function destoryCharts() {
 									<DatePicker
 										v-model:value="date"
 										class="global-date"
-										:inputReadOnly="true"
 										:allow-clear="false"
 									>
 										<template #suffixIcon></template>
@@ -334,7 +342,6 @@ function destoryCharts() {
 										v-model:value="time"
 										picker="time"
 										class="global-date"
-										:inputReadOnly="true"
 										:allow-clear="false"
 									>
 										<template #suffixIcon></template>
@@ -438,6 +445,7 @@ function destoryCharts() {
 					<div
 						class="tr"
 						v-for="item in dataList[page - 1]"
+						:key="item.id"
 					>
 						<div class="td date english">{{ item.created_at }}</div>
 						<div class="td info">{{ item.station.name }}-{{ item.region.name }}</div>
@@ -637,7 +645,7 @@ input[type="number"] {
 	padding-left: 23px;
 	text-wrap: nowrap;
 	overflow: hidden;
-	text-overflow: ellipsis
+	text-overflow: ellipsis;
 }
 
 .table-list .table .tr .td.date {

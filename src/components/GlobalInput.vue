@@ -47,6 +47,7 @@ const txt = defineModel();
 	background: none;
 	border: none;
 	outline: none;
+	color: #fff;
 }
 
 .global-input-wrap input::placeholder {

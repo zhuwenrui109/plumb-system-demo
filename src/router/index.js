@@ -37,7 +37,7 @@ const router = createRouter({
       }
     },
     {
-      path: '/realAlarm',
+      path: '/realAlarm/:id',
       name: 'realAlarm',
       component: () => import("@/views/RealAlarm.vue"),
       meta: {

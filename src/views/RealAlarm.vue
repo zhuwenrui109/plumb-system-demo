@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import GlobalContent from "@/components/GlobalContent.vue";
 import SettingTopHandller from "@/components/SettingTopHandller.vue";
@@ -10,33 +10,36 @@ import { API_HOME } from "@/api";
 import toastPlguin from "@/utils/toast";
 import { useStore } from "vuex";
 import FormPop from "@/components/FormPop.vue";
+import { useRoute } from "vue-router";
+import VideoPop from "@/components/VideoPop.vue";
+
+const route = useRoute();
+const deviceId = route.params.id;
+console.log("deviceId :>> ", deviceId);
 
 const store = useStore();
 
+const isVideoShow = ref(false);
+const currentVideoUrl = ref("");
 const isPopShow = ref(false);
-const standId = ref("");
-const areaId = ref("");
-const startDate = ref("");
-const endDate = ref("");
 const checkList = ref([]);
-const dataList = reactive([]);
+const dataList = ref([]);
 const page = ref(1);
 const pageConfig = ref({
 	total: 1,
 	pageSize: 10
 });
-const keyword = ref("");
 const form = ref({
+	type: 0,
 	confirm_user: "",
 	remark: ""
 });
-
-const alarmList = computed(() => store.state.alarmList);
 
 watch(isPopShow, newVal => {
 	if (!newVal) {
 		setTimeout(() => {
 			form.value = {
+				type: 0,
 				confirm_user: "",
 				remark: ""
 			};
@@ -48,12 +51,31 @@ watch(page, () => {
 	checkList.value = [];
 });
 
-function showForm() {
-	if (!checkList.value.length) {
-		toastPlguin("请选择报警信息")
+loadData();
+
+async function loadData() {
+	const { data } = await API_HOME.getRealAlarm({
+		device_id: deviceId,
+		page: page.value
+	});
+	if (!data.data.length) {
+		toastPlguin("暂无内容...");
+		dataList.value = [];
+		return;
+	}
+	console.log("data :>> ", data);
+	dataList.value = [...data.data];
+	pageConfig.value.total = data.total;
+	pageConfig.value.pageSize = data.per_page;
+}
+
+function showForm(type) {
+	if (!checkList.value.length && !type) {
+		toastPlguin("请选择报警信息");
 		return;
 	}
 	form.value.confirm_user = store.state.user.name;
+	form.value.type = type;
 	isPopShow.value = true;
 }
 
@@ -77,24 +99,41 @@ function handleSelectAll() {
 		checkList.value.splice(0, checkList.value.length);
 		return;
 	}
-	checkList.value = alarmList.value.map(item => item.alarm_id);
+	checkList.value = dataList.value.map(item => item.alarm_id);
 }
 
 async function submitCheckList() {
-	const { confirm_user, remark } = form.value;
+	const { confirm_user, remark, type } = form.value;
 	if (!confirm_user && !remark) {
 		toastPlguin("请检查确认人和备注");
 		return;
 	}
+	if (type) {
+		submitAlarmByDevice();
+		return;
+	}
+	submitAlarmByAlarm();
+}
+
+function refreshData() {
+	page.value = 1;
+	checkList.value = [];
+	loadData();
+}
+
+async function submitAlarmByDevice() {
+	const { confirm_user, remark } = form.value;
 	try {
 		const { code } = await API_HOME.submitCheckAlarm({
-			alarm_ids: checkList.value,
+			devices_ids: [deviceId],
 			confirm_user,
-			remark
+			remark,
+			last_alarm_id: dataList.value[0].alarm_id
 		});
 		if (code == 200) {
+			checkList.value.splice(0, checkList.value.length);
+			loadData();
 			isPopShow.value = false;
-			checkList.value.splice(0, checkList.value.length)
 			toastPlguin("确认报警成功");
 		} else {
 			toastPlguin("提交失败");
@@ -103,18 +142,61 @@ async function submitCheckList() {
 		toastPlguin("提交失败");
 	}
 }
+
+async function submitAlarmByAlarm() {
+	const { confirm_user, remark } = form.value;
+	try {
+		const { code } = await API_HOME.checkRealAlarm({
+			alarm_ids: checkList.value,
+			confirm_user,
+			remark
+		});
+		if (code == 200) {
+			checkList.value.splice(0, checkList.value.length);
+			loadData();
+			isPopShow.value = false;
+			toastPlguin("确认报警成功");
+		} else {
+			toastPlguin("提交失败");
+		}
+	} catch (err) {
+		console.log("err :>> ", err);
+		toastPlguin("提交失败");
+	}
+}
+
+async function checkVideo(id) {
+	const { code, data, msg} = await API_HOME.checkRealAlarmVideo({
+		alarm_id: id
+	});
+	if (code == 400) {
+		toastPlguin(msg);
+		return;
+	}
+	currentVideoUrl.value = data.video;
+	isVideoShow.value = true;
+}
 </script>
 
 <template>
 	<HomeGlobalContent class="history-wrap">
 		<GlobalContent class="history-content">
 			<SettingTopHandller title="实时报警">
+				<template #left>
+					<div class="refresh-btn" @click="refreshData">
+						<img
+							src="../assets/images/icon-refresh.png"
+							alt=""
+						/>
+						<span>刷新</span>
+					</div>
+				</template>
 				<template #right>
 					<div class="history-right">
-						<SettingButtonBorder @click="showForm"> 确认选中报警 </SettingButtonBorder>
+						<SettingButtonBorder @click="showForm(0)"> 确认选中报警 </SettingButtonBorder>
 						<SettingButtonBorder
 							type="clear"
-							@click="clearForm"
+							@click="showForm(1)"
 						>
 							确认所有报警
 						</SettingButtonBorder>
@@ -145,7 +227,7 @@ async function submitCheckList() {
 						</div>
 						<div
 							class="tr"
-							v-for="item in alarmList"
+							v-for="item in dataList"
 							:key="item.alarm_id"
 						>
 							<div
@@ -174,7 +256,7 @@ async function submitCheckList() {
 								>级
 							</div>
 							<div class="td english color">{{ item.density + "pmm.m" }}</div>
-							<div class="td video">
+							<div class="td video" @click="checkVideo(item.alarm_id)">
 								<img
 									src="../assets/images/icon-video.png"
 									alt=""
@@ -224,6 +306,7 @@ async function submitCheckList() {
 				</div>
 			</div>
 		</FormPop>
+		<VideoPop v-model="isVideoShow" :video-url="currentVideoUrl"></VideoPop>
 	</HomeGlobalContent>
 </template>
 
@@ -239,6 +322,24 @@ async function submitCheckList() {
 	width: 1860px;
 	height: 100%;
 	margin: 0 auto;
+}
+
+.history-wrap .history-content .refresh-btn {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	align-self: flex-end;
+	column-gap: 10px;
+	cursor: pointer;
+}
+
+.history-wrap .history-content .refresh-btn img {
+	display: block;
+	width: 20px;
+}
+
+.history-wrap .history-content .refresh-btn span {
+	font-size: 15px;
 }
 
 .history-wrap .history-content .history-handle {
@@ -487,6 +588,7 @@ async function submitCheckList() {
 }
 
 .form-wrap .form-item .txt-area-box textarea {
+	font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
 	display: block;
 	width: 100%;
 	height: 100%;
@@ -495,6 +597,7 @@ async function submitCheckList() {
 	outline: none;
 	resize: none;
 	background: none;
+	color: #fff;
 }
 
 .form-wrap .form-item .btn {

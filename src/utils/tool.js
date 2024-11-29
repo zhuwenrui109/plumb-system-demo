@@ -36,7 +36,6 @@ export const clearToken = () => {
 export const tokenExpressInTime = () => {
   const date = new Date()
   const tokenTime = localStorage.getItem('tokenTime') || sessionStorage.getItem("tokenTime");
-  console.log('tokenTime :>> ', tokenTime);
   // 大于0: token过期返回true 否则返回false
   return (date.getTime() - Number(tokenTime)) > 0 ? true : false
 }

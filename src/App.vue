@@ -41,11 +41,18 @@ onMounted(() => {
 
 watch(
 	() => alarm.message.value,
-	(newVal, oldVal) => {
-		if (newVal.length > (oldVal && oldVal.length)) {
-			store.dispatch("handleAlarmList", newVal);
-			startAudio();
+	newVal => {
+		if (JSON.stringify(newVal) == "[]") {
+			store.dispatch("handleAlarmList", []);
+			pauseAudio();
+			return;
 		}
+		if (newVal.some(item => item.mute_status === 0)) {
+			startAudio();
+		} else {
+			pauseAudio();
+		}
+		store.dispatch("handleAlarmList", newVal);
 	}
 );
 
@@ -65,13 +72,14 @@ provide("getData", {
 });
 
 function startAudio() {
+	// console.log('audio.value.paused :>> ', audio.value.paused);
 	if (audio.value.paused) {
-		audio.value.play().catch(() => {
+		audio.value.play().catch(err => {
 			const test = document.createElement("div");
 			test.addEventListener("click", () => {
 				audio.value.play();
 				test.remove();
-			})
+			});
 			test.click();
 			// audioToastPlguin({ message: "设备浓度超标" }).then(() => {
 			// 	audio.value.play();
@@ -102,8 +110,12 @@ async function loadUserInfo() {
 }
 
 async function loadStandList() {
-	const { data } = await API_HOME.getStandList();
-	await store.dispatch("handleStandList", data);
+	try {
+		const { data } = await API_HOME.getStandList();
+		await store.dispatch("handleStandList", data);
+	} catch (err) {
+		console.log("服务器繁忙");
+	}
 }
 </script>
 
@@ -141,6 +153,7 @@ async function loadStandList() {
 	justify-content: flex-start;
 	width: 100%;
 	height: 100%;
+	overflow: hidden;
 	background: url("./assets/images/bg.jpg") no-repeat center top;
 	background-size: cover;
 }

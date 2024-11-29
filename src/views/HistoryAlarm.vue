@@ -9,21 +9,28 @@ import GlobalDatePicker from "@/components/GlobalDatePicker.vue";
 import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import GlobalPagination from "@/components/GlobalPagination.vue";
 import { API_ALARM } from "@/api";
+import zhCN from "ant-design-vue/es/locale/zh_CN";
 import dayjs from "dayjs";
 import toastPlguin from "@/utils/toast";
 import dialogPlguin from "@/utils/dialog";
 import { useStore } from "vuex";
 import VideoPop from "@/components/VideoPop.vue";
+import GlobalTimePicker from "@/components/GlobalTimePicker.vue";
+
+dayjs.locale("zh-cn");
 
 const store = useStore();
 
+const locale = ref(zhCN);
 const isPopShow = ref(false);
 const currentVideoUrl = ref("");
 const currentStandArea = ref(0);
 const standId = ref("");
 const areaId = ref("");
 const startDate = ref("");
+const startTime = ref("");
 const endDate = ref("");
+const endTime = ref("");
 const isToolsShow = ref(false);
 const checkList = ref([]);
 const dataList = reactive([]);
@@ -41,6 +48,18 @@ onMounted(() => {
 
 const userRole = computed(() => store.state.user.role);
 
+watch(startDate, newVal => {
+	if (!newVal) {
+		startTime.value = "";
+	}
+})
+
+watch(endDate, newVal => {
+	if (!newVal) {
+		endTime.value = "";
+	}
+})
+
 watch(page, () => {
 	checkList.value = [];
 });
@@ -50,10 +69,14 @@ async function loadData() {
 	let end_date = "";
 	if (startDate.value) {
 		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
+		start_date += startTime.value ? ` ${dayjs(startTime.value).format("HH:mm:ss")}` : "";
 	}
 	if (startDate.value) {
 		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
+		end_date += endTime.value ? ` ${dayjs(endTime.value).format("HH:mm:ss")}` : "";
 	}
+	console.log('start_date :>> ', start_date);
+	console.log('end_date :>> ', end_date);
 	const res = await API_ALARM.getList({
 		page: page.value,
 		station_id: standId.value,
@@ -81,9 +104,11 @@ async function search() {
 	let end_date = "";
 	if (startDate.value) {
 		start_date = dayjs(startDate.value).format("YYYY-MM-DD");
+		start_date += startTime.value ? ` ${dayjs(startTime.value).format("HH:mm:ss")}` : "";
 	}
 	if (startDate.value) {
 		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
+		end_date += endTime.value ? ` ${dayjs(endTime.value).format("HH:mm:ss")}` : "";
 	}
 	const res = await API_ALARM.getList({
 		page: page.value,
@@ -127,23 +152,17 @@ async function exportData() {
 	if (startDate.value) {
 		end_date = dayjs(endDate.value).format("YYYY-MM-DD");
 	}
-	// station_id: standId.value,
-	// 	region_id: areaId.value,
-	// 	keyword: keyword.value,
-	// 	start_date,
-	// 	end_date
-	// if (checkList.value.length == 0) {
-	// 	return;
-	// }
-	// const res = await API_ALARM.exprotData(checkList.value.join(","), { responseType: "blob" });
-	const res = await API_ALARM.exprotData({
-		selected_id: "0",
-		station_id: standId.value,
-		region_id: areaId.value,
-		keyword: keyword.value,
-		start_date,
-		end_date
-	}, { responseType: "blob" });
+	const res = await API_ALARM.exprotData(
+		{
+			selected_id: "0",
+			station_id: standId.value,
+			region_id: areaId.value,
+			keyword: keyword.value,
+			start_date,
+			end_date
+		},
+		{ responseType: "blob" }
+	);
 	const url = window.URL.createObjectURL(res);
 	const link = document.createElement("a");
 	const date = new Date();
@@ -268,11 +287,21 @@ function showVideoPop(url) {
 							v-model="startDate"
 							:name="'报警开始日期'"
 						></GlobalDatePicker>
+						<GlobalTimePicker
+							v-model="startTime"
+							:disabled="!startDate"
+							:name="'报警开始时间'"
+						></GlobalTimePicker>
 						<GlobalDatePicker
 							v-model="endDate"
 							:start-date="startDate"
 							:name="'报警结束日期'"
 						></GlobalDatePicker>
+						<GlobalTimePicker
+							v-model="endTime"
+							:disabled="!endDate"
+							:name="'报警结束时间'"
+						></GlobalTimePicker>
 						<SettingButtonBorder @click="search"> 搜索 </SettingButtonBorder>
 						<SettingButtonBorder
 							type="clear"
@@ -350,13 +379,16 @@ function showVideoPop(url) {
 								<Transition>
 									<div
 										class="tips-more"
-										v-show="item.remark != 'null' && item.remark.length > 16 && currentRemarkId == item.alarm_id"
+										v-show="item.remark != null && item.remark.length > 16 && currentRemarkId == item.alarm_id"
 									>
 										{{ item.remark }}
 									</div>
 								</Transition>
 							</div>
-							<div class="td video" @click="showVideoPop(item.video)">
+							<div
+								class="td video"
+								@click="showVideoPop(item.video)"
+							>
 								<img
 									src="../assets/images/icon-video.png"
 									alt=""
@@ -372,7 +404,10 @@ function showVideoPop(url) {
 					></GlobalPagination>
 				</div>
 			</div>
-			<VideoPop v-model="isPopShow" :video-url="currentVideoUrl"></VideoPop>
+			<VideoPop
+				v-model="isPopShow"
+				:video-url="currentVideoUrl"
+			></VideoPop>
 		</GlobalContent>
 	</HomeGlobalContent>
 </template>
@@ -472,6 +507,21 @@ function showVideoPop(url) {
 	align-items: center;
 	justify-content: flex-end;
 	column-gap: 10px;
+}
+
+.history-wrap .history-content .history-right .ant-picker {
+	width: 116px;
+	height: 36px;
+	box-sizing: border-box;
+	padding: 0 9px;
+	background: rgba(39, 39, 39, 0.26);
+	border: 2px solid rgba(221, 221, 221, 0.17);
+	border-radius: 2px;
+	margin-right: 3px;
+}
+
+.history-wrap .history-content .history-right .ant-picker:last-child {
+	margin-right: 0;
 }
 
 .history-wrap .history-content .main {
@@ -599,5 +649,22 @@ function showVideoPop(url) {
 .global-table-wrap .table .tr .td.video img {
 	display: block;
 	width: 21px;
+}
+</style>
+
+<style>
+.ant-picker .ant-picker-input > input {
+	font-size: 15px;
+	color: #fff;
+	border: 0;
+	border-radius: 0;
+}
+.ant-picker-focused {
+	box-shadow: none;
+	border-inline-end-width: none;
+}
+
+.ant-picker .ant-picker-input > input::placeholder {
+	color: rgba(255, 255, 255, 0.4);
 }
 </style>

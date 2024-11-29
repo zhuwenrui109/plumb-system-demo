@@ -127,7 +127,6 @@ function handleLogout() {
 	align-items: center;
 	justify-content: flex-start;
 	column-gap: 10px;
-	cursor: pointer;
 	font-size: 12px;
 }
 
@@ -138,6 +137,7 @@ function handleLogout() {
 	column-gap: 5px;
 	opacity: .7;
 	transition: .1s all linear;
+	cursor: pointer;
 }
 
 .wrap .logout-wrap .logout-btn:hover {

@@ -18,6 +18,10 @@ import SettingButtonBorder from "@/components/SettingButtonBorder.vue";
 import homeToastPlguin from "@/utils/homeToast";
 import { getInfo } from "@/utils/pluginController";
 import { checkFaultType } from "@/utils/tool";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Autoplay } from "swiper/modules";
+
+import "swiper/css";
 
 const router = useRouter();
 const store = useStore();
@@ -31,7 +35,7 @@ const currentDeviceId = ref("");
 const roll = ref(null);
 const rollTimer = ref(null);
 const pluginDom = ref(null);
-const pluginSpeed = ref(10);
+const pluginSpeed = ref(15);
 const g_iWndIndex = ref(0);
 const g_iWndowType = ref(0);
 const g_iWndowPage = ref(0);
@@ -42,7 +46,6 @@ const form = ref({
 	confirm_user: "",
 	remark: ""
 });
-const audio = ref(null);
 
 const standList = computed(() => store.state.standList);
 const deviceList = computed(() => store.getters.getDeviceList);
@@ -63,19 +66,25 @@ socket.onmessage = msgEvent => {
 
 	console.log("msg :>> ", msg);
 	if (!msg.status) {
-		clearInterval(socketTimer);
-		socketTimer = null;
+		if (socketTimer) {
+			clearInterval(socketTimer);
+			socketTimer = null;
+		}
 		isBusy.value = true;
+		currentDeviceId.value = "";
 	}
 };
 
 onMounted(() => {
-	// setTimeout(testPluginError, 1000 * 10);
-	initRoll();
+	// initRoll();
 });
 
 onUnmounted(() => {
 	destoryRoll();
+	if (socketTimer) {
+		clearInterval(socketTimer);
+		socketTimer = null;
+	}
 });
 
 watch(
@@ -88,11 +97,19 @@ watch(
 watch(g_iWndowType, newVal => {
 	if (newVal != 1) {
 		currentDeviceId.value = "";
+		isBusy.value = false;
+		if (socketTimer) {
+			clearInterval(socketTimer);
+			socketTimer = null;
+		}
 	}
 });
 
-watch(isPopShow, () => {
+watch(isPopShow, newVal => {
 	alarmScroll.value.refreshScroll();
+	if (!newVal) {
+		form.value.remark = "";
+	}
 });
 
 let timer = null;
@@ -116,7 +133,11 @@ concentration.connect();
 
 watch(
 	() => concentration.message.value,
-	newVal => {
+	async newVal => {
+		// console.log("newVal :>> ", newVal);
+		if (g_iWndowType.value == 1) {
+			// await pluginDom.value.setTextOverlay();
+		}
 		deepList.value = [...newVal];
 	}
 );
@@ -125,7 +146,7 @@ function initRoll() {
 	console.log("定时器触发周期");
 	destoryRoll();
 	//定时器触发周期
-	rollTimer.value = setInterval(marqueeTest, 1000 * 1);
+	rollTimer.value = setInterval(marqueeTest, 1000 * 6);
 }
 
 async function marqueeTest() {
@@ -137,7 +158,7 @@ async function marqueeTest() {
 		test1 = roll.value;
 	} else {
 		//如果列表数量过少不进行滚动
-		if (test1.childNodes.length < 5) {
+		if (test1.childNodes.length <= 5) {
 			destoryRoll();
 			return;
 		}
@@ -146,9 +167,13 @@ async function marqueeTest() {
 		let i = 1;
 		const childMarginTop = getComputedStyle(child[0]).getPropertyValue("margin-top");
 		const childMarginBottom = getComputedStyle(child[0]).getPropertyValue("margin-bottom");
+		console.log("childMarginTop :>> ", childMarginTop);
+		console.log("childMarginBottom :>> ", childMarginBottom);
+		console.log("child[0].offsetHeight :>> ", child[0].offsetHeight);
 		const scrollTimer = setInterval(() => {
+			console.log("scrollTimer");
 			i++;
-			if (i >= child[0].offsetHeight + parseInt(childMarginTop, 10) + parseInt(childMarginBottom, 10)) {
+			if (i >= child[0].offsetHeight + parseInt(childMarginTop, 10) + 2) {
 				//获取组件第一个节点
 				let a = test1.childNodes[0];
 				//删除节点
@@ -196,7 +221,10 @@ async function changeSpeed(value) {
 
 function goPlugin(id) {
 	const { href } = router.resolve({
-		name: "realAlarm"
+		name: "realAlarm",
+		params: {
+			id
+		}
 	});
 	window.open(href, "_blank");
 }
@@ -228,25 +256,27 @@ async function handlePlugin() {
 	}
 	if (currentDeviceId.value) {
 		currentDeviceId.value = "";
+		isBusy.value = false;
 		return;
 	}
 	if (!socketStatus) {
 		homeToastPlguin("服务器繁忙");
 		return;
 	}
-	const { code } = await API_HOME.startContrl({
-		device_id: currentDeviceId.value
-	});
 	const { szDeviceIdentify } = getInfo(0);
 	const { device_id } = deviceList.value[g_iWndowPage.value].find(item => item.device.szDeviceIdentify == szDeviceIdentify).device;
 	currentDeviceId.value = device_id;
+	isBusy.value = false;
+	await API_HOME.startContrl({
+		device_id: currentDeviceId.value
+	});
 	const socketParams = {
 		target: "contrl",
 		user_id: store.state.user.id,
 		device_id: currentDeviceId.value
 	};
 	socket.send(JSON.stringify(socketParams));
-	console.log('socketTimer :>> ', socketTimer);
+	console.log("socketTimer :>> ", socketTimer);
 	if (!socketTimer) {
 		socketTimer = setInterval(() => {
 			socket.send(JSON.stringify(socketParams));
@@ -307,7 +337,7 @@ function toggleCheckAlarm(id) {
 }
 
 async function openWiper() {
-	if (!currentDeviceId.value || (wiperTimer.value && !action)) {
+	if (!currentDeviceId.value || wiperTimer.value) {
 		return;
 	}
 	currentWiperStatus.value = true;
@@ -318,8 +348,7 @@ async function openWiper() {
 	wiperTimer.value = setTimeout(() => {
 		currentWiperStatus.value = false;
 		wiperTimer.value = null;
-		closeWiper();
-	}, 1000 * 40);
+	}, 1000 * 20);
 }
 
 async function closeWiper() {
@@ -342,17 +371,11 @@ async function closeWiper() {
  * 设备消音
  */
 async function handleAlarmMuted() {
-	if (!alarmCheckList.value.length) {
-		homeToastPlguin("请选择报警信息");
-		return;
-	}
-	const alarm_ids = [...alarmCheckList.value];
 	try {
-		const res = await API_HOME.alarmMuted({
-			alarm_ids
-		});
+		// devices_ids: alarmCheckList.value
+		const res = await API_HOME.alarmMuted();
 		if (res.code == 200) {
-			alarmCheckList.value = [];
+			// alarmCheckList.value = [];
 			store.state.pauseAudio();
 			homeToastPlguin("已消音");
 		} else {
@@ -380,11 +403,12 @@ async function submitCheckList() {
 	}
 	try {
 		const { code } = await API_HOME.submitCheckAlarm({
-			alarm_ids: alarmCheckList.value,
+			devices_ids: alarmCheckList.value,
 			confirm_user,
 			remark
 		});
 		if (code == 200) {
+			store.commit("setAlarmList", []);
 			isPopShow.value = false;
 			homeToastPlguin("确认报警成功");
 		} else {
@@ -430,9 +454,10 @@ async function submitCheckList() {
 					<Transition name="fade">
 						<div
 							class="control-tips"
-							v-show="g_iWndowType > 1"
+							v-show="g_iWndowType > 1 || isBusy"
 						>
-							云台不可控
+							<!-- {{ !currentDeviceId ? "云台不可控" : isBusy ? "云台占用中" : "" }} -->
+							{{ isBusy ? "云台占用中" : !currentDeviceId ? "云台不可控" : "" }}
 						</div>
 					</Transition>
 				</global-title>
@@ -440,17 +465,17 @@ async function submitCheckList() {
 				<home-global-content>
 					<div
 						class="control-direction"
-						:class="{ active: currentDeviceId && !isBusy, ready: g_iWndowType == 1 && !currentDeviceId }"
+						:class="{ active: currentDeviceId, ready: g_iWndowType == 1 && !currentDeviceId }"
 					>
 						<control
-							:class="{ 'control-wrap-active': currentDeviceId && !isBusy, 'control-wrap-disabled': g_iWndowType > 1 }"
+							:class="{ 'control-wrap-active': currentDeviceId, 'control-wrap-disabled': g_iWndowType > 1 }"
 							v-model="currentDeviceId"
 						></control>
 						<div
 							class="start-control"
 							@click="handlePlugin"
 						>
-							{{ !currentDeviceId ? "开始控制" : isBusy ? "占用中..." : "云台控制中" }}
+							{{ !currentDeviceId ? "开始控制" : "云台控制中" }}
 						</div>
 						<GlobalBlackContent>
 							<div
@@ -485,23 +510,13 @@ async function submitCheckList() {
 								class="control-item wiper"
 								:class="{ active: currentDeviceId }"
 							>
-								<span class="name">雨刷开/关</span>
+								<span class="name">雨刷</span>
 								<span
 									class="icon"
 									@click="openWiper"
 								>
 									<img
 										src="../assets/images/icon-wipers-on.png"
-										alt=""
-									/>
-								</span>
-								<span
-									class="icon"
-									:class="{ active: !currentWiperStatus }"
-									@click="closeWiper"
-								>
-									<img
-										src="../assets/images/icon-wipers-off.png"
 										alt=""
 									/>
 								</span>
@@ -533,7 +548,38 @@ async function submitCheckList() {
 					class="density-wrap"
 					:isNeedScroll="false"
 				>
-					<div
+					<swiper
+						class="density-list"
+						direction="vertical"
+						:slides-per-view="5"
+						:space-between="5"
+						:loop="deepList.length > 5"
+						:autoplay="{ delay: 3000 }"
+						:speed="1000"
+						:observer="true"
+						:observe-parents="true"
+						:observe-slide-children="true"
+						:allow-touch-move="false"
+						:modules="[Autoplay]"
+					>
+						<!-- Slides -->
+						<swiper-slide
+							class="density-slide"
+							v-for="item in deepList"
+							:key="item.device_id"
+						>
+							<div class="density-item">
+								<div class="area-name">{{ item.station.name }}-{{ item.region.name }}</div>
+								<div class="density-num">
+									浓度: <span class="english">{{ item.gas }}ppm.m</span>
+								</div>
+								<div class="density-num">
+									光强: <span class="english">{{ item.light }}</span>
+								</div>
+							</div>
+						</swiper-slide>
+					</swiper>
+					<!-- <div
 						class="density-list"
 						ref="roll"
 					>
@@ -550,7 +596,7 @@ async function submitCheckList() {
 								光强: <span class="english">{{ item.light }}</span>
 							</div>
 						</div>
-					</div>
+					</div> -->
 				</home-global-content>
 			</div>
 			<!-- 实时报警 -->
@@ -589,7 +635,7 @@ async function submitCheckList() {
 							class="alarm-item"
 							v-for="item in alarmList"
 							:key="item.alarm_id"
-							:id="item.alarm_id"
+							:id="item.device_id"
 							:stand-name="item.station.name"
 							:area-name="item.region.name"
 							:time="item.created_at"
@@ -814,15 +860,10 @@ async function submitCheckList() {
 	cursor: pointer;
 }
 
-.top-wrap .home-item .control-direction .control-item.zoom.active .icon:hover {
+.top-wrap .home-item .control-direction .control-item.active .icon:hover {
 	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
 		linear-gradient(to top, #505050, #aeadad);
 	cursor: pointer;
-}
-
-.top-wrap .home-item .control-direction .control-item.wiper .icon.active {
-	background-image: linear-gradient(to bottom, rgba(98, 98, 98, 0.8), rgba(54, 49, 47, 0.8), rgba(39, 39, 39, 0.8)),
-		linear-gradient(to top, #505050, #aeadad);
 }
 
 .top-wrap .home-item .control-direction .control-item .icon img {
@@ -860,14 +901,13 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item .density-wrap {
-	height: 180px;
+	height: 200px;
 	box-sizing: border-box;
-	padding: 0 20px 0 15px;
+	padding: 10px 20px 10px 15px;
 }
 
 .bottom-wrap .home-item .density-wrap .density-list {
 	height: 100%;
-	overflow-y: scroll;
 	/* padding: 10px 0; */
 }
 
@@ -875,18 +915,26 @@ async function submitCheckList() {
 	display: none;
 }
 
+.bottom-wrap .home-item .density-wrap .density-list .density-slide {
+	height: 30px;
+}
+
+.bottom-wrap .home-item .density-wrap .density-list .density-slide .swiper-wrapper {
+	transition-timing-function: linear !important; /* 设置线性动画 */
+}
+
 .bottom-wrap .home-item .density-wrap .density-list .density-item {
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;
 	width: 100%;
-	height: 30px;
+	height: 100%;
 	box-sizing: border-box;
 	padding: 0 18px;
 	border: 1px solid rgba(119, 111, 99, 0.8);
 	background: #363636;
 	border-radius: 4px;
-	margin: 8px 0;
+	/* margin: 8px 0; */
 }
 
 .bottom-wrap .home-item .density-wrap .density-list .density-item .area-name {
@@ -924,7 +972,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap {
-	height: 180px;
+	height: 200px;
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-list {
@@ -940,7 +988,6 @@ async function submitCheckList() {
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-list .alarm-item {
 	width: 342px;
-	box-sizing: border-box;
 }
 
 .bottom-wrap .home-item.alarm-item .alarm-wrap .alarm-check-form {
@@ -1010,7 +1057,7 @@ async function submitCheckList() {
 }
 
 .bottom-wrap .home-item.fault-item .fault-wrap {
-	height: 180px;
+	height: 200px;
 	box-sizing: border-box;
 	padding: 0 15px;
 }
@@ -1100,6 +1147,7 @@ async function submitCheckList() {
 }
 
 .form-wrap .form-item .txt-area-box textarea {
+	font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
 	display: block;
 	width: 100%;
 	height: 100%;
@@ -1108,6 +1156,7 @@ async function submitCheckList() {
 	outline: none;
 	resize: none;
 	background: none;
+	color: #fff;
 }
 
 .form-wrap .form-item .btn {

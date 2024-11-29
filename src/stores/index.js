@@ -13,9 +13,9 @@ const store = createStore({
       role: "",
       token: ""
     },
-    initPlugin: () => {},
-    destoryPlugin: () => {},
-    pauseAudio: () => {}
+    initPlugin: () => { },
+    destoryPlugin: () => { },
+    pauseAudio: () => { }
   },
   mutations: {
     setPauseAudio(state, data) {
@@ -31,13 +31,13 @@ const store = createStore({
       state.user = data;
     },
     setStandList(state, data) {
-      state.standList = [...data];
+      state.standList = [].concat(data);
     },
     setAlarmList(state, data) {
-      state.alarmList = [...data];
+      state.alarmList = [].concat(data);
     },
     setFaultList(state, data) {
-      state.faultList = [...data];
+      state.faultList = [].concat(data);
     },
     setWindowCount(state, data) {
       state.windowCount = data;
@@ -88,29 +88,42 @@ const store = createStore({
         return arr;
       }
       let deviceList = [];
-      state.standList.forEach((station, sIndex) => {
-        station.regions.forEach((region, rIndex) => {
+      for (let i = 0; i < state.standList.length; i++) {
+        const { regions } = state.standList[i];
+        for (let j = 0; j < regions.length; j++) {
+          const region = regions[j];
           // 防止测试数据没有设备
           if (Object.keys(region.device).length > 0) {
             const { device } = region;
             device["szDeviceIdentify"] = `${device.monitor_ip}_${device.monitor_port}`;
             deviceList.push({
-              sIndex,
-              rIndex,
+              sIndex: i,
+              rIndex: j,
               device
             })
           }
-        });
-      })
+        }
+      }
+      // state.standList.forEach((station, sIndex) => {
+      //   station.regions.forEach((region, rIndex) => {
+      //     // 防止测试数据没有设备
+      //     if (Object.keys(region.device).length > 0) {
+      //       const { device } = region;
+      //       device["szDeviceIdentify"] = `${device.monitor_ip}_${device.monitor_port}`;
+      //       deviceList.push({
+      //         sIndex,
+      //         rIndex,
+      //         device
+      //       })
+      //     }
+      //   });
+      // })
       let j = 0,
         o = j;
       // windowCount为一组（页）
       while (j < deviceList.length) {
-        console.log("while");
         if (state.windowCount == "1*2") {
           j += 2;
-        } else if (state.windowCount == 1) {
-          j += 4 * 4;
         } else {
           j += state.windowCount * state.windowCount;
         }

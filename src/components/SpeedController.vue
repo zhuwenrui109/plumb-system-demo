@@ -36,7 +36,6 @@ function handleMouseup() {
 
 function handleSpeed(key) {
 	if (props.disabled) return;
-	console.log("handleSpeed");
 	switch (key) {
 		case 0:
 			if (speed.value <= 1) return;
@@ -51,7 +50,18 @@ function handleSpeed(key) {
 		default:
 			break;
 	}
-	console.log("speed.value :>> ", speed.value);
+}
+
+/**
+ * 点击跳转对应数值
+ * @param { Event } event 元素事件
+ */
+function handleClick(event) {
+	const container = event.currentTarget;
+	const rect = container.getBoundingClientRect();
+	const clickPosition = event.clientX - rect.left; // 点击位置相对容器左侧的距离
+	const newProgress = Math.round((clickPosition / rect.width) * 30); // 计算新的进度值
+	speed.value = newProgress;
 }
 </script>
 
@@ -84,7 +94,10 @@ function handleSpeed(key) {
 				@mouseup="handleMouseup"
 			/> -->
 			<!-- 速度条 -->
-			<div class="line-wrap">
+			<div
+				class="line-wrap"
+				@click="handleClick"
+			>
 				<div class="line">
 					<div :style="{ width: lineWidth }"></div>
 				</div>
@@ -142,9 +155,9 @@ function handleSpeed(key) {
 	width: 22px;
 	height: 30px;
 	box-sizing: border-box;
-	background-color: rgba(40, 40, 40, .8);
-	border: 1px solid rgba(108, 108, 108, .8);
-	box-shadow: inset 0 0 7px 3px rgba(92, 92, 92, .79);
+	background-color: rgba(40, 40, 40, 0.8);
+	border: 1px solid rgba(108, 108, 108, 0.8);
+	box-shadow: inset 0 0 7px 3px rgba(92, 92, 92, 0.79);
 	border-radius: 2px;
 	flex-shrink: 0;
 }
@@ -182,6 +195,10 @@ function handleSpeed(key) {
 	background: rgba(0, 0, 0, 0.4);
 	box-shadow: inset 0 0 7px 3px rgba(92, 92, 92, 0.4);
 	border: 1px solid rgba(108, 108, 108, 0.3);
+}
+
+.speed-controller-wrap.active .btn-wrap .line-wrap .line {
+	cursor: pointer;
 }
 
 .speed-controller-wrap .btn-wrap .line-wrap .line div {

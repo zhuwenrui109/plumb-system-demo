@@ -28,6 +28,8 @@ async function submitSetting() {
 		value: windowCount.value
 	});
 	if (res.code == 200) {
+		store.dispatch("setIWndPage", 0);
+		store.dispatch("handleIWndIndex", 0);
 		toastPlguin("修改成功")
 	}
 }

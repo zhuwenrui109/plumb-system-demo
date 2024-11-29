@@ -105,3 +105,21 @@ export const getSdkFile = () => request.get(`sdk/HCWebSDKPlugin.exe`, { response
  * @returns 
  */
 export const getAudio = () => request.get(`resource/alarm.mp3`, { responseType: 'blob' });
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const getRealAlarm = data => request.post(`api/alarms`, data);
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const checkRealAlarm = data => request.post(`api/confirmSelectedAlarm`, data);
+
+/**
+ * 全部场站
+ * @returns 
+ */
+export const checkRealAlarmVideo = data => request.post(`api/alarmVideo`, data);
