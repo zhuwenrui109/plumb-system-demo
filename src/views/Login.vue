@@ -2,7 +2,7 @@
 import { API_HOME } from "@/api";
 import HomeGlobalContent from "@/components/HomeGlobalContent.vue";
 import toastPlguin from "@/utils/toast";
-import { tokenExpressInTime } from "@/utils/tool";
+import { getCurrentTime, tokenExpressInTime } from "@/utils/tool";
 import { inject, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
@@ -13,8 +13,8 @@ const store = useStore();
 
 const isAutoLogin = ref(false);
 // 账号: 18804030703; 密码: 123456;
-const username = ref("");
-const password = ref("");
+const username = ref("18804030703");
+const password = ref("123456");
 const router = useRouter();
 const date = ref("");
 const time = ref("");
@@ -35,18 +35,18 @@ onUnmounted(() => {
 	timer = null;
 });
 
+/**
+ * 初始化时间
+ */
 function timeInit() {
-	const tm = new Date();
-	const y = tm.getFullYear();
-	const m = (tm.getMonth() + 1).toString().padStart(2, "0");
-	const d = tm.getDate().toString().padStart(2, "0");
-	const hours = tm.getHours().toString().padStart(2, "0");
-	const minutes = tm.getMinutes().toString().padStart(2, "0");
-	const secound = tm.getSeconds().toString().padStart(2, "0");
-	date.value = `${y}-${m}-${d}`;
-	time.value = `${hours}:${minutes}:${secound}`;
+	const current = getCurrentTime();
+	date.value = `${current.year}-${current.month}-${current.day}`;
+	time.value = `${current.hours}:${current.minutes}:${current.secound}`;
 }
 
+/**
+ * 检查登录状态
+ */
 function checkLoginStatus() {
 	// 如果已经登录并且token没过期直接回到上一个页面
 	if (localStorage.getItem("token") && !tokenExpressInTime()) {
@@ -69,18 +69,17 @@ function checkLoginStatus() {
 
 /**
  * 登录
- * @param {Event} e Event
  */
-async function handleLogin(e) {
+async function handleLogin() {
 	if (!username || !password) {
 		toastPlguin("请检查账号密码是否正确");
 	}
 	try {
-		const { token_type, access_token, expires_in, user_role } = await API_HOME.login({
+		const { token, user_role } = await API_HOME.login({
 			account: username.value,
 			password: password.value
 		});
-		// 如果需要自动登录保存账号密码到缓存
+		// 如果需要自动登录
 		if (isAutoLogin.value) {
 			localStorage.setItem(
 				"autoToken",
@@ -89,17 +88,16 @@ async function handleLogin(e) {
 					password: password.value
 				})
 			);
-			const token = token_type + " " + access_token;
 			localStorage.setItem("token", token);
 			localStorage.setItem("tokenTime", 99999999999999999999);
 			localStorage.setItem("userRole", user_role);
 		} else {
-			const token = token_type + " " + access_token;
 			sessionStorage.setItem("token", token);
 			sessionStorage.setItem("tokenTime", 99999999999999999999);
 			sessionStorage.setItem("userRole", user_role);
 		}
 		loadUserInfo();
+		// 如果是从其他页面跳转返回
 		let prev = localStorage.getItem("preRoute") ? localStorage.getItem("preRoute") : "/";
 		alarm.connect();
 		fault.connect();
@@ -203,8 +201,10 @@ function toggleAutoLogin() {
 }
 
 .login .time-wrap .time {
+	min-width: 300px;
 	font-size: 32px;
 	line-height: 1;
+	text-align: center;
 	margin: 0 33px;
 }
 

@@ -9,18 +9,24 @@ const props = defineProps({
 const isShow = defineModel();
 
 async function handleDownload() {
-	// {url}/sdk/HCWebSDKPlugin.exe
-	const res = await API_HOME.getSdkFile();
-	console.log("res :>> ", res);
-	const dom = document.createElement("a");
-	const url = window.URL.createObjectURL(res);
-	dom.href = url;
-	dom.download = decodeURI("HCWebSDKPlugin.exe");
-	dom.style.display = "none";
-	document.body.appendChild(dom);
-	dom.click();
-	dom.parentNode.removeChild(dom);
-	window.URL.revokeObjectURL(url);
+	const link = document.createElement("a");
+	link.href = "/hikvision/HCWebSDKPlugin.exe";
+	link.download = "HCWebSDKPlugin.exe";
+	link.style.display = "none";
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	// const res = await API_HOME.getSdkFile();
+	// console.log("res :>> ", res);
+	// const dom = document.createElement("a");
+	// const url = window.URL.createObjectURL(res);
+	// dom.href = url;
+	// dom.download = decodeURI("HCWebSDKPlugin.exe");
+	// dom.style.display = "none";
+	// document.body.appendChild(dom);
+	// dom.click();
+	// dom.parentNode.removeChild(dom);
+	// window.URL.revokeObjectURL(url);
 }
 
 function reload() {
@@ -29,57 +35,59 @@ function reload() {
 </script>
 
 <template>
-	<Transition name="fade">
-		<div
-			class="form-pop-wrap"
-			v-show="isShow"
-		>
-			<div class="pop-tips">未检测到驱动程序，请重试</div>
+	<Teleport to="body">
+		<Transition name="fade">
 			<div
-				class="form-pop-main"
-				@click.stop
+				class="form-pop-wrap"
+				v-show="isShow"
 			>
-				<div class="title-wrap">
-					<div class="content">
-						<div class="title">{{ name }}</div>
+				<div class="pop-tips">未检测到驱动程序，请重试</div>
+				<div
+					class="form-pop-main"
+					@click.stop
+				>
+					<div class="title-wrap">
+						<div class="content">
+							<div class="title">{{ name }}</div>
+							<img
+								src="../assets/images/icon-video-close.png"
+								alt=""
+								class="close"
+								@click="isShow = false"
+							/>
+						</div>
 						<img
-							src="../assets/images/icon-video-close.png"
+							src="../assets/images/form-pop-title-bg.png"
 							alt=""
-							class="close"
-							@click="isShow = false"
+							class="bg"
 						/>
 					</div>
-					<img
-						src="../assets/images/form-pop-title-bg.png"
-						alt=""
-						class="bg"
-					/>
-				</div>
-				<div class="list">
-					<div class="item">
-						<div class="tips">系统使用前请先安装</div>
-						<div class="tips chance">监控设备软件驱动程序</div>
-						<SettingButtonBorder
-							class="btn"
-							type="clear"
-							@click="handleDownload"
-						>
-							驱动程序下载
-						</SettingButtonBorder>
-					</div>
-					<div class="item">
-						<div class="tips">安装完成后，点下方按钮刷新该界面登录使用。</div>
-						<SettingButtonBorder
-							class="btn"
-							@click="reload"
-						>
-							已成功安装设备驱动程序
-						</SettingButtonBorder>
+					<div class="list">
+						<div class="item">
+							<div class="tips">系统使用前请先安装</div>
+							<div class="tips chance">监控设备软件驱动程序</div>
+							<SettingButtonBorder
+								class="btn"
+								type="clear"
+								@click="handleDownload"
+							>
+								驱动程序下载
+							</SettingButtonBorder>
+						</div>
+						<div class="item">
+							<div class="tips">安装完成后，点下方按钮刷新该界面登录使用。</div>
+							<SettingButtonBorder
+								class="btn"
+								@click="reload"
+							>
+								已成功安装设备驱动程序
+							</SettingButtonBorder>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	</Transition>
+		</Transition>
+	</Teleport>
 </template>
 
 <style scoped>

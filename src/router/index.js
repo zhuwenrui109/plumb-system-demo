@@ -71,7 +71,7 @@ const router = createRouter({
         {
           path: "connect",
           name: "connect",
-          component: () => import("@/views/Connect.vue"),
+          component: () => import("@/views/Connect/index.vue"),
           meta: {
             title: "设备连接",
             needRole: true

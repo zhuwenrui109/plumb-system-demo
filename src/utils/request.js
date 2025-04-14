@@ -4,7 +4,7 @@ import toastPlguin from "./toast";
 import router from "@/router";
 
 const request = axios.create({
-  baseURL: "/api", // 此处的 '/api' 和 vite.config.js 的配置相关联
+  baseURL: "/",
   timeout: 50000,
   requestOptions: {
     withToken: true,

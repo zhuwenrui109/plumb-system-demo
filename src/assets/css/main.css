@@ -1,6 +1,10 @@
 @import './base.css';
 @import "./font.css";
 
+[v-cloak] {
+  display: none;
+}
+
 html,
 body {
 	font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
@@ -47,4 +51,14 @@ body {
 .slide-fade-leave-to {
   transform: translateX(20px);
   opacity: 0;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.2s ease-in;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+	opacity: 0;
 }

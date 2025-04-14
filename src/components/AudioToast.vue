@@ -1,16 +1,21 @@
 <script setup>
 const props = defineProps({
 	message: String,
-  checkButton: Function
+	checkButton: Function
 });
 </script>
 
 <template>
-	<div class="home-toast-wrap" @click="checkButton">
-		<div class="content">
-			{{ message }}
+	<Teleport to="body">
+		<div
+			class="home-toast-wrap"
+			@click="checkButton"
+		>
+			<div class="content">
+				{{ message }}
+			</div>
 		</div>
-	</div>
+	</Teleport>
 </template>
 
 <style scoped>
@@ -41,7 +46,6 @@ const props = defineProps({
 	border-radius: 4px;
 	font-size: 14px;
 	text-align: center;
-  cursor: pointer;
 }
 
 @keyframes ani {

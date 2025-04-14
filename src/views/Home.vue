@@ -26,6 +26,315 @@ import "swiper/css";
 const router = useRouter();
 const store = useStore();
 
+const testConcentrationList = [
+	{
+		device_id: 1557,
+		sensor_ip: "192.168.1.182",
+		sensor_port: "505",
+		station_id: 21,
+		region_id: 12,
+		gas: "62169",
+		light: 1,
+		station: {
+			station_id: 21,
+			name: "沈阳分输站"
+		},
+		region: {
+			region_id: 12,
+			name: "过滤区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+	{
+		device_id: 1552,
+		sensor_ip: "192.168.1.181",
+		sensor_port: "500",
+		station_id: 2,
+		region_id: 2,
+		gas: "62169",
+		light: 9,
+		station: {
+			station_id: 2,
+			name: "大连计量站"
+		},
+		region: {
+			region_id: 2,
+			name: "清管区"
+		}
+	},
+];
+
 const { WebVideoCtrl } = window;
 const currentWiperStatus = ref(false);
 const wiperTimer = ref(null);
@@ -41,7 +350,7 @@ const g_iWndowType = ref(0);
 const g_iWndowPage = ref(0);
 const deepList = ref([]);
 const alarmCheckList = ref([]);
-const isPopShow = ref(true);
+const isPopShow = ref(false);
 const form = ref({
 	confirm_user: "",
 	remark: ""
@@ -54,26 +363,26 @@ const faultList = computed(() => store.state.faultList);
 
 let socketTimer = null;
 let socketStatus = 0;
-const socket = new WebSocket("ws://192.168.1.51:8080");
+// const socket = new WebSocket("ws://localhost:3000");
 
-socket.onopen = () => {
-	socketStatus = 1;
-};
+// socket.onopen = () => {
+// 	socketStatus = 1;
+// };
 
-socket.onmessage = msgEvent => {
-	const { data } = msgEvent;
-	const msg = JSON.parse(data);
+// socket.onmessage = msgEvent => {
+// 	const { data } = msgEvent;
+// 	const msg = JSON.parse(data);
 
-	console.log("msg :>> ", msg);
-	if (!msg.status) {
-		if (socketTimer) {
-			clearInterval(socketTimer);
-			socketTimer = null;
-		}
-		isBusy.value = true;
-		currentDeviceId.value = "";
-	}
-};
+// 	console.log("msg :>> ", msg);
+// 	if (!msg.status) {
+// 		if (socketTimer) {
+// 			clearInterval(socketTimer);
+// 			socketTimer = null;
+// 		}
+// 		isBusy.value = true;
+// 		currentDeviceId.value = "";
+// 	}
+// };
 
 onMounted(() => {
 	// initRoll();
@@ -124,23 +433,20 @@ watch(pluginSpeed, newVal => {
 });
 
 // 实时浓度
-const concentration = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "concentration" }),
-	heartBeatInterval: 1000
-});
+// const concentration = useWebSocket({
+// 	heartBeatData: JSON.stringify({ target: "concentration" }),
+// 	heartBeatInterval: 1000
+// });
 
-concentration.connect();
+// concentration.connect();
+deepList.value = [...testConcentrationList];
 
-watch(
-	() => concentration.message.value,
-	async newVal => {
-		// console.log("newVal :>> ", newVal);
-		if (g_iWndowType.value == 1) {
-			// await pluginDom.value.setTextOverlay();
-		}
-		deepList.value = [...newVal];
-	}
-);
+// watch(
+// 	() => concentration.message.value,
+// 	async newVal => {
+// 		deepList.value = [...newVal];
+// 	}
+// );
 
 function initRoll() {
 	console.log("定时器触发周期");
@@ -192,21 +498,6 @@ function destoryRoll() {
 		clearInterval(rollTimer.value);
 		rollTimer.value = null;
 	}
-}
-
-/**
- * 测试浓度超标警报录制视频
- */
-function testPluginError() {
-	console.log("测试浓度超标警报录制视频");
-	const test = {
-		id: 0,
-		title: "2级别",
-		value: "1000ppm.m",
-		ip: "192.168.1.64"
-	};
-	capturePicData();
-	alarmList.value.push(test);
 }
 
 async function changeSpeed(value) {

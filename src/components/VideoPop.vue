@@ -53,25 +53,27 @@ function destoryVideoPlayer() {
 </script>
 
 <template>
-	<Transition name="fade">
-		<div
-			class="video-pop-wrap"
-			v-show="isShow"
-		>
-			<div class="video-pop">
-				<div
-					class="video"
-					ref="videoWrap"
-				></div>
-				<img
-					src="../assets/images/icon-video-close.png"
-					alt=""
-					class="close"
-					@click="isShow = false"
-				/>
+	<Teleport to="body">
+		<Transition name="fade">
+			<div
+				class="video-pop-wrap"
+				v-show="isShow"
+			>
+				<div class="video-pop">
+					<div
+						class="video"
+						ref="videoWrap"
+					></div>
+					<img
+						src="../assets/images/icon-video-close.png"
+						alt=""
+						class="close"
+						@click="isShow = false"
+					/>
+				</div>
 			</div>
-		</div>
-	</Transition>
+		</Transition>
+	</Teleport>
 </template>
 
 <style scoped>

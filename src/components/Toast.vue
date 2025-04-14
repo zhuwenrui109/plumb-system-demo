@@ -5,11 +5,13 @@ const props = defineProps({
 </script>
 
 <template>
-	<div class="toast-wrap">
-		<div class="content">
-			{{ message }}
+	<Teleport to="body">
+		<div class="toast-wrap">
+			<div class="content">
+				{{ message }}
+			</div>
 		</div>
-	</div>
+	</Teleport>
 </template>
 
 <style scoped>

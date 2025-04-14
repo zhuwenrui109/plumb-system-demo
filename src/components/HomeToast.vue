@@ -5,11 +5,13 @@ const props = defineProps({
 </script>
 
 <template>
-	<div class="home-toast-wrap">
-		<div class="content">
-			{{ message }}
+	<Teleport to="body">
+		<div class="home-toast-wrap">
+			<div class="content">
+				{{ message }}
+			</div>
 		</div>
-	</div>
+	</Teleport>
 </template>
 
 <style scoped>
@@ -22,8 +24,8 @@ const props = defineProps({
 	justify-content: center;
 	width: 100%;
 	height: 100%;
-  box-sizing: border-box;
-  padding-bottom: 50px;
+	box-sizing: border-box;
+	padding-bottom: 50px;
 	z-index: 1000;
 }
 

@@ -6,6 +6,7 @@ import { useRoute } from "vue-router";
 import { API_HOME } from "./api";
 import { useStore } from "vuex";
 import useWebSocket from "./utils/useWebSocket";
+import audioToastPlguin from "./utils/audioToast";
 
 const route = useRoute();
 const store = useStore();
@@ -15,23 +16,23 @@ const isLoginRouter = computed(() => route.name == "login");
 const audio = ref(null);
 
 // 实时报警 心跳间隔一秒
-const alarm = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "alarm" }),
-	heartBeatInterval: 1000
-});
+// const alarm = useWebSocket({
+// 	heartBeatData: JSON.stringify({ target: "alarm" }),
+// 	heartBeatInterval: 1000
+// });
 
 // 实时故障 心跳间隔一秒
-const fault = useWebSocket({
-	heartBeatData: JSON.stringify({ target: "fault" }),
-	heartBeatInterval: 1000
-});
+// const fault = useWebSocket({
+// 	heartBeatData: JSON.stringify({ target: "fault" }),
+// 	heartBeatInterval: 1000
+// });
 
-loadAudio();
+// loadAudio();
 
 if (localStorage.getItem("token") || sessionStorage.getItem("token")) {
 	loadStandList();
-	alarm.connect();
-	fault.connect();
+	// alarm.connect();
+	// fault.connect();
 	loadUserInfo();
 }
 
@@ -39,51 +40,45 @@ onMounted(() => {
 	store.commit("setPauseAudio", pauseAudio);
 });
 
-watch(
-	() => alarm.message.value,
-	newVal => {
-		if (JSON.stringify(newVal) == "[]") {
-			store.dispatch("handleAlarmList", []);
-			pauseAudio();
-			return;
-		}
-		if (newVal.some(item => item.mute_status === 0)) {
-			startAudio();
-		} else {
-			pauseAudio();
-		}
-		store.dispatch("handleAlarmList", newVal);
-	}
-);
+// watch(
+// 	() => alarm.message.value,
+// 	newVal => {
+// 		if (JSON.stringify(newVal) == "[]") {
+// 			store.dispatch("handleAlarmList", []);
+// 			pauseAudio();
+// 			return;
+// 		}
+// 		if (newVal.some(item => item.mute_status === 0)) {
+// 			document.title = `${newVal.length}条报警`;
+// 			startAudio();
+// 		} else {
+// 			document.title = `(云台式)线型光束甲烷气体探测系统`;
+// 			pauseAudio();
+// 		}
+// 		store.dispatch("handleAlarmList", newVal);
+// 	}
+// );
 
-watch(
-	() => fault.message.value,
-	newVal => {
-		// console.log("fault :>> ", newVal);
-		store.dispatch("handleFaultList", newVal);
-	}
-);
+// watch(
+// 	() => fault.message.value,
+// 	newVal => {
+// 		store.dispatch("handleFaultList", newVal);
+// 	}
+// );
 
 provide("getData", {
-	alarm,
-	fault,
+	// alarm,
+	// fault,
 	loadStandList,
 	loadUserInfo
 });
 
 function startAudio() {
-	// console.log('audio.value.paused :>> ', audio.value.paused);
 	if (audio.value.paused) {
 		audio.value.play().catch(err => {
-			const test = document.createElement("div");
-			test.addEventListener("click", () => {
+			audioToastPlguin({ message: "设备浓度超标" }).then(() => {
 				audio.value.play();
-				test.remove();
 			});
-			test.click();
-			// audioToastPlguin({ message: "设备浓度超标" }).then(() => {
-			// 	audio.value.play();
-			// });
 		});
 	}
 }
@@ -94,15 +89,15 @@ function pauseAudio() {
 	}
 }
 
-async function loadAudio() {
-	const res = await API_HOME.getAudio();
-	const audioBlob = new Blob([res]);
-	const audioUrlObject = URL.createObjectURL(audioBlob);
-	if (audio.value) {
-		audio.value.src = audioUrlObject;
-		audio.value.load();
-	}
-}
+// async function loadAudio() {
+// 	// const res = await API_HOME.getAudio();
+// 	// const audioBlob = new Blob([res]);
+// 	// const audioUrlObject = URL.createObjectURL(audioBlob);
+// 	if (audio.value) {
+// 		audio.value.src = audioUrlObject;
+// 		audio.value.load();
+// 	}
+// }
 
 async function loadUserInfo() {
 	const res = await API_HOME.getUserInfo();
@@ -120,7 +115,7 @@ async function loadStandList() {
 </script>
 
 <template>
-	<div class="app-wrap">
+	<div class="app-wrap" v-cloak>
 		<!-- 头部 -->
 		<Header></Header>
 
@@ -135,6 +130,7 @@ async function loadStandList() {
 			<router-view></router-view>
 		</div>
 		<audio
+			src="./assets/audio/alarm.mp3"
 			preload="auto"
 			loop
 			ref="audio"
@@ -142,7 +138,7 @@ async function loadStandList() {
 	</div>
 </template>
 
-<style>
+<style scoped>
 .app-wrap {
 	position: fixed;
 	top: 0;
@@ -178,15 +174,5 @@ async function loadStandList() {
 .app-wrap .app-main.login {
 	padding-bottom: 0;
 	flex: 1;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-	transition: opacity 0.2s ease-in;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-	opacity: 0;
 }
 </style>

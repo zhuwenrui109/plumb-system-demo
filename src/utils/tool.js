@@ -1,18 +1,46 @@
+/**
+ * 获取当前时间
+ * @returns 时间对象
+ */
+export const getCurrentTime = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const secound = date.getSeconds().toString().padStart(2, "0");
+  return {
+    year,
+    month,
+    day,
+    hours,
+    minutes,
+    secound
+  }
+};
+
+
+/**
+ * 根据类型返回名称
+ * @param { Number } type 类型
+ * @returns 类型名称
+ */
 export const checkFaultType = (type) => {
   let txt = "";
   switch (type) {
     case 1:
       txt = "传感器"
       break;
-  
+
     case 2:
       txt = "云台"
       break;
-  
+
     case 3:
       txt = "摄像头"
       break;
-  
+
     default:
       break;
   }

@@ -104,7 +104,7 @@ export const getSdkFile = () => request.get(`sdk/HCWebSDKPlugin.exe`, { response
  * 全部场站
  * @returns 
  */
-export const getAudio = () => request.get(`resource/alarm.mp3`, { responseType: 'blob' });
+// export const getAudio = () => request.get(`resource/alarm.mp3`, { responseType: 'blob' });
 
 /**
  * 全部场站

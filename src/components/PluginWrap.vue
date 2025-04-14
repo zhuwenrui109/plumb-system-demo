@@ -48,16 +48,17 @@ const isRightArrshow = computed(() => {
 });
 
 watch(windowType, (newVal, oldVal) => {
-	if (!oldVal) {
-		initPlugin();
-		return;
-	}
-	destoryPlugin(initPlugin);
+	// if (!oldVal) {
+	// 	initPlugin();
+	// 	return;
+	// }
+	// destoryPlugin(initPlugin);
 });
 
 loadWindowCount();
 
 onMounted(() => {
+	initPlugin();
 	store.dispatch("handleInitPlugin", initPlugin);
 	store.dispatch("handleDestoryPlugin", destoryPlugin);
 });
@@ -131,32 +132,6 @@ async function initPlugin() {
 						iWndIndex: index
 					});
 				});
-				return;
-				for (let i = 0; i < results.length; i++) {
-					const item = results[i];
-					if (item.status == "rejected") {
-						if (item.reason.errorCode == ERROR_CODE_LOGIN_REPEATLOGIN) {
-							// destoryPlugin(initPlugin);
-							const { iRtspPort } = await getDevicePort(`${item.reason.szIP}_${item.reason.szPort}`);
-							await getChannelInfo(`${item.reason.szIP}_${item.reason.szPort}`);
-							await startRealPlay(`${item.reason.szIP}_${item.reason.szPort}`, {
-								iWndIndex: i,
-								iPort: iRtspPort
-							});
-							continue;
-						}
-						if (item.reason.errorCode == 16) {
-							homeToastPlguin(`${item.reason.szIP}_${item.reason.szPort} 连接失败`);
-							continue;
-						}
-					}
-					const { iRtspPort } = await getDevicePort(item.value);
-					await getChannelInfo(item.value);
-					await startRealPlay(item.value, {
-						iWndIndex: i,
-						iPort: iRtspPort
-					});
-				}
 			});
 		} else {
 			const { monitor_ip, monitor_port, szDeviceIdentify } = deviceList.value[g_iWndowPage.value][g_iWndIndex.value].device;
